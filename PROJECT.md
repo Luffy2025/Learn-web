@@ -2,9 +2,9 @@
 
 This file records the plan for the app. The product owner makes the design
 decisions. Anything marked **TO DECIDE** is waiting for the product owner's
-answer.
+answer..
 
-*Last updated: 8 November 2026*
+_Last updated: 8 November 2026_
 
 ## Where we are now
 
@@ -18,13 +18,13 @@ answer.
 
 ## The basics
 
-| | |
-|---|---|
-| **App name** | **TO DECIDE.** The browser tab says "Drawlab!!", but the top panel says "My Drawing App". Pick one name for both. |
-| **Who it's for** | **TO DECIDE.** For example: kids, students, or anyone who wants to sketch quickly. |
-| **Purpose** | **TO DECIDE.** Fill in: "My app lets ___ draw ___ so that ___." |
-| **Runs on** | A web browser. It's one file, `hello.html`, and needs nothing installed. |
-| **Devices** | Phone, iPad, laptop and PC (decided) |
+|                  |                                                                                                                   |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **App name**     | **TO DECIDE.** The browser tab says "Drawlab!!", but the top panel says "My Drawing App". Pick one name for both. |
+| **Who it's for** | **TO DECIDE.** For example: kids, students, or anyone who wants to sketch quickly.                                |
+| **Purpose**      | **TO DECIDE.** Fill in: "My app lets **_ draw _** so that \_\_\_."                                                |
+| **Runs on**      | A web browser. It's one file, `hello.html`, and needs nothing installed.                                          |
+| **Devices**      | Phone, iPad, laptop and PC (decided)                                                                              |
 
 ## Expected behaviour (decided)
 
@@ -47,17 +47,17 @@ answer.
 
 Status: ✅ built, ⚠️ partly built, ❌ not built yet
 
-| Feature | Why it matters | Status |
-|---|---|---|
-| Drawing canvas | Gives users a space to create artwork | ✅ Fills the space between the panels and grows with the window. It never shrinks, so no part of a drawing is ever lost. |
-| Basic brush | Lets users draw freehand | ✅ Works with a mouse, a finger or a stylus. A single tap or click leaves a dot. |
-| Colour palette | Lets users express ideas with different colours | ✅ Colour picker plus 4 quick colours (black, red, blue, green) |
-| Brush-size control | Thin lines for detail, thick lines for colouring large areas | ✅ Slider from 1 to 40 (starts at 5), plus Thin (2), Medium (10) and Thick (30) buttons. A preview dot shows the exact size. Also sets the Eraser size and the outline of new shapes. |
-| Eraser | Fixes one part of a drawing | ✅ A separate tool (Home → Tool: Eraser). It truly removes drawing (the pixels become empty), not paints over it. It doesn't change your colour, so going back to Brush keeps the colour you picked. Erases brush drawing only. Text and shapes are separate objects, so they're removed with Delete instead (see Design decisions). |
-| Undo | Takes back a mistake | ✅ "↶ Undo" button and Ctrl+Z. Undoes drawing, text, shapes, moving, resizing, rotating, colours, fonts, Delete and Clear. There's no limit on steps (they're kept until the page is closed or refreshed). |
-| Clear canvas | Starts a new picture | ✅ "Clear" and "New Drawing" buttons. Also removes text and shapes, and can be undone. |
-| Save as PNG | Keeps the artwork after the browser closes | ✅ "Save Picture" downloads `my-drawing.png`, with text and shapes. Saves exactly the part you can see. |
-| Clear toolbar and layout | Makes the app easy to understand | ⚠️ The top panel (Home and Insert tabs, Undo, Delete, Save, New Drawing) works and wraps on small screens. The left panel is the **Properties** panel. The bottom panel is still empty. Both side panels can be resized by dragging. The **Tools** tab does nothing yet. |
+| Feature                  | Why it matters                                               | Status                                                                                                                                                                                                                                                                                                                               |
+| ------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Drawing canvas           | Gives users a space to create artwork                        | ✅ Fills the space between the panels and grows with the window. It never shrinks, so no part of a drawing is ever lost.                                                                                                                                                                                                             |
+| Basic brush              | Lets users draw freehand                                     | ✅ Works with a mouse, a finger or a stylus. A single tap or click leaves a dot.                                                                                                                                                                                                                                                     |
+| Colour palette           | Lets users express ideas with different colours              | ✅ Colour picker plus 4 quick colours (black, red, blue, green)                                                                                                                                                                                                                                                                      |
+| Brush-size control       | Thin lines for detail, thick lines for colouring large areas | ✅ Slider from 1 to 40 (starts at 5), plus Thin (2), Medium (10) and Thick (30) buttons. A preview dot shows the exact size. Also sets the Eraser size and the outline of new shapes.                                                                                                                                                |
+| Eraser                   | Fixes one part of a drawing                                  | ✅ A separate tool (Home → Tool: Eraser). It truly removes drawing (the pixels become empty), not paints over it. It doesn't change your colour, so going back to Brush keeps the colour you picked. Erases brush drawing only. Text and shapes are separate objects, so they're removed with Delete instead (see Design decisions). |
+| Undo                     | Takes back a mistake                                         | ✅ "↶ Undo" button and Ctrl+Z. Undoes drawing, text, shapes, moving, resizing, rotating, colours, fonts, Delete and Clear. There's no limit on steps (they're kept until the page is closed or refreshed).                                                                                                                           |
+| Clear canvas             | Starts a new picture                                         | ✅ "Clear" and "New Drawing" buttons. Also removes text and shapes, and can be undone.                                                                                                                                                                                                                                               |
+| Save as PNG              | Keeps the artwork after the browser closes                   | ✅ "Save Picture" downloads `my-drawing.png`, with text and shapes. Saves exactly the part you can see.                                                                                                                                                                                                                              |
+| Clear toolbar and layout | Makes the app easy to understand                             | ⚠️ The top panel (Home and Insert tabs, Undo, Delete, Save, New Drawing) works and wraps on small screens. The left panel is the **Properties** panel. The bottom panel is still empty. Both side panels can be resized by dragging. The **Tools** tab does nothing yet.                                                             |
 
 ## Extra features already built
 
@@ -66,18 +66,22 @@ These aren't on the must-have list.
 **TO DECIDE:** keep them in version 1, or count them as bonus features?
 
 **Drawing helpers**
+
 - **Straight lines:** hold still for 2 seconds while drawing, and the line turns straight. Keep holding to aim it.
 - **Joining lines:** start a line near the end of another line, and it joins on. With a mouse, a blue dot shows where it will join.
 - **Tool switch:** Home has three tools: Cursor (select and edit things), Brush (draw) and Eraser (rub out drawing). Picking a colour while the Eraser is on switches back to the Brush.
 
 **Text (Insert tab)**
+
 - Text boxes: click to place one, type, and click it again later to edit.
 - Text size setting.
 
 **Shapes (Insert tab)**
+
 - Rectangle, circle, triangle and line. They use the brush colour and size.
 
 **Properties panel (left panel)**
+
 - Shows the options for the selected text box, shape or line. With nothing selected, it shows a hint.
 - **Colour** (text, shapes and lines): 12 colour squares, a colour wheel and R/G/B sliders. The heading says what it changes: "Text colour", "Outline colour" or "Line colour".
 - **Thickness** (a slider): shapes and lines go from 1 to 40 (the outline). Text goes from 0 (normal) to 10 (very thick).
@@ -92,6 +96,7 @@ These aren't on the must-have list.
 - On small screens, the panel opens up wider when you select something.
 
 **Working with text boxes and shapes (Cursor tool)**
+
 - Click to select. Only the selected item shows its blue border and handles.
 - Drag to move.
 - Pull a corner to resize. Text gets bigger, and shapes stretch.
@@ -99,6 +104,7 @@ These aren't on the must-have list.
 - Delete the selected item with the 🗑 Delete button, or the Delete or Backspace key.
 
 **Layout**
+
 - Properties panel on the left, and an empty bottom panel. Drag the bar next to each one to make it bigger or smaller.
 
 ## Saved for version 2
@@ -135,12 +141,14 @@ PC's address on the network, so it may change).
 Tick each test on each device: Phone, iPad, Laptop, PC.
 
 **Leaving the canvas**
+
 - [ ] Draw a line and slide off the edge of the canvas while still pressing. The line stops at the edge.
 - [ ] Keep pressing and come back onto the canvas. No new line appears.
 - [ ] Lift or let go, then press again on the canvas. Drawing works normally.
 - [ ] Draw off the edge into the top panel and the left panel. The line stops at the edge both times.
 
 **Drawing**
+
 - [ ] A quick tap or click leaves a dot.
 - [ ] Freehand lines follow your finger, mouse or stylus with no gaps.
 - [ ] Change the colour and size, then draw. The new colour and size are used.
@@ -158,6 +166,7 @@ Tick each test on each device: Phone, iPad, Laptop, PC.
 - [ ] Phone/iPad: draw with one finger, then touch the canvas with a second finger. No extra line appears.
 
 **Layout**
+
 - [ ] Open or refresh the app. The Home tab is already open and its button is bold. Press Home to close it, and Insert to switch.
 - [ ] Phone (upright): every toolbar button can be seen, with nothing cut off on the right.
 - [ ] Phone/iPad: turn the device sideways and back. The canvas fills the space, and the drawing is still there.
@@ -165,11 +174,13 @@ Tick each test on each device: Phone, iPad, Laptop, PC.
 - [ ] Phone: the page doesn't zoom when you double-tap a button.
 
 **Text and shapes**
+
 - [ ] Add a text box. The keyboard appears on phone and iPad, and you can type.
 - [ ] Add a shape, then drag it, resize it from a corner and rotate it with the round handle.
 - [ ] While rotating, a label shows the angle (like 90°) and disappears when you let go. Phone/iPad: your finger doesn't cover it.
 
 **Properties panel**
+
 - [ ] With nothing selected, the panel says "Select a text box, shape or line to change it."
 - [ ] Select a shape or line. Colour shows, but Font doesn't. Pick a colour. The shape changes.
 - [ ] Select a text box. Colour and Font both show. Pick a colour and a font. The whole box changes.
@@ -198,6 +209,7 @@ Tick each test on each device: Phone, iPad, Laptop, PC.
 - [ ] Select an item and press 🗑 Delete. It's removed. On a laptop or PC, also try the Delete key.
 
 **Undo and saving**
+
 - [ ] Undo removes the last thing you did, several times in a row.
 - [ ] Make more than 50 changes, then keep pressing Undo. You can go all the way back to the empty canvas.
 - [ ] Save Picture downloads a PNG that looks like the screen (with text and shapes).
