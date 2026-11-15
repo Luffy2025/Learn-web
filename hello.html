@@ -7,7 +7,130 @@
          instead of shrinking a big desktop page down to fit -->
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <!-- The title shows on the browser tab -->
-    <title>Drawlab!!</title>
+    <title>Sunrise</title>
+    <!-- ===== Sunrise theme =====
+         All the app's colours are here, so the look can be changed in one
+         place. (The colours you draw with aren't affected.) Only colours,
+         corners and shadows change here: nothing moves. -->
+    <style>
+      :root {
+        --sr-coral: #ff7e5f; /* the main sunrise colour */
+        --sr-orange: #ff9f43;
+        --sr-peach: #feb47b;
+        --sr-gold: #ffd166;
+        --sr-deep: #e8590c; /* for words and links on light colours */
+        --sr-text: #3b2a26; /* warm dark brown, instead of black */
+        --sr-muted: #8a6f66;
+        --sr-line: #f3dccf; /* soft borders */
+        --sr-soft: #fff1e8; /* hover and highlights */
+        --sr-bg: #fff8f2; /* the page behind the panels */
+        --sr-grad: linear-gradient(90deg, #ff7e5f, #ff9f43 55%, #feb47b);
+        --sr-sky: linear-gradient(160deg, #ffb88c 0%, #ff8c94 38%, #ffc59e 68%, #fff1d6 100%);
+        --sr-shadow: 0 2px 10px rgba(232, 89, 12, 0.1);
+        --sr-shadow-big: 0 10px 30px rgba(232, 89, 12, 0.18);
+      }
+      body {
+        background: var(--sr-bg);
+        color: var(--sr-text);
+        font-family: "Segoe UI", system-ui, Arial, sans-serif;
+      }
+      /* Buttons: white and rounded, peach when you point at them */
+      button {
+        font-family: inherit;
+        color: var(--sr-text);
+        background: white;
+        border: 1px solid var(--sr-line);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+      }
+      button:hover:not(:disabled) {
+        background: var(--sr-soft);
+        border-color: #ffc4a8;
+      }
+      button:disabled {
+        opacity: 0.45;
+        cursor: default;
+      }
+      /* The main buttons (Export, Log in, Share, Move...) get the sunrise */
+      button[style*="#1a7f37"] {
+        background: var(--sr-grad) !important;
+        border-color: transparent !important;
+        color: white !important;
+        font-weight: 600;
+        box-shadow: var(--sr-shadow);
+      }
+      button[style*="#1a7f37"]:hover:not(:disabled) {
+        filter: brightness(1.05);
+        box-shadow: var(--sr-shadow-big);
+      }
+      /* "Are you sure?" red buttons: a softer red */
+      button[style*="background: #cc0000"] {
+        background: #ef4444 !important;
+        border-color: #ef4444 !important;
+      }
+      /* Boxes you type in */
+      input:not([type="range"]):not([type="checkbox"]):not([type="color"]):not([type="file"]),
+      select,
+      textarea {
+        font-family: inherit;
+        color: var(--sr-text);
+        background: white;
+        border: 1px solid var(--sr-line);
+        border-radius: 8px;
+      }
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: 2px solid #ffb38a;
+        outline-offset: 0;
+      }
+      /* Sliders and tick boxes in sunrise orange */
+      input[type="range"],
+      input[type="checkbox"] {
+        accent-color: var(--sr-coral);
+      }
+      /* Pop-up panels (Export, Share, Account...) */
+      dialog {
+        border: none !important;
+        border-radius: 16px !important;
+        box-shadow: 0 14px 44px rgba(120, 40, 0, 0.25);
+        color: var(--sr-text);
+        font-family: "Segoe UI", system-ui, Arial, sans-serif !important;
+      }
+      dialog::backdrop {
+        background: rgba(80, 30, 10, 0.35);
+      }
+      /* Cards on the home page: rounded, with a soft shadow that lifts
+         when you point at them */
+      #templateList > div,
+      #drawingList > div,
+      #inboxList > div {
+        border-radius: 14px !important;
+        border-color: var(--sr-line) !important;
+        box-shadow: var(--sr-shadow);
+        transition: transform 0.15s, box-shadow 0.15s;
+      }
+      #templateList > div:hover,
+      #drawingList > div:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--sr-shadow-big);
+      }
+      /* Headings on the home page */
+      #homeMain h2 {
+        color: var(--sr-text);
+      }
+      /* The tabs in the chat panel: the open one is coral */
+      #chatsTab,
+      #friendsTab {
+        border-radius: 999px;
+      }
+      /* The editor's menu buttons (Home, Insert, Tools) */
+      #homeButton,
+      #insertButton {
+        border-radius: 999px;
+      }
+    </style>
   </head>
   <!-- margin: 0 removes the gap browsers put around the page.
        overflow: hidden stops scroll bars from showing.
@@ -31,7 +154,7 @@
       "
     >
       <!-- ===== Top panel ===== -->
-      <div style="padding: 10px; border: 2px solid black; background: #dde6f0">
+      <div style="padding: 10px; border: 2px solid var(--sr-line); background: linear-gradient(90deg, #fff1e6, #ffe3d3 50%, #fff0dc); border-radius: 14px; box-shadow: var(--sr-shadow)">
         <!-- Row 1: title, menu buttons, save/new.
            flex-wrap: wrap lets buttons move onto a new line on small screens -->
         <div
@@ -57,6 +180,11 @@
           />
           <!-- "Saving..." / "Saved", so you know your work is safe -->
           <span id="saveStatus" style="color: #555; font-size: 13px"></span>
+          <!-- Who else has this drawing open right now (shared drawings) -->
+          <span
+            id="editingNow"
+            style="display: inline-flex; align-items: center; gap: 3px; font-size: 12px; color: #1a7f37"
+          ></span>
 
           <!-- Menu buttons. Each one shows/hides its own options row below -->
           <button id="homeButton" onclick="toggleMenu('home')">Home</button>
@@ -74,6 +202,21 @@
           >
             ↶ Undo
           </button>
+          <!-- Clear: wipes the whole drawing. It's next to Undo (product
+             owner's choice), so it always asks first (see askToClear), and
+             the red outline warns you -->
+          <button
+            id="clearButton"
+            onclick="askToClear()"
+            title="Clear the whole drawing (asks first)"
+            style="
+              border: 2px solid #cc0000;
+              border-radius: 3px;
+              color: #cc0000;
+            "
+          >
+            Clear
+          </button>
           <!-- Delete: for phones and tablets, which have no Delete key.
              Greyed out until a text box or shape is selected -->
           <button
@@ -83,11 +226,11 @@
           >
             🗑 Delete
           </button>
-          <!-- Share: makes a .drawlab project file you can send to someone.
-             When they open it in Drawlab, everything can still be edited -->
+          <!-- Share: pick friends to draw this with you. They get it in
+             the inbox on their home page -->
           <button
-            onclick="shareProject()"
-            title="Make a project file to send to someone"
+            onclick="openShareDialog(currentDrawing && currentDrawing.id)"
+            title="Draw this together with your friends"
           >
             📤 Share
           </button>
@@ -243,23 +386,6 @@
             </span>
           </span>
 
-          <!-- Clear: starts a new drawing. It asks first (see askToClear),
-             because clearing wipes your work. The red outline warns you.
-             It's kept here, away from Undo and Save Picture, so you don't
-             press it by accident. -->
-          <button
-            id="clearButton"
-            onclick="askToClear()"
-            title="Start a new drawing (asks first)"
-            style="
-              border: 2px solid #cc0000;
-              border-radius: 3px;
-              color: #cc0000;
-            "
-          >
-            Clear
-          </button>
-
           <!-- A hint that tells you what to do next -->
           <span id="homeHint" style="color: #555"></span>
         </div>
@@ -344,8 +470,10 @@
             box-sizing: border-box;
             overflow-x: hidden;
             overflow-y: auto;
-            border: 2px solid black;
-            background: #f0f0f0;
+            border: 2px solid var(--sr-line);
+            background: white;
+            border-radius: 14px;
+            box-shadow: var(--sr-shadow);
           "
         >
           <h4 style="margin: 0 0 8px 0">Properties</h4>
@@ -547,6 +675,25 @@
             >
           </div>
 
+          <!-- Layer: which items are in front of which. 1 = at the very back -->
+          <div id="propsLayer" style="display: none; margin-top: 14px">
+            <div style="font-weight: bold; margin-bottom: 4px">Layer</div>
+            <div id="layerInfo" style="font-size: 13px; color: var(--sr-muted); margin-bottom: 4px"></div>
+            <label style="font-size: 13px"
+              >Move by
+              <input type="number" id="layerSteps" min="1" value="1" style="width: 46px" />
+              layer(s)</label
+            >
+            <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px">
+              <button onclick="moveLayerBy(1)" title="Bring it forward by that many layers">▲ Forward</button>
+              <button onclick="moveLayerBy(-1)" title="Send it back by that many layers">▼ Backward</button>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px">
+              <button onclick="moveLayer(Infinity)" title="In front of everything">⏫ To front</button>
+              <button onclick="moveLayer(-Infinity)" title="Behind everything (but still on top of the brush drawing)">⏬ To back</button>
+            </div>
+          </div>
+
           <!-- Sides: polygons only (3 = triangle, 6 = hexagon, 8 = octagon...) -->
           <div id="propsSides" style="display: none; margin-top: 14px">
             <div style="font-weight: bold; margin-bottom: 4px">Sides</div>
@@ -627,8 +774,8 @@
             background: linear-gradient(
               to right,
               transparent 4px,
-              #aaa 4px,
-              #aaa 6px,
+              #f3c9b2 4px,
+              #f3c9b2 6px,
               transparent 6px
             );
           "
@@ -648,21 +795,62 @@
               position: relative;
               min-height: 0;
               overflow: hidden;
-              border: 2px solid black;
+              border: 2px solid var(--sr-line);
+              background: #fbefe7;
+              box-shadow: var(--sr-shadow);
             "
           >
-            <!-- canvas is a blank area you can draw on.
-               Its size gets set by the JavaScript (see fitCanvas) -->
-            <canvas
-              id="drawArea"
+            <!-- canvasScroller: scrolls when you zoom in (or for a tall page).
+                 stageSizer: as big as the zoomed stage, so the scroll bars fit.
+                 stage: the canvas and all the items. Zooming makes it bigger
+                 or smaller (a CSS "scale"), so everything zooms together -->
+            <div
+              id="canvasScroller"
+              style="position: absolute; inset: 0; overflow: hidden; touch-action: none"
+            >
+              <div id="stageSizer" style="position: relative">
+                <div
+                  id="stage"
+                  style="position: absolute; left: 0; top: 0; transform-origin: 0 0"
+                >
+                  <!-- canvas is a blank area you can draw on.
+                     Its size gets set by the JavaScript (see fitCanvas) -->
+                  <canvas
+                    id="drawArea"
+                    style="
+                      position: absolute;
+                      left: 0;
+                      top: 0;
+                      background: white;
+                      touch-action: none;
+                    "
+                  ></canvas>
+                </div>
+              </div>
+            </div>
+            <!-- Zoom: − (smaller), the size (press it to fit), + (bigger).
+                 Ctrl + mouse wheel, or two fingers, zoom too -->
+            <div
+              id="zoomBar"
               style="
                 position: absolute;
-                left: 0;
-                top: 0;
+                right: 10px;
+                bottom: 10px;
+                z-index: 20;
+                display: flex;
+                align-items: center;
+                gap: 2px;
+                padding: 3px;
                 background: white;
-                touch-action: none;
+                border: 1px solid var(--sr-line);
+                border-radius: 999px;
+                box-shadow: var(--sr-shadow);
               "
-            ></canvas>
+            >
+              <button onclick="zoomBy(1 / 1.25)" title="Zoom out" style="border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 18px; padding: 0">−</button>
+              <button id="zoomLabel" onclick="zoomToFit()" title="Fit the drawing on screen" style="border: none; min-width: 52px; font-size: 13px">100%</button>
+              <button onclick="zoomBy(1.25)" title="Zoom in" style="border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 18px; padding: 0">+</button>
+            </div>
           </div>
 
           <!-- The bar between the canvas and the bottom panel.
@@ -678,8 +866,8 @@
               background: linear-gradient(
                 to bottom,
                 transparent 4px,
-                #aaa 4px,
-                #aaa 6px,
+                #f3c9b2 4px,
+                #f3c9b2 6px,
                 transparent 6px
               );
             "
@@ -695,14 +883,22 @@
               flex-shrink: 0;
               box-sizing: border-box;
               overflow: hidden;
-              border: 2px solid black;
-              background: #f7f7f7;
+              border: 2px solid var(--sr-line);
+              background: white;
+              border-radius: 14px;
+              box-shadow: var(--sr-shadow);
               display: flex;
               flex-direction: column;
               font-family: Arial;
               font-size: 14px;
             "
           >
+            <!-- The whole chat panel. It moves to the left of the home page
+                 when you're there, and back here when you open a drawing -->
+            <div
+              id="chatPanel"
+              style="flex: 1; display: flex; flex-direction: column; min-height: 0"
+            >
             <!-- The tabs. The badges show how many things are new -->
             <div
               style="
@@ -710,7 +906,7 @@
                 align-items: center;
                 gap: 4px;
                 padding: 4px 6px;
-                background: #e4e4e4;
+                background: var(--sr-soft);
                 border-bottom: 1px solid #ccc;
                 flex-shrink: 0;
               "
@@ -739,13 +935,78 @@
               .chatRow {
                 padding: 6px 8px;
                 cursor: pointer;
-                border-bottom: 1px solid #e4e4e4;
+                border-bottom: 1px solid #f8e7dd;
                 overflow: hidden;
                 white-space: nowrap;
                 text-overflow: ellipsis;
               }
               .chatRow:hover {
-                background: #eaf1fb;
+                background: var(--sr-soft);
+              }
+              /* The red circle with how many messages you haven't read */
+              .unreadCount {
+                margin-left: auto;
+                flex-shrink: 0;
+                min-width: 18px;
+                height: 18px;
+                padding: 0 5px;
+                box-sizing: border-box;
+                border-radius: 9px;
+                background: #f03e3e;
+                color: white;
+                font-size: 11px;
+                font-weight: bold;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+              }
+              /* The ⋮ button */
+              .dotsButton {
+                flex-shrink: 0;
+                width: 22px;
+                height: 22px;
+                padding: 0;
+                border: none;
+                border-radius: 50%;
+                background: none;
+                font-size: 18px;
+                line-height: 1;
+                cursor: pointer;
+              }
+              .dotsButton:hover {
+                background: #ffe4d6;
+              }
+              /* The small panel that opens from ⋮ (or holding a message) */
+              .popMenu {
+                position: fixed;
+                z-index: 100;
+                min-width: 150px;
+                background: white;
+                border: 1px solid #bbb;
+                border-radius: 8px;
+                box-shadow: 0 4px 14px #0003;
+                padding: 4px 0;
+                font-family: Arial;
+                font-size: 14px;
+              }
+              .popMenu button {
+                display: block;
+                width: 100%;
+                text-align: left;
+                padding: 7px 14px;
+                border: none;
+                background: none;
+                font-size: 14px;
+                cursor: pointer;
+              }
+              .popMenu button:hover {
+                background: var(--sr-soft);
+              }
+              /* Small grey words under a message, like "Read · Edited" */
+              .metaLine {
+                font-size: 11px;
+                color: #777;
+                margin: 0 4px 2px 4px;
               }
               /* One message bubble */
               .bubble {
@@ -775,6 +1036,11 @@
                 <button onclick="openGroupDialog()" style="margin: 4px">
                   ＋ New group
                 </button>
+                <!-- like "3 of 10 chats": you can be in up to 10 -->
+                <div
+                  id="chatCount"
+                  style="font-size: 11px; color: #777; text-align: center; margin-bottom: 2px"
+                ></div>
                 <div id="chatList" style="flex: 1; overflow-y: auto"></div>
               </div>
               <div
@@ -809,10 +1075,37 @@
                     flex-direction: column;
                   "
                 ></div>
+                <!-- "Alex is typing…" (only the others see it) -->
+                <div
+                  id="typingNote"
+                  style="min-height: 15px; padding: 0 8px; font-size: 12px; color: #1a7f37; font-style: italic; flex-shrink: 0"
+                ></div>
+                <!-- Shows while you're editing one of your messages -->
+                <div
+                  id="editBar"
+                  style="display: none; align-items: center; gap: 6px; padding: 2px 8px; font-size: 12px; background: #fff7d6; flex-shrink: 0"
+                >
+                  ✏ Editing your message
+                  <button type="button" class="linkButton" onclick="stopEditing()">Cancel</button>
+                </div>
                 <form
                   id="messageForm"
                   style="display: none; gap: 4px; padding: 4px; flex-shrink: 0"
                 >
+                  <!-- 📎 Send a photo or video (you can also drag one in) -->
+                  <button
+                    type="button"
+                    title="Send a photo or video"
+                    onclick="document.getElementById('chatFileInput').click()"
+                  >
+                    📎
+                  </button>
+                  <input
+                    type="file"
+                    id="chatFileInput"
+                    accept="image/*,video/mp4,video/webm,video/quicktime"
+                    hidden
+                  />
                   <input
                     id="messageInput"
                     maxlength="2000"
@@ -847,6 +1140,8 @@
               </form>
               <div id="friendList" style="margin-top: 6px"></div>
             </div>
+            </div>
+            <!-- end of chatPanel -->
           </div>
         </div>
       </div>
@@ -948,6 +1243,16 @@
           </option>
         </select>
       </label>
+      <!-- How sharp the saved picture is. High and Best draw everything again
+           at 2 or 3 times the size, so text, shapes and photos are crisp -->
+      <label style="display: block; margin-top: 8px">
+        Graphic:
+        <select id="saveQuality">
+          <option value="1">Normal (same as the screen)</option>
+          <option value="2" selected>High (2× sharper)</option>
+          <option value="3">Best (3× sharper, biggest file)</option>
+        </select>
+      </label>
 
       <div
         style="
@@ -1004,7 +1309,7 @@
         background: none;
         border: none;
         padding: 0;
-        color: #1a73e8;
+        color: var(--sr-deep);
         text-decoration: underline;
         cursor: pointer;
         font-size: 14px;
@@ -1017,7 +1322,7 @@
         position: fixed;
         inset: 0;
         z-index: 50;
-        background: linear-gradient(135deg, #dde6f0, #f3d9e6);
+        background: var(--sr-sky);
         font-family: Arial;
         overflow-y: auto;
       "
@@ -1035,7 +1340,7 @@
           box-shadow: 0 4px 20px #0002;
         "
       >
-        <h1 style="margin: 0; font-size: 32px">🎨 Drawlab</h1>
+        <h1 style="margin: 0; font-size: 32px; color: var(--sr-deep)">🎨 Sunrise</h1>
         <p id="loginIntro" style="margin: 4px 0 16px 0; color: #555">
           Draw, design and save your work.
         </p>
@@ -1165,11 +1470,40 @@
         position: fixed;
         inset: 0;
         z-index: 40;
-        background: #f4f6f9;
+        background: var(--sr-bg);
         font-family: Arial;
-        overflow-y: auto;
+        flex-direction: column;
       "
     >
+      <style>
+        /* On the home page the chat panel is narrow and tall, so the list
+           of chats goes above the messages instead of beside them */
+        #homeChat #chatsView {
+          flex-direction: column;
+        }
+        #homeChat #chatListBox {
+          width: auto !important;
+          max-height: 40%;
+          border-right: none !important;
+          border-bottom: 1px solid #ccc;
+        }
+        /* Phones: the chat goes above your drawings */
+        @media (max-width: 700px) {
+          #homeBody {
+            flex-direction: column;
+            overflow-y: auto;
+          }
+          #homeChat {
+            width: auto !important;
+            height: 60vh;
+            border-right: none !important;
+            border-bottom: 2px solid var(--sr-line);
+          }
+          #homeMain {
+            overflow: visible !important;
+          }
+        }
+      </style>
       <!-- Top bar: app name, who's logged in, Log out -->
       <div
         style="
@@ -1178,19 +1512,50 @@
           align-items: center;
           gap: 10px;
           padding: 12px 20px;
-          background: #dde6f0;
-          border-bottom: 2px solid black;
+          background: var(--sr-grad);
+          border-bottom: 2px solid transparent;
+          color: white;
+          box-shadow: var(--sr-shadow);
         "
       >
-        <strong style="font-size: 24px">🎨 Drawlab</strong>
-        <span style="margin-left: auto">Hi, <b id="homeUserName"></b></span>
+        <strong style="font-size: 24px; color: white; text-shadow: 0 1px 3px rgba(150, 50, 0, 0.35)">🎨 Sunrise</strong>
+        <span
+          style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px"
+          ><span id="homeAvatar"></span> Hi, <b id="homeUserName"></b
+        ></span>
         <button onclick="openAccountDialog()">⚙ Account</button>
         <button onclick="logOut()">Log out</button>
       </div>
 
+      <div id="homeBody" style="flex: 1; display: flex; min-height: 0">
+      <!-- Chat and friends (the same panel as the editor's bottom panel) -->
+      <aside
+        id="homeChat"
+        style="
+          width: 400px;
+          flex-shrink: 0;
+          border-right: 2px solid var(--sr-line);
+          background: white;
+          display: flex;
+          flex-direction: column;
+          min-height: 0;
+          font-size: 14px;
+        "
+      ></aside>
+      <div id="homeMain" style="flex: 1; overflow-y: auto; min-width: 0">
       <div
         style="max-width: 1100px; margin: auto; padding: 10px 20px 40px 20px"
       >
+        <!-- 📥 Inbox: drawings friends want to share with you.
+             Hidden when there's nothing in it -->
+        <div id="inboxBox" style="display: none">
+          <h2>📥 Inbox <span id="inboxBadge" class="badge"></span></h2>
+          <div
+            id="inboxList"
+            style="display: flex; flex-direction: column; gap: 8px"
+          ></div>
+        </div>
+
         <h2>Start something new</h2>
         <!-- The template cards get added in here by the JavaScript -->
         <div
@@ -1211,17 +1576,15 @@
             margin-top: 30px;
           "
         >
-          <h2 style="margin: 0">My drawings</h2>
-          <!-- Open a .drawlab file someone shared with you -->
-          <button onclick="document.getElementById('projectInput').click()">
-            📂 Open a project file
-          </button>
-          <input
-            type="file"
-            id="projectInput"
-            accept=".drawlab,application/json"
-            hidden
-          />
+          <h2 style="margin: 0">
+            My drawings
+            <!-- like "(12 of 20)": you can own up to 20 drawings -->
+            <span
+              id="drawingCount"
+              style="font-size: 15px; font-weight: normal; color: #777"
+            ></span>
+          </h2>
+
           <!-- Only shows if this browser still has drawings from the old
                "this browser only" accounts -->
           <button
@@ -1243,6 +1606,10 @@
           "
         ></div>
       </div>
+      </div>
+      <!-- end of homeMain -->
+      </div>
+      <!-- end of homeBody -->
     </div>
 
     <!-- The "are you sure?" box for deleting a drawing from the home page -->
@@ -1296,6 +1663,21 @@
     >
       <h3 style="margin: 0 0 4px 0">Your account</h3>
       <p id="accountWho" style="margin: 0 0 14px 0; color: #555"></p>
+
+      <!-- Profile picture: everyone logged in can see it -->
+      <div
+        style="display: flex; align-items: center; gap: 10px; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #ddd"
+      >
+        <span id="accountAvatar"></span>
+        <div>
+          <b>Profile picture</b><br />
+          <button onclick="document.getElementById('avatarInput').click()">
+            Choose picture
+          </button>
+          <button id="removeAvatarButton" onclick="setAvatar(null)">Remove</button>
+          <input type="file" id="avatarInput" accept="image/*" hidden />
+        </div>
+      </div>
 
       <!-- Email is optional. With one, "Forgot your password?" works -->
       <form
@@ -1433,6 +1815,51 @@
       </form>
     </dialog>
 
+    <!-- 📤 Share: pick friends to draw this drawing with you -->
+    <dialog
+      id="shareDialog"
+      style="
+        border: 1px solid #999;
+        border-radius: 8px;
+        padding: 20px;
+        width: 360px;
+        max-width: 92vw;
+        box-sizing: border-box;
+        font-family: Arial;
+      "
+    >
+      <form id="shareForm">
+        <h3 id="shareTitle" style="margin: 0 0 6px 0">Share</h3>
+        <p id="shareIntro" style="margin: 0 0 10px 0; font-size: 14px; color: #555"></p>
+        <!-- A row for each friend gets added in here -->
+        <div
+          id="shareFriends"
+          style="max-height: 45vh; overflow-y: auto; margin: 6px 0"
+        ></div>
+        <p id="shareMessage" role="alert" style="min-height: 1.2em"></p>
+        <div style="display: flex; justify-content: flex-end; gap: 10px">
+          <button
+            type="button"
+            onclick="document.getElementById('shareDialog').close()"
+          >
+            Close
+          </button>
+          <button
+            id="shareSubmit"
+            type="submit"
+            style="
+              border: 2px solid #1a7f37;
+              border-radius: 3px;
+              color: white;
+              background: #1a7f37;
+            "
+          >
+            Share
+          </button>
+        </div>
+      </form>
+    </dialog>
+
     <!-- ＋ New group: a name, and which friends to put in it -->
     <dialog
       id="groupDialog"
@@ -1494,6 +1921,54 @@
     <script>
       // ===== Drawing code =====
       const canvas = document.getElementById("drawArea");
+      // The stage holds the canvas and every item, and zooms (see Zoom)
+      const stage = document.getElementById("stage");
+      const scroller = document.getElementById("canvasScroller");
+      const stageSizer = document.getElementById("stageSizer");
+      let zoom = 1; // 1 = 100%, 2 = 200%...
+      // A fixed page (like a vertical phone page): { w, h } in pixels.
+      // null = no page: the canvas just fills the space, like before
+      let currentPage = null;
+
+      // Where the mouse or finger is on the canvas, in canvas pixels
+      // (the same at any zoom)
+      function canvasPoint(event) {
+        const place = canvas.getBoundingClientRect();
+        return {
+          x: (event.clientX - place.left) / zoom,
+          y: (event.clientY - place.top) / zoom,
+        };
+      }
+
+      // The size of the drawing (what gets saved): the page, or the space
+      // the canvas box has at 100%
+      function areaSize() {
+        if (currentPage) return { w: currentPage.w, h: currentPage.h };
+        const box = document.getElementById("canvasBox");
+        return { w: box.clientWidth, h: box.clientHeight };
+      }
+
+      // Put the stage in the right place: a page sits in the middle with a
+      // margin round it; without a page the canvas starts at the top left
+      function layoutStage() {
+        const w = canvas.width;
+        const h = canvas.height;
+        const margin = currentPage ? 40 : 0;
+        const left = currentPage ? Math.max(margin, (scroller.clientWidth - w * zoom) / 2) : 0;
+        const top = currentPage ? Math.max(margin, (scroller.clientHeight - h * zoom) / 2) : 0;
+        stage.style.left = left + "px";
+        stage.style.top = top + "px";
+        stage.style.width = w + "px";
+        stage.style.height = h + "px";
+        stage.style.transform = "scale(" + zoom + ")";
+        stageSizer.style.width = left + w * zoom + margin + "px";
+        stageSizer.style.height = top + h * zoom + margin + "px";
+        // Scroll bars only when there's more to see
+        scroller.style.overflow = currentPage || zoom > 1 ? "auto" : "hidden";
+        canvas.style.boxShadow = currentPage ? "0 4px 22px rgba(120, 40, 0, 0.18)" : "";
+        updatePanPointer();
+        document.getElementById("zoomLabel").textContent = Math.round(zoom * 100) + "%";
+      }
       const pen = canvas.getContext("2d"); // the "pen" we draw with
       let drawing = false; // is the mouse button held down?
 
@@ -1504,14 +1979,20 @@
       // minWidth / minHeight (optional): make it at least this big too,
       // like when opening a saved drawing that's bigger than the screen
       function fitCanvas(minWidth, minHeight) {
-        const box = document.getElementById("canvasBox");
-        const newWidth = Math.max(canvas.width, box.clientWidth, minWidth || 0);
-        const newHeight = Math.max(
-          canvas.height,
-          box.clientHeight,
-          minHeight || 0,
-        );
-        if (newWidth === canvas.width && newHeight === canvas.height) return; // big enough
+        // A page keeps its own size: just keep it in the middle
+        if (currentPage) {
+          layoutStage();
+          return;
+        }
+        // When zoomed out, more of the canvas shows, so it needs to be bigger
+        const showsW = Math.ceil(scroller.clientWidth / Math.min(zoom, 1));
+        const showsH = Math.ceil(scroller.clientHeight / Math.min(zoom, 1));
+        const newWidth = Math.max(canvas.width, showsW, minWidth || 0);
+        const newHeight = Math.max(canvas.height, showsH, minHeight || 0);
+        if (newWidth === canvas.width && newHeight === canvas.height) {
+          layoutStage();
+          return; // big enough
+        }
 
         // Changing a canvas's size wipes it, so copy the drawing first
         const copy = document.createElement("canvas");
@@ -1532,7 +2013,172 @@
         if (copy.width > 0 && copy.height > 0) {
           pen.drawImage(copy, 0, 0);
         }
+        layoutStage();
       }
+
+      // ===== Pages =====
+      // Start using a page (like { w: 1080, h: 1920 }), or no page (null)
+      function setPage(page) {
+        currentPage = page ? { w: Number(page.w), h: Number(page.h) } : null;
+        zoom = 1;
+        if (currentPage) {
+          canvas.width = currentPage.w;
+          canvas.height = currentPage.h;
+          canvas.style.width = currentPage.w + "px";
+          canvas.style.height = currentPage.h + "px";
+          clearCanvas();
+          zoom = fitZoom(); // the whole page fits on screen
+          layoutStage();
+        } else {
+          // Back to "fills the space" (fitCanvas makes it the right size)
+          canvas.width = 0;
+          canvas.height = 0;
+          fitCanvas();
+        }
+        scroller.scrollLeft = 0;
+        scroller.scrollTop = 0;
+      }
+
+      // ===== Zoom =====
+      // The zoom that fits the whole page on screen (100% without a page)
+      function fitZoom() {
+        if (!currentPage) return 1;
+        return Math.min(
+          (scroller.clientWidth - 80) / currentPage.w,
+          (scroller.clientHeight - 80) / currentPage.h,
+          4,
+        );
+      }
+      // Zoom to newZoom, keeping the spot at (screenX, screenY) still
+      // (the middle of the canvas box if they're left out)
+      function setZoom(newZoom, screenX, screenY) {
+        const smallest = Math.min(0.25, fitZoom());
+        newZoom = Math.max(smallest, Math.min(4, newZoom));
+        const box = scroller.getBoundingClientRect();
+        if (screenX === undefined) {
+          screenX = box.left + scroller.clientWidth / 2;
+          screenY = box.top + scroller.clientHeight / 2;
+        }
+        const px = screenX - box.left;
+        const py = screenY - box.top;
+        // Which canvas spot is under that point now?
+        const spotX = (scroller.scrollLeft + px - parseFloat(stage.style.left || 0)) / zoom;
+        const spotY = (scroller.scrollTop + py - parseFloat(stage.style.top || 0)) / zoom;
+        zoom = newZoom;
+        fitCanvas(); // (also puts the stage in place)
+        // Scroll so the same spot is under that point again
+        scroller.scrollLeft = spotX * zoom + parseFloat(stage.style.left || 0) - px;
+        scroller.scrollTop = spotY * zoom + parseFloat(stage.style.top || 0) - py;
+      }
+      function zoomBy(times) {
+        setZoom(zoom * times);
+      }
+      // The % button: fit the page on screen (or back to 100%)
+      function zoomToFit() {
+        setZoom(fitZoom());
+        if (currentPage) layoutStage();
+      }
+      // Ctrl + mouse wheel (and pinching on a laptop's touchpad)
+      scroller.addEventListener(
+        "wheel",
+        function (event) {
+          if (!event.ctrlKey && !event.metaKey) return; // normal scrolling
+          event.preventDefault(); // not the browser's own zoom
+          setZoom(zoom * Math.exp(-event.deltaY * 0.0015), event.clientX, event.clientY);
+        },
+        { passive: false },
+      );
+      // ===== Dragging the page (Cursor tool) =====
+      // With the Cursor tool, press on an empty part of the canvas (or the
+      // background round a page) and drag to move the view, like moving a
+      // sheet of paper. Pressing on an item still moves the item.
+      let panning = null; // { pointerId, x, y, left, top } while dragging
+
+      // Is there more to see than fits? (zoomed in, or a big page)
+      function canPan() {
+        return (
+          scroller.scrollWidth > scroller.clientWidth + 1 ||
+          scroller.scrollHeight > scroller.clientHeight + 1
+        );
+      }
+      // A ✋ when you can drag the page
+      function updatePanPointer() {
+        const hand = tool === "cursor" && canPan();
+        scroller.style.cursor = panning ? "grabbing" : hand ? "grab" : "";
+      }
+
+      scroller.addEventListener("pointerdown", function (event) {
+        if (tool !== "cursor" || pinch) return;
+        // Only empty places: the canvas itself, or round the page
+        const empty = [canvas, scroller, stageSizer, stage].includes(event.target);
+        if (!empty) return;
+        if (event.button !== undefined && event.button !== 0) return; // left button only
+        selectItem(null); // pressing on empty space un-selects (like before)
+        if (!canPan()) return;
+        event.preventDefault();
+        panning = {
+          pointerId: event.pointerId,
+          x: event.clientX,
+          y: event.clientY,
+          left: scroller.scrollLeft,
+          top: scroller.scrollTop,
+        };
+        scroller.setPointerCapture(event.pointerId); // keep getting moves
+        updatePanPointer();
+      });
+      scroller.addEventListener("pointermove", function (event) {
+        if (!panning || event.pointerId !== panning.pointerId) return;
+        scroller.scrollLeft = panning.left - (event.clientX - panning.x);
+        scroller.scrollTop = panning.top - (event.clientY - panning.y);
+      });
+      function stopPanning(event) {
+        if (!panning || (event && event.pointerId !== panning.pointerId)) return;
+        panning = null;
+        updatePanPointer();
+      }
+      scroller.addEventListener("pointerup", stopPanning);
+      scroller.addEventListener("pointercancel", stopPanning);
+
+      // Two fingers on a phone or iPad: pinch to zoom, move to scroll
+      let pinch = null;
+      function fingers(event) {
+        const a = event.touches[0];
+        const b = event.touches[1];
+        return {
+          gap: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY),
+          x: (a.clientX + b.clientX) / 2,
+          y: (a.clientY + b.clientY) / 2,
+        };
+      }
+      scroller.addEventListener(
+        "touchstart",
+        function (event) {
+          if (event.touches.length !== 2) return;
+          event.preventDefault();
+          cancelStroke(); // the first finger started a line: that wasn't meant
+          panning = null; // or started dragging the page
+          const now = fingers(event);
+          pinch = { gap: now.gap, zoom, x: now.x, y: now.y };
+        },
+        { passive: false },
+      );
+      scroller.addEventListener(
+        "touchmove",
+        function (event) {
+          if (!pinch || event.touches.length !== 2) return;
+          event.preventDefault();
+          const now = fingers(event);
+          setZoom((pinch.zoom * now.gap) / pinch.gap, now.x, now.y);
+          scroller.scrollLeft -= now.x - pinch.x;
+          scroller.scrollTop -= now.y - pinch.y;
+          pinch.x = now.x;
+          pinch.y = now.y;
+        },
+        { passive: false },
+      );
+      scroller.addEventListener("touchend", function (event) {
+        if (event.touches.length < 2) pinch = null;
+      });
       // Run fitCanvas whenever the canvas's box changes size, for any reason:
       // the window, a menu opening, or a panel being dragged
       new ResizeObserver(function () {
@@ -1592,11 +2238,11 @@
         const left = document.getElementById("leftSplitter");
         left.style.width = "20px";
         left.style.background =
-          "linear-gradient(to right, transparent 8px, #aaa 8px, #aaa 12px, transparent 12px)";
+          "linear-gradient(to right, transparent 8px, #f3c9b2 8px, #f3c9b2 12px, transparent 12px)";
         const bottom = document.getElementById("bottomSplitter");
         bottom.style.height = "20px";
         bottom.style.background =
-          "linear-gradient(to bottom, transparent 8px, #aaa 8px, #aaa 12px, transparent 12px)";
+          "linear-gradient(to bottom, transparent 8px, #f3c9b2 8px, #f3c9b2 12px, transparent 12px)";
       }
 
       // Small screens (like phones): start the panels small,
@@ -1614,10 +2260,11 @@
           placing = null;
           event.preventDefault(); // stop this click from un-focusing the box
           document.getElementById("insertHint").textContent = "";
-          if (what === "text") makeTextBox(event.offsetX, event.offsetY);
+          const spot = canvasPoint(event);
+          if (what === "text") makeTextBox(spot.x, spot.y);
           else if (what.startsWith("sticker:"))
-            makeSticker(what.slice(8), event.offsetX, event.offsetY);
-          else makeShape(what, event.offsetX, event.offsetY);
+            makeSticker(what.slice(8), spot.x, spot.y);
+          else makeShape(what, spot.x, spot.y);
           return;
         }
         // Cursor tool + clicked on empty canvas = un-select the text box
@@ -1637,8 +2284,9 @@
         drawing = true;
         drawingPointer = event.pointerId; // remember which finger/mouse this is
         straight = false;
-        startX = event.offsetX;
-        startY = event.offsetY;
+        const spot = canvasPoint(event);
+        startX = spot.x;
+        startY = spot.y;
         // Touch screens can't hover, so the blue dot never showed.
         // Check for a nearby line end now, at the moment you press
         if (snapPoint === null) {
@@ -1675,16 +2323,17 @@
       // Mouse moved: if drawing, draw a line to the new spot
       canvas.addEventListener("pointermove", function (event) {
         // Not drawing? Check if the mouse is near the end of a line
+        const spot = canvasPoint(event);
         if (!drawing) {
-          checkForLineEnd(event.offsetX, event.offsetY, event.pointerType);
+          checkForLineEnd(spot.x, spot.y, event.pointerType);
           return;
         }
         // A different finger from the one drawing? Ignore it
         if (event.pointerId !== drawingPointer) return;
         // Ignore "moves" that didn't really move
-        if (event.offsetX === lastX && event.offsetY === lastY) return;
-        lastX = event.offsetX;
-        lastY = event.offsetY;
+        if (spot.x === lastX && spot.y === lastY) return;
+        lastX = spot.x;
+        lastY = spot.y;
         setPen();
 
         if (straight) {
@@ -1717,6 +2366,15 @@
 
       let drawingPointer = null; // which mouse/finger is drawing
       let timerX, timerY; // where the 2-second timer was last restarted
+
+      // Rub out the line being drawn (a pinch started instead)
+      function cancelStroke() {
+        if (!drawing) return;
+        drawing = false;
+        clearTimeout(stillTimer);
+        if (before) pen.putImageData(before, 0, 0);
+        hideDot();
+      }
 
       function stopDrawing(event) {
         // A different finger from the one drawing? Ignore it
@@ -1761,7 +2419,7 @@
       dot.style.boxSizing = "border-box";
       dot.style.pointerEvents = "none";
       dot.style.display = "none";
-      document.getElementById("canvasBox").appendChild(dot);
+      stage.appendChild(dot);
 
       // Find the closest line end to the mouse. Show the dot on it if it's close
       // pointerType is "mouse", "touch" (finger) or "pen" (like Apple Pencil)
@@ -1925,6 +2583,7 @@
       function makeItem(x, y) {
         const item = document.createElement("div");
         item.className = "canvasItem"; // so we can find all items later
+        item.dataset.id = newItemId(); // its own name (for drawing together)
         item.style.position = "absolute";
         item.style.left = x + "px";
         item.style.top = y + "px";
@@ -1934,7 +2593,7 @@
 
         addCornerHandles(item);
         addDragging(item);
-        document.getElementById("canvasBox").appendChild(item);
+        stage.appendChild(item);
         return item;
       }
 
@@ -2539,16 +3198,17 @@
           item.setPointerCapture(event.pointerId);
 
           function onMove(e) {
-            const dx = e.clientX - startMouseX; // how far the mouse moved
-            const dy = e.clientY - startMouseY;
+            // How far the mouse moved (in canvas pixels, so it's right at any zoom)
+            const dx = (e.clientX - startMouseX) / zoom;
+            const dy = (e.clientY - startMouseY) / zoom;
             // Ignore tiny wobbles, so a click doesn't count as a drag
             if (!moved && Math.abs(dx) + Math.abs(dy) < 4) return;
             moved = true;
 
-            // Move the item, but keep it inside the canvas
-            const area = document.getElementById("canvasBox");
-            const maxLeft = area.clientWidth - item.offsetWidth;
-            const maxTop = area.clientHeight - item.offsetHeight;
+            // Move the item, but keep it inside the drawing
+            const area = areaSize();
+            const maxLeft = Math.max(canvas.width, area.w) - item.offsetWidth;
+            const maxTop = Math.max(canvas.height, area.h) - item.offsetHeight;
             item.style.left =
               Math.max(0, Math.min(maxLeft, startLeft + dx)) + "px";
             item.style.top =
@@ -2626,8 +3286,8 @@
           const anchorY = startMiddleY + (cornerX * sin + cornerY * cos);
 
           function onMove(e) {
-            const screenDx = e.clientX - startMouseX;
-            const screenDy = e.clientY - startMouseY;
+            const screenDx = (e.clientX - startMouseX) / zoom; // in canvas pixels
+            const screenDy = (e.clientY - startMouseY) / zoom;
             // Turn the mouse movement into the item's own directions
             let dx = screenDx * cos + screenDy * sin;
             let dy = -screenDx * sin + screenDy * cos;
@@ -3233,7 +3893,9 @@
           name === "eraser" ? "bold" : "normal";
 
         // Brush and Eraser show a crosshair, Cursor shows the normal arrow
-        canvas.style.cursor = name === "cursor" ? "default" : "crosshair";
+        // (or a hand, when there's more page to drag into view)
+        canvas.style.cursor = name === "cursor" ? "" : "crosshair";
+        updatePanPointer();
 
         // Text boxes and shapes can only be clicked with the Cursor tool.
         // pointerEvents "none" makes clicks go straight through to the canvas.
@@ -3275,6 +3937,38 @@
       //   nothing selected = a hint
       //   shape or line    = Colour, Thickness, Size (W and H) and Rotation
       //   text box         = Colour, Font, Thickness, Size (text size) and Rotation
+      // ===== Layers =====
+      // Items further down the list are in front. The brush drawing is
+      // always at the very back
+      function itemsInOrder() {
+        return Array.from(stage.querySelectorAll(".canvasItem"));
+      }
+      // Move the selected item forward (steps > 0) or back (steps < 0).
+      // Infinity = all the way to the front, -Infinity = all the way back
+      function moveLayer(steps) {
+        if (selectedItem === null) return;
+        const items = itemsInOrder();
+        const from = items.indexOf(selectedItem);
+        const to = Math.max(0, Math.min(items.length - 1, from + steps));
+        if (to === from) return;
+        items.splice(from, 1);
+        items.splice(to, 0, selectedItem);
+        for (const item of items) stage.appendChild(item); // in the new order
+        saveState(); // for Undo (and friends drawing with you)
+        showLayer();
+      }
+      // ▲ Forward / ▼ Backward: by the number in the box
+      function moveLayerBy(direction) {
+        const steps = Math.max(1, Math.round(Number(document.getElementById("layerSteps").value) || 1));
+        moveLayer(direction * steps);
+      }
+      function showLayer() {
+        if (selectedItem === null) return;
+        const items = itemsInOrder();
+        document.getElementById("layerInfo").textContent =
+          "Layer " + (items.indexOf(selectedItem) + 1) + " of " + items.length + " (1 = at the back)";
+      }
+
       function updatePropertiesPanel() {
         const isText =
           selectedItem !== null && selectedItem.classList.contains("textItem");
@@ -3309,6 +4003,10 @@
         document.getElementById("propsRotation").style.display = anything
           ? "block"
           : "none";
+        document.getElementById("propsLayer").style.display = anything
+          ? "block"
+          : "none";
+        showLayer();
         document.getElementById("propsSides").style.display =
           isShape && selectedItem.dataset.shape === "polygon"
             ? "block"
@@ -3378,7 +4076,8 @@
       let canvasChanged = true; // did the drawing change since the last snapshot?
       let lastImage = null; // the drawing in the last snapshot
 
-      function saveState() {
+      // A snapshot of everything, right now
+      function makeState() {
         // Turning the canvas into a picture is slow-ish, so only do it
         // when the drawing really changed. Otherwise reuse the last one
         if (canvasChanged || lastImage === null) {
@@ -3386,7 +4085,7 @@
           canvasChanged = false;
         }
 
-        const state = {
+        return {
           image: lastImage,
           // JSON.stringify turns the list into text, so we can easily
           // check if anything changed
@@ -3396,7 +4095,12 @@
             ),
           ),
           lineEnds: JSON.stringify(lineEnds),
+          page: currentPage, // the page size (null = no page)
         };
+      }
+
+      function saveState() {
+        const state = makeState();
 
         // Nothing changed since the last snapshot? Don't save a copy
         const last = undoHistory[undoHistory.length - 1];
@@ -3406,6 +4110,7 @@
         undoHistory.push(state);
         updateUndoButton();
         scheduleAutosave(); // save it to your account in a moment
+        sendLiveChanges(); // and show it to friends drawing with you
       }
 
       // Undo button or Ctrl+Z: go back one step
@@ -3416,23 +4121,31 @@
           document.activeElement.blur();
         }
         undoHistory.pop(); // throw away the newest snapshot...
-        restoreState(undoHistory[undoHistory.length - 1]); // ...and go back to the one before
+        restoreState(undoHistory[undoHistory.length - 1]) // ...and go back to the one before
+          .then(sendLiveChanges); // then show friends drawing with you
         updateUndoButton();
         scheduleAutosave(); // save the undone version to your account too
       }
 
       // Put everything back the way it was in a snapshot
       let restoreNumber = 0;
+      // (Gives back a "Promise" that's done once the drawing is painted)
       function restoreState(state) {
         // The drawing: load the picture, then paint it onto the canvas.
         // Loading takes a moment, so it happens in img.onload
         const myNumber = ++restoreNumber;
         const img = new Image();
-        img.onload = function () {
-          if (myNumber !== restoreNumber) return; // a newer undo started, skip this
-          clearCanvas();
-          pen.drawImage(img, 0, 0);
-        };
+        const painted = new Promise(function (resolve) {
+          img.onload = function () {
+            if (myNumber === restoreNumber) {
+              // (skip it if a newer undo started)
+              clearCanvas();
+              pen.drawImage(img, 0, 0);
+            }
+            resolve();
+          };
+          img.onerror = resolve;
+        });
         img.src = state.image;
         lastImage = state.image;
         canvasChanged = false;
@@ -3441,18 +4154,25 @@
         selectedItem = null;
         for (const item of document.querySelectorAll(".canvasItem"))
           item.remove();
-        for (const data of JSON.parse(state.items)) dataToItem(data);
+        JSON.parse(state.items).forEach(function (data, number) {
+          // Items saved before they had names get one from their place in
+          // the list, so everyone drawing together gives them the same name
+          if (!data.id) data.id = "old" + number;
+          dataToItem(data);
+        });
         setTool(tool); // make the rebuilt items behave like the others
 
         // The line ends (for the blue joining dot)
         lineEnds.length = 0;
         for (const end of JSON.parse(state.lineEnds)) lineEnds.push(end);
         hideDot();
+        return painted;
       }
 
       // Write down everything about an item, so it can be rebuilt later
       function itemToData(item) {
         const data = {
+          id: item.dataset.id,
           left: item.style.left,
           top: item.style.top,
           angle: item.dataset.angle || 0,
@@ -3539,6 +4259,8 @@
         item.style.left = data.left;
         item.style.top = data.top;
         setAngle(item, Number(data.angle));
+        if (data.id) item.dataset.id = String(data.id);
+        return item;
       }
 
       // Grey out the Undo button when there's nothing to undo
@@ -3617,7 +4339,7 @@
         if (document.getElementById("exportDialog").open) return; // already open
         await picturesReady();
         if (document.getElementById("exportDialog").open) return; // opened while we waited
-        exportPicture = makePicture();
+        exportPicture = makePicture(exportSharpness());
         updateExportPreview();
         document.getElementById("exportDialog").showModal();
         document.getElementById("exportButton").focus();
@@ -3653,13 +4375,23 @@
       document
         .getElementById("saveFormat")
         .addEventListener("change", updateExportPreview);
+      // Graphic: 1 = Normal, 2 = High, 3 = Best
+      function exportSharpness() {
+        return Number(document.getElementById("saveQuality").value) || 1;
+      }
+      // Picking a different Graphic makes the picture again at that size
+      document.getElementById("saveQuality").addEventListener("change", function () {
+        if (!document.getElementById("exportDialog").open) return;
+        exportPicture = makePicture(exportSharpness());
+        updateExportPreview();
+      });
 
       // Export (yes = true) or Discard (yes = false)
       function closeExportDialog(yes) {
         if (yes) {
           const format =
             saveFormats[document.getElementById("saveFormat").value];
-          downloadFile(exportFile, saveFileName(format.ending)); // like drawlab-2026-11-15-1430.png
+          downloadFile(exportFile, saveFileName(format.ending)); // like sunrise-2026-11-15-1430.png
           showSavedMessage();
         }
         document.getElementById("exportDialog").close();
@@ -3726,18 +4458,26 @@
       // and the text boxes and shapes painted on top.
       // Text boxes and shapes aren't part of the canvas, so we make a copy
       // of the drawing and paint them onto the copy.
-      function makePicture() {
-        // Only save the part of the canvas you can see
-        // (the canvas can be bigger than its box, see fitCanvas)
-        const box = document.getElementById("canvasBox");
+      //   sharp = how many times bigger to draw it (1 = Normal, 2 = High,
+      //           3 = Best). Everything is drawn again at that size, so text,
+      //           shapes and photos stay crisp
+      function makePicture(sharp) {
+        sharp = sharp || 1;
+        // Only save the drawing's area: the page, or the part of the canvas
+        // you can see (the canvas can be bigger than its box, see fitCanvas)
+        const area = areaSize();
         const copy = document.createElement("canvas");
-        copy.width = box.clientWidth;
-        copy.height = box.clientHeight;
+        copy.width = Math.round(area.w * sharp);
+        copy.height = Math.round(area.h * sharp);
+        copy.logicalWidth = area.w; // the size it is on screen
+        copy.logicalHeight = area.h;
         const copyPen = copy.getContext("2d");
+        copyPen.scale(sharp, sharp); // draw everything that many times bigger
+        copyPen.imageSmoothingQuality = "high";
         // The drawing is see-through where nothing is drawn (or where it was
         // erased), so give the saved picture a white background first
         copyPen.fillStyle = "white";
-        copyPen.fillRect(0, 0, copy.width, copy.height);
+        copyPen.fillRect(0, 0, area.w, area.h);
         copyPen.drawImage(canvas, 0, 0);
 
         // Go through items in order, so ones on top stay on top
@@ -3822,8 +4562,10 @@
         );
         const w = picture.width,
           h = picture.height;
-        const pageW = ((w * 72) / 96).toFixed(2),
-          pageH = ((h * 72) / 96).toFixed(2);
+        // The page is the drawing's size (not the sharper picture's), so
+        // High and Best print the same size, just sharper
+        const pageW = (((picture.logicalWidth || w) * 72) / 96).toFixed(2),
+          pageH = (((picture.logicalHeight || h) * 72) / 96).toFixed(2);
         const draw = "q " + pageW + " 0 0 " + pageH + " 0 0 cm /Picture Do Q";
 
         const parts = []; // the pieces of the file, in order
@@ -3891,8 +4633,8 @@
       // The brush drawing, photos and stickers are made of dots, so they go
       // in as pictures.
       function makeSvg(picture) {
-        const w = picture.width,
-          h = picture.height;
+        const w = picture.logicalWidth || picture.width,
+          h = picture.logicalHeight || picture.height;
         // The brush drawing on its own (see-through where nothing is drawn)
         const drawingOnly = document.createElement("canvas");
         drawingOnly.width = w;
@@ -4139,7 +4881,7 @@
       })();
 
       // The file name, made from the date and time right now:
-      // drawlab-YEAR-MONTH-DAY-HOURMINUTE.png (or .jpg or .webp)
+      // sunrise-YEAR-MONTH-DAY-HOURMINUTE.png (or .jpg or .webp)
       // padStart(2, "0") turns 7 into "07", so the numbers always line up
       function saveFileName(ending) {
         const now = new Date();
@@ -4147,7 +4889,7 @@
           return String(n).padStart(2, "0");
         };
         return (
-          "drawlab-" +
+          "sunrise-" +
           now.getFullYear() +
           "-" +
           two(now.getMonth() + 1) +
@@ -4468,8 +5210,8 @@
         };
         img.onerror = function () {
           document.getElementById("insertHint").textContent = fromWeb
-            ? "That website won't let Drawlab copy its picture. Right-click the picture, choose \"Save image as\", then drag the saved file onto the canvas."
-            : "Sorry, Drawlab can't open that kind of file. Try a JPG or PNG photo.";
+            ? "That website won't let Sunrise copy its picture. Right-click the picture, choose \"Save image as\", then drag the saved file onto the canvas."
+            : "Sorry, Sunrise can't open that kind of file. Try a JPG or PNG photo.";
         };
         img.src = address;
       }
@@ -4486,7 +5228,7 @@
       }
 
       // Stop the browser from opening a dropped picture in place of
-      // Drawlab (you'd lose your place) when you miss the canvas
+      // Sunrise (you'd lose your place) when you miss the canvas
       for (const what of ["dragover", "drop"]) {
         document.addEventListener(what, function (event) {
           if (isDraggingPicture(event)) event.preventDefault();
@@ -4498,7 +5240,7 @@
         if (currentScreen !== "editor" || !isDraggingPicture(event)) return;
         event.preventDefault(); // = "yes, you can drop here"
         event.dataTransfer.dropEffect = "copy";
-        dropBox.style.outline = "4px dashed #1a73e8";
+        dropBox.style.outline = "4px dashed #ff7e5f";
         dropBox.style.outlineOffset = "-6px";
         document.getElementById("insertHint").textContent =
           "Let go to put the picture here.";
@@ -4520,8 +5262,8 @@
         endDropLook();
         // Where it was dropped, measured from the canvas's top-left corner
         const place = canvas.getBoundingClientRect();
-        const dropX = event.clientX - place.left;
-        const dropY = event.clientY - place.top;
+        const dropX = (event.clientX - place.left) / zoom;
+        const dropY = (event.clientY - place.top) / zoom;
         const data = event.dataTransfer;
 
         // 1. A picture file (from your computer. Some browsers also send
@@ -4534,9 +5276,29 @@
           return;
         }
 
-        // 2. A picture from a website: find its address. The dragged HTML
-        //    has the <img> itself, which is best, because dragging a picture
-        //    that's also a link sends the link's address as the "uri"
+        // 2. A picture from a website
+        const address = droppedPictureAddress(data);
+        if (!address) {
+          document.getElementById("insertHint").textContent =
+            "That isn't a picture. Try dragging a photo or a picture file.";
+          return;
+        }
+        document.getElementById("insertHint").textContent =
+          "Getting the picture...";
+        addPhotoFromAddress(
+          address,
+          "",
+          dropX,
+          dropY,
+          !address.startsWith("data:"),
+        );
+      });
+
+      // The web address of a picture dragged from a website (or "").
+      // The dragged HTML has the <img> itself, which is best, because
+      // dragging a picture that's also a link sends the link's address as
+      // the "uri"
+      function droppedPictureAddress(data) {
         let address = "";
         const html = data.getData("text/html");
         if (html) {
@@ -4555,36 +5317,19 @@
                 return line && !line.startsWith("#");
               }) || "";
         }
-        if (!/^(https?:|data:image\/)/i.test(address)) {
-          document.getElementById("insertHint").textContent =
-            "That isn't a picture. Try dragging a photo or a picture file.";
-          return;
-        }
-        document.getElementById("insertHint").textContent =
-          "Getting the picture...";
-        addPhotoFromAddress(
-          address,
-          "",
-          dropX,
-          dropY,
-          !address.startsWith("data:"),
-        );
-      });
+        return /^(https?:|data:image\/)/i.test(address) ? address : "";
+      }
 
       // Put a photo on the canvas, shrunk to fit inside 60% of the canvas
       // you can see. It goes in the middle, or with its middle where it was
       // dropped (dropX, dropY)
       function addPhoto(pictureId, width, height, dropX, dropY) {
-        const box = document.getElementById("canvasBox");
-        const scale = Math.min(
-          1,
-          (box.clientWidth * 0.6) / width,
-          (box.clientHeight * 0.6) / height,
-        );
+        const area = areaSize();
+        const scale = Math.min(1, (area.w * 0.6) / width, (area.h * 0.6) / height);
         const w = width * scale;
         const h = height * scale;
-        const middleX = dropX === undefined ? box.clientWidth / 2 : dropX;
-        const middleY = dropY === undefined ? box.clientHeight / 2 : dropY;
+        const middleX = dropX === undefined ? area.w / 2 : dropX;
+        const middleY = dropY === undefined ? area.h / 2 : dropY;
         const item = buildImage(
           middleX - w / 2,
           middleY - h / 2,
@@ -4941,7 +5686,7 @@
           return answer(await this.client.rpc("username_available", { name }));
         },
         // Gives back true if you're logged in straight away, or false if
-        // you need to click the link in the email first
+        // Supabase is waiting for you to click a link in an email
         async signUp(email, password, username) {
           const data = answer(
             await this.client.auth.signUp({
@@ -4985,13 +5730,15 @@
           answer(await this.client.rpc("delete_my_account"));
           await this.client.auth.signOut();
         },
+
+        // ----- Profiles -----
         async myProfile() {
           const user = await this.currentAuthUser();
           if (!user) return null;
           const rows = answer(
             await this.client
               .from("profiles")
-              .select("id, username, display_name")
+              .select("id, username, display_name, avatar")
               .eq("id", user.id),
           );
           if (!rows[0]) return null;
@@ -4999,18 +5746,37 @@
             id: rows[0].id,
             username: rows[0].username,
             displayName: rows[0].display_name,
+            avatar: rows[0].avatar,
             email: user.email,
           };
+        },
+        // Names and pictures of some people
+        async profiles(ids) {
+          return answer(
+            await this.client
+              .from("profiles")
+              .select("id, username, display_name, avatar")
+              .in("id", ids),
+          );
+        },
+        async setAvatar(avatar) {
+          answer(
+            await this.client
+              .from("profiles")
+              .update({ avatar })
+              .eq("id", currentUser.id),
+          );
         },
 
         // ----- Drawings -----
         // The list leaves out the big parts (the drawing itself and its
-        // photos), so the home page loads fast
+        // photos), so the home page loads fast. It has your own drawings
+        // and the ones friends shared with you.
         async listDrawings() {
           return answer(
             await this.client
               .from("drawings")
-              .select("id, title, thumbnail, updated_at")
+              .select("id, owner, title, thumbnail, updated_at")
               .order("updated_at", { ascending: false }),
           );
         },
@@ -5020,9 +5786,20 @@
           );
           return rows[0] || null;
         },
-        // "upsert" = add it, or change it if it's already there
-        async saveDrawing(record) {
-          answer(await this.client.from("drawings").upsert(record));
+        async addDrawing(record) {
+          answer(await this.client.from("drawings").insert(record));
+        },
+        // Gives back false if the drawing wasn't there to change (it was
+        // deleted, or isn't shared with you any more)
+        async updateDrawing(id, changes) {
+          const rows = answer(
+            await this.client
+              .from("drawings")
+              .update(changes)
+              .eq("id", id)
+              .select("id"),
+          );
+          return rows.length > 0;
         },
         async renameDrawing(id, title) {
           answer(
@@ -5031,6 +5808,46 @@
         },
         async deleteDrawing(id) {
           answer(await this.client.from("drawings").delete().eq("id", id));
+        },
+
+        // ----- Sharing drawings -----
+        async shareDrawing(drawingId, friendIds) {
+          answer(
+            await this.client.rpc("share_drawing", {
+              drawing: drawingId,
+              friend_ids: friendIds,
+            }),
+          );
+        },
+        // Who a drawing is shared with: [{ user_id, status }]
+        async drawingMembers(drawingId) {
+          return answer(
+            await this.client
+              .from("drawing_members")
+              .select("user_id, status")
+              .eq("drawing_id", drawingId),
+          );
+        },
+        // Stop sharing with someone (owner), or leave (yourself)
+        async removeDrawingMember(drawingId, userId) {
+          answer(
+            await this.client
+              .from("drawing_members")
+              .delete()
+              .eq("drawing_id", drawingId)
+              .eq("user_id", userId),
+          );
+        },
+        async myInbox() {
+          return answer(await this.client.rpc("my_inbox"));
+        },
+        async answerShare(drawingId, accept) {
+          answer(
+            await this.client.rpc("answer_share", {
+              drawing: drawingId,
+              accept,
+            }),
+          );
         },
 
         // ----- Friends -----
@@ -5066,6 +5883,48 @@
             );
           }
         },
+        async blockUser(personId) {
+          answer(await this.client.rpc("block_user", { person: personId }));
+        },
+        async unblockUser(personId) {
+          answer(
+            await this.client
+              .from("blocks")
+              .delete()
+              .eq("blocker", currentUser.id)
+              .eq("blocked", personId),
+          );
+        },
+        async myBlocked() {
+          return answer(await this.client.rpc("my_blocked"));
+        },
+        // Your private names for people: { personId: "nickname" }
+        async myNicknames() {
+          const rows = answer(
+            await this.client.from("nicknames").select("target, nickname"),
+          );
+          const names = {};
+          for (const row of rows) names[row.target] = row.nickname;
+          return names;
+        },
+        // nickname = null removes it
+        async setNickname(personId, nickname) {
+          if (nickname === null) {
+            answer(
+              await this.client
+                .from("nicknames")
+                .delete()
+                .eq("owner", currentUser.id)
+                .eq("target", personId),
+            );
+          } else {
+            answer(
+              await this.client
+                .from("nicknames")
+                .upsert({ owner: currentUser.id, target: personId, nickname }),
+            );
+          }
+        },
 
         // ----- Chats -----
         async myChats() {
@@ -5093,42 +5952,135 @@
           );
         },
         async leaveGroup(chatId) {
-          answer(
-            await this.client
-              .from("chat_members")
-              .delete()
-              .eq("chat_id", chatId)
-              .eq("user_id", currentUser.id),
-          );
+          answer(await this.client.rpc("leave_group", { chat: chatId }));
+        },
+        async deleteChat(chatId) {
+          answer(await this.client.rpc("delete_chat", { chat: chatId }));
         },
         // The newest 100 messages, oldest first
         async messages(chatId) {
           const rows = answer(
             await this.client
               .from("messages")
-              .select("id, chat_id, sender, body, created_at")
+              .select("id, chat_id, sender, body, file_path, file_kind, created_at, edited_at")
               .eq("chat_id", chatId)
               .order("id", { ascending: false })
               .limit(100),
           );
           return rows.reverse();
         },
-        async sendMessage(chatId, body) {
+        // file = { path, kind } of an uploaded photo or video (or null)
+        async sendMessage(chatId, body, file) {
+          const message = { chat_id: chatId, body };
+          if (file) {
+            message.file_path = file.path;
+            message.file_kind = file.kind;
+          }
           const rows = answer(
-            await this.client
-              .from("messages")
-              .insert({ chat_id: chatId, body })
-              .select(),
+            await this.client.from("messages").insert(message).select(),
           );
           return rows[0];
+        },
+        async unsendMessage(messageId) {
+          answer(
+            await this.client.from("messages").delete().eq("id", messageId),
+          );
         },
         async markRead(chatId) {
           answer(await this.client.rpc("mark_read", { chat: chatId }));
         },
+        // "My device has got this chat's messages" (for "Delivered")
+        // "I'm here" (every minute while Sunrise is open) / "I'm leaving"
+        async iAmOnline() {
+          answer(await this.client.rpc("i_am_online"));
+        },
+        async iAmOffline() {
+          answer(await this.client.rpc("i_am_offline"));
+        },
+        async markDelivered(chatId) {
+          answer(await this.client.rpc("mark_delivered", { chat: chatId }));
+        },
+        async setMuted(chatId, mute) {
+          answer(await this.client.rpc("set_muted", { chat: chatId, mute }));
+        },
+        async editMessage(messageId, body) {
+          answer(
+            await this.client.rpc("edit_message", {
+              message: messageId,
+              new_body: body,
+            }),
+          );
+        },
 
-        // Live updates: the server tells us straight away about new
-        // messages, friend requests and chats. Gives back a function that
-        // stops listening.
+        // ----- Chat photos and videos (Supabase Storage) -----
+        // Each chat's files are in a folder named after the chat
+        async uploadChatFile(chatId, file, ending) {
+          const path = chatId + "/" + newDrawingId() + "." + ending;
+          answer(
+            await this.client.storage
+              .from("chat-files")
+              .upload(path, file, { contentType: file.type }),
+          );
+          return path;
+        },
+        // Download a chat file (gives back the file itself)
+        async downloadChatFile(path) {
+          return answer(
+            await this.client.storage.from("chat-files").download(path),
+          );
+        },
+        // "I've got this photo or video now". Gives back true when everyone
+        // in the chat has it, so it can be deleted from the server
+        async fileReceived(messageId) {
+          return answer(
+            await this.client.rpc("file_received", { message: messageId }),
+          );
+        },
+        // A web address for a file, that works for an hour
+        async chatFileAddress(path) {
+          const data = answer(
+            await this.client.storage
+              .from("chat-files")
+              .createSignedUrl(path, 3600),
+          );
+          return data.signedUrl;
+        },
+        async removeChatFiles(paths) {
+          if (paths.length === 0) return;
+          answer(await this.client.storage.from("chat-files").remove(paths));
+        },
+        // A chat's photos and videos that are over 7 days old (their
+        // messages have been deleted, so the files aren't needed any more)
+        async oldChatFiles(chatId) {
+          const files = answer(
+            await this.client.storage
+              .from("chat-files")
+              .list(chatId, { limit: 1000 }),
+          );
+          const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+          return files
+            .filter(function (file) {
+              return file.created_at && new Date(file.created_at).getTime() < weekAgo;
+            })
+            .map(function (file) {
+              return chatId + "/" + file.name;
+            });
+        },
+        // Every file in a chat's folder (to delete them with the chat)
+        async chatFiles(chatId) {
+          const files = answer(
+            await this.client.storage
+              .from("chat-files")
+              .list(chatId, { limit: 1000 }),
+          );
+          return files.map(function (file) {
+            return chatId + "/" + file.name;
+          });
+        },
+
+        // Live updates: the server tells us straight away about new and
+        // unsent messages, friend requests, chats and shared drawings.
+        // Gives back a function that stops listening.
         listen(handlers) {
           const channel = this.client
             .channel("drawlab-live")
@@ -5137,6 +6089,13 @@
               { event: "INSERT", schema: "public", table: "messages" },
               function (change) {
                 handlers.message(change.new);
+              },
+            )
+            .on(
+              "postgres_changes",
+              { event: "DELETE", schema: "public", table: "messages" },
+              function (change) {
+                handlers.unsent(change.old);
               },
             )
             .on(
@@ -5151,13 +6110,97 @@
             )
             .on(
               "postgres_changes",
+              { event: "UPDATE", schema: "public", table: "messages" },
+              function (change) {
+                handlers.edited(change.new);
+              },
+            )
+            .on(
+              "postgres_changes",
               { event: "INSERT", schema: "public", table: "chat_members" },
               handlers.chatMember,
+            )
+            .on(
+              "postgres_changes",
+              { event: "UPDATE", schema: "public", table: "chat_members" },
+              handlers.chatMember, // someone got or read messages
+            )
+            .on(
+              "postgres_changes",
+              { event: "INSERT", schema: "public", table: "drawing_members" },
+              handlers.share,
             )
             .subscribe(handlers.status);
           const client = this.client;
           return function () {
             client.removeChannel(channel);
+          };
+        },
+
+        // "Alex is typing…": a private channel for one chat. Only people in
+        // the chat can join (the database checks). Gives back { send, stop }
+        joinChat(chatId, handlers) {
+          const client = this.client;
+          const channel = client.channel("chat:" + chatId, {
+            config: { private: true, broadcast: { self: false } },
+          });
+          channel
+            .on("broadcast", { event: "typing" }, function (message) {
+              handlers.typing(message.payload);
+            })
+            .subscribe();
+          return {
+            send(payload) {
+              return channel.send({ type: "broadcast", event: "typing", payload });
+            },
+            stop() {
+              client.removeChannel(channel);
+            },
+          };
+        },
+
+        // Drawing together: a private channel for one drawing. Only people
+        // who can edit the drawing can join (the database checks).
+        //   handlers.change(payload) = someone changed the drawing
+        //   handlers.people(list)    = who has it open changed
+        // Gives back { send(payload), stop() }
+        joinDrawing(drawingId, me, handlers) {
+          const client = this.client;
+          const channel = client.channel("drawing:" + drawingId, {
+            config: {
+              private: true,
+              broadcast: { self: false },
+              presence: { key: me.id },
+            },
+          });
+          channel
+            .on("broadcast", { event: "change" }, function (message) {
+              handlers.change(message.payload);
+            })
+            .on("presence", { event: "sync" }, function () {
+              const state = channel.presenceState();
+              const people = [];
+              for (const key in state) {
+                if (key !== me.id && state[key][0]) people.push(state[key][0]);
+              }
+              handlers.people(people);
+            })
+            .subscribe(function (status) {
+              if (status === "SUBSCRIBED")
+                channel.track({ id: me.id, name: me.displayName });
+              handlers.status(status);
+            });
+          return {
+            send(payload) {
+              return channel.send({
+                type: "broadcast",
+                event: "change",
+                payload,
+              });
+            },
+            stop() {
+              client.removeChannel(channel);
+            },
           };
         },
       };
@@ -5166,8 +6209,16 @@
       function friendlyError(problem) {
         const text = String((problem && problem.message) || problem);
         // Our own messages from supabase-setup.sql are already friendly
-        if (/^(You |Too many messages|Group|Pick |Not logged in)/.test(text))
+        if (/^(You |Too many messages|Group|Pick |Not logged in|Only |Sorry|Photos can|Videos can|Upload the)/.test(text))
           return text;
+        if (/already has 10 chats/.test(text)) return text;
+        if (/maximum allowed size|too large|Payload too large/i.test(text))
+          return "That file is too big. Videos can be up to 5 MB.";
+        if (/mime type/i.test(text))
+          return "That kind of file can't be sent. Try a JPG or PNG photo, or an MP4 video.";
+        // The server is missing something this version of Sunrise needs
+        if (/Could not find the function|schema cache|does not exist/i.test(text))
+          return "The server needs updating: run the newest supabase-update file in Supabase (see SETUP-ONLINE.md).";
         if (/fetch|network|Load failed/i.test(text))
           return "Can't reach the server. Check your internet connection.";
         if (/Invalid login credentials/i.test(text))
@@ -5266,8 +6317,8 @@
       function showSetupMessage() {
         setLoginMessage(
           window.supabase === undefined
-            ? "Couldn't load the online part of Drawlab. Check your internet, then refresh the page."
-            : "Drawlab's online accounts aren't set up yet. Follow SETUP-ONLINE.md to connect it to Supabase.",
+            ? "Couldn't load the online part of Sunrise. Check your internet, then refresh the page."
+            : "Sunrise's online accounts aren't set up yet. Follow SETUP-ONLINE.md to connect it to Supabase.",
         );
       }
 
@@ -5359,6 +6410,7 @@
           showScreen("login");
           showLoginMode("newPassword");
         } else if (event === "SIGNED_OUT" && currentUser !== null) {
+          stopLive();
           stopChat();
           currentUser = null;
           currentDrawing = null;
@@ -5373,6 +6425,12 @@
         const profile = await Server.myProfile();
         if (!profile) throw new Error("Couldn't find your account.");
         currentUser = profile;
+        people[profile.id] = {
+          id: profile.id,
+          username: profile.username,
+          display_name: profile.displayName,
+          avatar: profile.avatar,
+        };
         setLoginMessage("");
         startChat();
         await showHome();
@@ -5380,6 +6438,8 @@
 
       async function logOut() {
         await saveNow();
+        await Server.iAmOffline().catch(function () {}); // grey dot for friends straight away
+        stopLive();
         stopChat();
         currentUser = null; // first, so onAuthChange doesn't say "You've been logged out"
         currentDrawing = null;
@@ -5402,7 +6462,74 @@
         document.getElementById("newPassword").value = "";
         document.getElementById("newPasswordConfirm").value = "";
         document.getElementById("deleteAccountName").value = "";
+        showMyAvatar();
         document.getElementById("accountDialog").showModal();
+      }
+
+      // ----- Profile picture -----
+      function showMyAvatar() {
+        for (const [id, size] of [
+          ["accountAvatar", 56],
+          ["homeAvatar", 28],
+        ]) {
+          const spot = document.getElementById(id);
+          spot.innerHTML = "";
+          spot.appendChild(avatarElement(currentUser.id, size));
+        }
+        document.getElementById("removeAvatarButton").style.display =
+          currentUser.avatar ? "" : "none";
+      }
+
+      // You picked a picture: cut a square from its middle, shrink it to
+      // 128 x 128 (small, so it loads fast everywhere), and save it
+      document
+        .getElementById("avatarInput")
+        .addEventListener("change", function () {
+          const file = this.files[0];
+          this.value = "";
+          if (!file) return;
+          const address = URL.createObjectURL(file);
+          const img = new Image();
+          img.onload = function () {
+            URL.revokeObjectURL(address);
+            const side = Math.min(img.width, img.height);
+            const square = document.createElement("canvas");
+            square.width = 128;
+            square.height = 128;
+            square
+              .getContext("2d")
+              .drawImage(
+                img,
+                (img.width - side) / 2,
+                (img.height - side) / 2,
+                side,
+                side,
+                0,
+                0,
+                128,
+                128,
+              );
+            setAvatar(square.toDataURL("image/jpeg", 0.85));
+          };
+          img.onerror = function () {
+            URL.revokeObjectURL(address);
+            setAccountMessage("Sorry, that picture can't be opened. Try a JPG or PNG.");
+          };
+          img.src = address;
+        });
+
+      // Save a new profile picture (null = remove it)
+      async function setAvatar(avatar) {
+        try {
+          await Server.setAvatar(avatar);
+        } catch (problem) {
+          setAccountMessage(friendlyError(problem));
+          return;
+        }
+        currentUser.avatar = avatar;
+        people[currentUser.id].avatar = avatar;
+        showMyAvatar();
+        setAccountMessage(avatar ? "Profile picture saved." : "Profile picture removed.", true);
       }
       // Say whether you've added an email
       function showEmailNow() {
@@ -5498,6 +6625,7 @@
             setAccountMessage(friendlyError(problem));
             return;
           }
+          stopLive();
           stopChat();
           currentUser = null;
           currentDrawing = null;
@@ -5515,14 +6643,25 @@
         document.getElementById("loginPage").style.display =
           name === "login" ? "block" : "none";
         document.getElementById("homePage").style.display =
-          name === "home" ? "block" : "none";
+          name === "home" ? "flex" : "none";
+        // The chat panel: on the left of the home page, or in the editor's
+        // bottom panel. It's the same panel, so an open chat stays open
+        const panel = document.getElementById("chatPanel");
+        const place = document.getElementById(name === "home" ? "homeChat" : "bottomPanel");
+        if (panel.parentElement !== place) {
+          place.appendChild(panel);
+          const list = document.getElementById("messageList");
+          list.scrollTop = list.scrollHeight; // show the newest messages
+        }
       }
 
       // ===== Home page =====
       async function showHome() {
         document.getElementById("homeUserName").textContent =
           currentUser.displayName;
+        showMyAvatar();
         showScreen("home");
+        refreshInbox();
         await refreshDrawingList();
         checkLocalDrawings();
       }
@@ -5532,9 +6671,15 @@
         if (document.activeElement.isContentEditable)
           document.activeElement.blur(); // finish typing
         await saveNow();
+        stopLive();
         currentDrawing = null;
         await showHome();
       }
+
+      // You can own up to 20 drawings (the server checks this too).
+      // Drawings friends shared with you don't count.
+      const mostDrawings = 20;
+      let myDrawingCount = 0;
 
       // Show your drawings, newest first (the server sorts them)
       async function refreshDrawingList() {
@@ -5547,7 +6692,19 @@
           message.textContent = friendlyError(problem);
           return;
         }
+        await learnPeople(
+          drawings.map(function (d) {
+            return d.owner;
+          }),
+        );
+        myDrawingCount = drawings.filter(function (d) {
+          return d.owner === currentUser.id;
+        }).length;
+        const count = document.getElementById("drawingCount");
+        count.textContent = "(" + myDrawingCount + " of " + mostDrawings + ")";
+        count.style.color = myDrawingCount >= mostDrawings ? "#cc0000" : "#777";
         list.innerHTML = "";
+        message.style.color = "";
         message.textContent =
           drawings.length === 0
             ? "No drawings yet. Pick a template above to start one."
@@ -5594,6 +6751,19 @@
         when.style.cssText = "color: #777; font-size: 12px; padding: 0 8px";
         card.appendChild(when);
 
+        // Shared with you by a friend? Say who
+        const mine = drawing.owner === currentUser.id;
+        if (!mine) {
+          const from = document.createElement("div");
+          from.style.cssText =
+            "display: flex; align-items: center; gap: 4px; color: #1a7f37; font-size: 12px; padding: 2px 8px 0 8px";
+          from.appendChild(avatarElement(drawing.owner, 16));
+          from.appendChild(
+            document.createTextNode("Shared by " + nameOf(drawing.owner)),
+          );
+          card.appendChild(from);
+        }
+
         const buttons = document.createElement("div");
         buttons.style.cssText =
           "display: flex; flex-wrap: wrap; gap: 4px; padding: 8px";
@@ -5612,27 +6782,30 @@
           ],
           [
             "📤 Share",
-            async function () {
-              try {
-                shareRecord(await Server.getDrawing(drawing.id));
-              } catch (problem) {
-                document.getElementById("homeMessage").textContent =
-                  friendlyError(problem);
-              }
-            },
-          ],
-          [
-            "Delete",
             function () {
-              deleteDrawing(drawing);
+              openShareDialog(drawing.id);
             },
           ],
+          // Your own drawings: Delete (for everyone). Shared with you: Leave
+          mine
+            ? [
+                "Delete",
+                function () {
+                  deleteDrawing(drawing);
+                },
+              ]
+            : [
+                "Leave",
+                function () {
+                  leaveDrawing(drawing.id);
+                },
+              ],
         ];
         for (const [label, action] of actions) {
           const button = document.createElement("button");
           button.textContent = label;
           button.addEventListener("click", action);
-          if (label === "Delete")
+          if (label === "Delete" || label === "Leave")
             button.style.cssText =
               "border: 2px solid #cc0000; border-radius: 3px; color: #cc0000";
           buttons.appendChild(button);
@@ -5658,7 +6831,9 @@
       function deleteDrawing(drawing) {
         const dialog = document.getElementById("deleteDrawingDialog");
         document.getElementById("deleteDrawingText").textContent =
-          'Delete "' + drawing.title + "\"? This can't be undone.";
+          'Delete "' +
+          drawing.title +
+          "\"? This can't be undone. If you shared it, it's deleted for your friends too.";
         dialog.returnValue = "";
         dialog.addEventListener(
           "close",
@@ -5709,16 +6884,20 @@
           return;
         }
         if (!record) return;
-        record.fromServer = true; // its photos are already on the server
+        record.fromServer = true; // it's saved, and so are its photos
         await openDrawing(record);
+        startLive(record.id); // draw together with anyone else who has it open
       }
 
       // Show a drawing in the editor. record.state is the same kind of
       // snapshot Undo uses (null for a brand new drawing).
       async function openDrawing(record) {
+        stopLive();
         currentDrawing = {
           id: record.id,
           title: record.title,
+          onServer: Boolean(record.fromServer), // false = not saved yet
+          updatedAt: record.updated_at || null, // which saved version this is
           // Which photos and stickers the server already has. Photos are
           // big, so they're only sent again when this list changes.
           // (null = none sent yet, so send them next time)
@@ -5729,13 +6908,15 @@
         document.getElementById("drawingTitle").value = record.title;
         showScreen("editor");
         resetEditor();
+        // A vertical page (or none). New drawings get it from their template
+        setPage(record.state ? record.state.page || null : record.page || null);
         Object.assign(pictureStore, record.pictures || {}); // its photos and stickers
 
         if (record.state) {
           // Make the canvas big enough for the saved drawing, then put it back
           const img = await loadPicture(record.state.image);
           fitCanvas(img.width, img.height);
-          restoreState(record.state);
+          await restoreState(record.state);
           undoHistory.push(record.state); // Undo starts from here
           lastImage = record.state.image;
           canvasChanged = false;
@@ -5812,20 +6993,36 @@
         if (currentDrawing !== drawing) return;
 
         const pictures = picturesUsedBy(state);
-        const record = {
-          id: drawing.id,
+        const changes = {
           title: drawing.title,
           state: state,
           thumbnail: makeThumbnail(),
         };
         const pictureNames = pictureList(pictures);
-        if (pictureNames !== drawing.savedPictures) record.pictures = pictures;
+        if (pictureNames !== drawing.savedPictures) changes.pictures = pictures;
         try {
-          await Server.saveDrawing(record);
+          if (!drawing.onServer) {
+            // The first save adds it to your account
+            await Server.addDrawing(
+              Object.assign({ id: drawing.id, pictures: pictures }, changes),
+            );
+            drawing.onServer = true;
+            if (currentDrawing === drawing && !live) startLive(drawing.id);
+          } else if (!(await Server.updateDrawing(drawing.id, changes))) {
+            // Nothing there to change: deleted, or not shared with you any more
+            if (currentDrawing === drawing)
+              setSaveStatus("⚠ Not saved: this drawing was deleted, or isn't shared with you any more.");
+            return;
+          }
           drawing.savedPictures = pictureNames;
           if (currentDrawing === drawing) setSaveStatus("Saved");
         } catch (problem) {
           if (currentDrawing !== drawing) return;
+          // Already have 20 drawings? Trying again won't help
+          if (/up to 20 drawings/.test(String(problem && problem.message))) {
+            setSaveStatus("⚠ Not saved: you already have 20 drawings. Delete one on the home page.");
+            return;
+          }
           setSaveStatus("⚠ Not saved yet. Trying again soon…");
           setChatStatus(friendlyError(problem));
           clearTimeout(autosaveTimer);
@@ -5873,6 +7070,7 @@
           if (currentDrawing === null) return;
           currentDrawing.title = this.value.trim() || "Untitled drawing";
           scheduleAutosave();
+          sendLiveTitle(); // so friends drawing with you see the new name
         });
       document
         .getElementById("drawingTitle")
@@ -5881,8 +7079,123 @@
           this.blur();
         });
 
+      // ===== People: names, nicknames and profile pictures =====
+      const people = {}; // everyone we know about: id → { username, display_name, avatar }
+      let peopleCheckedAt = 0; // when their pictures were last checked
+      let nicknames = {}; // your private names for people: id → "nickname"
+
+      // Get names and pictures for anyone we don't know yet.
+      // (Every 5 minutes, check everyone again, in case they changed)
+      async function learnPeople(ids) {
+        const stale = Date.now() - peopleCheckedAt > 5 * 60 * 1000;
+        const wanted = Array.from(new Set(ids)).filter(function (id) {
+          return id && (stale || !people[id]);
+        });
+        if (wanted.length === 0) return;
+        if (stale) peopleCheckedAt = Date.now();
+        try {
+          for (const person of await Server.profiles(wanted))
+            people[person.id] = person;
+        } catch (problem) {
+          // Not important enough to show a message: names still show
+        }
+      }
+
+      // Who's online: id → true (green) or false (grey). Only friends are
+      // in here; the server doesn't tell anyone else
+      const onlineNow = {};
+
+      // A profile picture with a green (online) or grey (offline) dot
+      function avatarWithDot(id, size) {
+        const picture = avatarElement(id, size);
+        if (onlineNow[id] === undefined) return picture; // not a friend: no dot
+        const holder = document.createElement("span");
+        holder.style.cssText =
+          "position: relative; display: inline-flex; flex-shrink: 0; vertical-align: middle";
+        holder.appendChild(picture);
+        const dot = document.createElement("span");
+        const dotSize = Math.max(8, Math.round(size * 0.38));
+        dot.className = "onlineDot";
+        dot.dataset.online = onlineNow[id] ? "yes" : "no";
+        dot.title = onlineNow[id] ? "Online" : "Offline";
+        dot.style.cssText =
+          "position: absolute; right: -1px; bottom: -1px; width: " +
+          dotSize +
+          "px; height: " +
+          dotSize +
+          "px; border-radius: 50%; border: 2px solid white; box-sizing: border-box; background: " +
+          (onlineNow[id] ? "#2ecc40" : "#9e9e9e");
+        holder.appendChild(dot);
+        return holder;
+      }
+
+      // Tell the server "I'm here" now, and every minute while Sunrise is
+      // showing (so friends see a green dot)
+      let onlineTimer = null;
+      function startOnline() {
+        stopOnline();
+        imHere();
+        onlineTimer = setInterval(imHere, 60000);
+      }
+      function stopOnline() {
+        clearInterval(onlineTimer);
+        onlineTimer = null;
+      }
+      function imHere() {
+        if (currentUser === null || document.visibilityState !== "visible") return;
+        Server.iAmOnline().catch(function () {});
+      }
+      document.addEventListener("visibilitychange", imHere);
+      // Closing Sunrise: say "I'm leaving" (if there's time before it closes)
+      window.addEventListener("pagehide", function () {
+        if (currentUser !== null) Server.iAmOffline().catch(function () {});
+      });
+
+      // The name to show for someone: your nickname for them, or their name
+      function nameOf(id, fallback) {
+        if (nicknames[id]) return nicknames[id];
+        if (people[id]) return people[id].display_name;
+        return fallback || "Someone";
+      }
+
+      // A round profile picture. No picture? Their first letter on a colour
+      // (the same colour every time for the same person)
+      function avatarElement(id, size) {
+        const person = people[id];
+        const picture = person && person.avatar;
+        let element;
+        if (picture && picture.startsWith("data:image/")) {
+          element = document.createElement("img");
+          element.src = picture;
+          element.alt = "";
+          element.style.objectFit = "cover";
+        } else {
+          element = document.createElement("span");
+          const name = (person && person.display_name) || "?";
+          element.textContent = name[0].toUpperCase();
+          let number = 0;
+          for (const letter of (person && person.username) || name)
+            number = (number * 31 + letter.charCodeAt(0)) % 360;
+          element.style.background = "hsl(" + number + ", 55%, 55%)";
+          element.style.color = "white";
+          element.style.display = "inline-flex";
+          element.style.alignItems = "center";
+          element.style.justifyContent = "center";
+          element.style.fontWeight = "bold";
+          element.style.fontSize = Math.round(size * 0.5) + "px";
+          element.style.fontFamily = "Arial";
+        }
+        element.style.width = size + "px";
+        element.style.height = size + "px";
+        element.style.borderRadius = "50%";
+        element.style.flexShrink = "0";
+        element.style.verticalAlign = "middle";
+        return element;
+      }
+
       // ===== Friends and chat (the bottom panel) =====
       let friends = []; // your friends and friend requests, from the server
+      let blocked = []; // people you blocked
       let chats = []; // your chats, newest first
       let openChatId = null; // the chat showing on the right
       let shownMessages = new Set(); // ids of the messages showing, so none show twice
@@ -5895,18 +7208,29 @@
       if (window.innerWidth < 700)
         document.getElementById("chatListBox").style.width = "110px";
 
-      function startChat() {
+      async function startChat() {
         stopChat();
         showChatTab("chats");
+        try {
+          nicknames = await Server.myNicknames();
+        } catch (problem) {
+          nicknames = {};
+        }
+        startOnline();
         refreshFriends();
-        refreshChats();
+        refreshChats().then(cleanOldChatFiles);
         stopListening = Server.listen({
           message: onNewMessage,
+          unsent: onUnsentMessage,
+          edited: applyEdit,
           friendship: function () {
             soon(refreshFriends);
           },
           chatMember: function () {
             soon(refreshChats);
+          },
+          share: function () {
+            soon(refreshInbox);
           },
           status: function (status) {
             setChatStatus(
@@ -5923,15 +7247,23 @@
           if (document.visibilityState !== "visible") return;
           refreshFriends();
           refreshChats();
+          if (currentScreen === "home") refreshInbox();
         }, 30000);
       }
 
       function stopChat() {
+        stopOnline();
+        for (const id in onlineNow) delete onlineNow[id];
         if (stopListening) stopListening();
         stopListening = null;
+        leaveChatChannel();
+        closeMenu();
+        stopEditing();
         clearInterval(checkTimer);
         friends = [];
+        blocked = [];
         chats = [];
+        nicknames = {};
         openChatId = null;
         chatHeaderKey = "";
         document.getElementById("chatList").innerHTML = "";
@@ -5943,6 +7275,109 @@
         const header = document.getElementById("chatHeader");
         header.textContent = "Log in to chat with your friends.";
         header.style.color = "#777";
+      }
+
+      // Messages are deleted after 7 days (the server does that). Their
+      // photos and videos are deleted here, because the server isn't allowed
+      // to delete stored files. Once a day is enough. (The server only lets
+      // you delete your own files, or every file in a chat you could delete)
+      async function cleanOldChatFiles() {
+        const last = Number(localStorage.getItem("drawlab.filesCleaned") || 0);
+        if (Date.now() - last < 24 * 60 * 60 * 1000) return;
+        localStorage.setItem("drawlab.filesCleaned", String(Date.now()));
+        for (const chat of chats) {
+          try {
+            await Server.removeChatFiles(await Server.oldChatFiles(chat.id));
+          } catch (problem) {
+            // Try again tomorrow
+          }
+        }
+        forgetOldSavedFiles(); // and the copies kept in this browser
+      }
+
+      // ----- Photos and videos kept in this browser -----
+      // The server deletes a chat photo or video once everyone in the chat
+      // has it. So each browser keeps its own copy, in its built-in
+      // database (IndexedDB), like the old accounts used to.
+      let savedFiles = null; // the database, once it's open
+      function openSavedFiles() {
+        if (savedFiles) return savedFiles;
+        savedFiles = new Promise(function (resolve, reject) {
+          const request = indexedDB.open("drawlab-files", 1);
+          request.onupgradeneeded = function () {
+            request.result.createObjectStore("files", { keyPath: "path" });
+          };
+          request.onsuccess = function () {
+            resolve(request.result);
+          };
+          request.onerror = function () {
+            reject(request.error);
+          };
+        });
+        return savedFiles;
+      }
+      // Do something with the store of saved files, and wait for the answer
+      async function savedFilesAsk(mode, ask) {
+        const db = await openSavedFiles();
+        return new Promise(function (resolve, reject) {
+          const request = ask(db.transaction("files", mode).objectStore("files"));
+          request.onsuccess = function () {
+            resolve(request.result);
+          };
+          request.onerror = function () {
+            reject(request.error);
+          };
+        });
+      }
+      // Each account keeps its own copies (two accounts in one browser
+      // shouldn't share them, or the server never hears you got the file)
+      function savedName(path) {
+        return currentUser.id + "/" + path;
+      }
+      async function keepFile(path, file) {
+        try {
+          await savedFilesAsk("readwrite", function (store) {
+            return store.put({ path: savedName(path), file, savedAt: Date.now() });
+          });
+        } catch (problem) {
+          // No room, or a private window: it just won't be kept
+        }
+      }
+      async function keptFile(path) {
+        try {
+          const saved = await savedFilesAsk("readonly", function (store) {
+            return store.get(savedName(path));
+          });
+          return saved ? saved.file : null;
+        } catch (problem) {
+          return null;
+        }
+      }
+      async function forgetFile(path) {
+        try {
+          await savedFilesAsk("readwrite", function (store) {
+            return store.delete(savedName(path));
+          });
+        } catch (problem) {
+          // nothing to do
+        }
+      }
+      // Messages are deleted after 7 days, so their files aren't needed
+      async function forgetOldSavedFiles() {
+        try {
+          const all = await savedFilesAsk("readonly", function (store) {
+            return store.getAll();
+          });
+          const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+          for (const saved of all) {
+            if (saved.savedAt < weekAgo)
+              await savedFilesAsk("readwrite", function (store) {
+                return store.delete(saved.path);
+              });
+          }
+        } catch (problem) {
+          // nothing to do
+        }
       }
 
       // Do something in a moment, once (lots of news at once = one refresh)
@@ -5983,14 +7418,241 @@
         return button;
       }
 
+      // Do something on the server, show any problem, then refresh the lists
+      async function friendJob(job) {
+        try {
+          await job();
+        } catch (problem) {
+          setChatStatus(friendlyError(problem));
+        }
+        refreshFriends();
+        refreshChats();
+      }
+
+      // ----- The ⋮ menu: a small panel of options next to a button -----
+      let openMenuBox = null;
+      function closeMenu() {
+        if (openMenuBox) openMenuBox.remove();
+        openMenuBox = null;
+      }
+      // items = [{ label, action, red }]
+      function showMenu(anchor, items) {
+        closeMenu();
+        const box = document.createElement("div");
+        box.className = "popMenu";
+        for (const item of items) {
+          const button = document.createElement("button");
+          button.textContent = item.label;
+          if (item.red) button.style.color = "#cc0000";
+          button.addEventListener("click", function () {
+            closeMenu();
+            item.action();
+          });
+          box.appendChild(button);
+        }
+        document.body.appendChild(box);
+        openMenuBox = box;
+        // Next to the button: on its right, or on its left if there's no room
+        const spot = anchor.getBoundingClientRect();
+        let left = spot.right + 4;
+        if (left + box.offsetWidth > window.innerWidth - 4)
+          left = Math.max(4, spot.left - box.offsetWidth - 4);
+        let top = spot.top;
+        if (top + box.offsetHeight > window.innerHeight - 4)
+          top = Math.max(4, window.innerHeight - box.offsetHeight - 4);
+        box.style.left = left + "px";
+        box.style.top = top + "px";
+      }
+      // Clicking anywhere else, or Escape, closes it
+      document.addEventListener(
+        "pointerdown",
+        function (event) {
+          if (openMenuBox && !openMenuBox.contains(event.target)) closeMenu();
+        },
+        true,
+      );
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") closeMenu();
+      });
+
+      // A ⋮ button. getItems() makes the list when it's pressed (so it's
+      // always up to date)
+      function dotsButton(getItems) {
+        const button = document.createElement("button");
+        button.className = "dotsButton";
+        button.textContent = "⋮";
+        button.title = "More options";
+        button.addEventListener("click", function (event) {
+          event.stopPropagation(); // don't open the chat behind it
+          if (openMenuBox) {
+            closeMenu();
+            return;
+          }
+          showMenu(button, getItems());
+        });
+        // (pressing it while a menu is open shouldn't close-then-reopen)
+        button.addEventListener("pointerdown", function (event) {
+          event.stopPropagation();
+        });
+        return button;
+      }
+
+      // The 1-to-1 chat with someone (if there is one yet)
+      function directChatWith(id) {
+        return chats.find(function (c) {
+          return (
+            !c.is_group &&
+            c.members.some(function (m) {
+              return m.id === id;
+            })
+          );
+        });
+      }
+
+      // Mute or unmute a chat (no red number when it's muted)
+      async function setChatMuted(chatId, mute) {
+        try {
+          await Server.setMuted(chatId, mute);
+        } catch (problem) {
+          setChatStatus(friendlyError(problem));
+        }
+        await refreshChats();
+      }
+      // Mute a friend = mute your 1-to-1 chat with them (making it if needed)
+      async function toggleMuteFriend(id) {
+        let chat = directChatWith(id);
+        try {
+          if (!chat) {
+            await Server.startDirectChat(id);
+            await refreshChats();
+            chat = directChatWith(id);
+          }
+        } catch (problem) {
+          setChatStatus(friendlyError(problem));
+          return;
+        }
+        if (chat) setChatMuted(chat.id, !chat.muted);
+      }
+
+      // The options for a friend
+      function friendMenuItems(id) {
+        const chat = directChatWith(id);
+        return [
+          { label: "💬 Message", action: function () { messageFriend(id); } },
+          { label: "✏ Nickname", action: function () { editNickname(id); } },
+          {
+            label: chat && chat.muted ? "🔔 Unmute" : "🔕 Mute",
+            action: function () { toggleMuteFriend(id); },
+          },
+          { label: "Unfriend", red: true, action: function () { unfriend(id); } },
+          { label: "🚫 Block", red: true, action: function () { block(id); } },
+        ];
+      }
+
+      // The options for a chat (in the chat list and at the top of the chat)
+      function chatMenuItems(chat) {
+        const mute = {
+          label: chat.muted ? "🔔 Unmute" : "🔕 Mute",
+          action: function () { setChatMuted(chat.id, !chat.muted); },
+        };
+        if (chat.is_group) {
+          const items = [
+            mute,
+            { label: "Leave group", red: true, action: function () { leaveGroup(chat); } },
+          ];
+          // Only the person who made the group can delete it
+          if (chat.created_by === currentUser.id)
+            items.push({
+              label: "🗑 Delete group",
+              red: true,
+              action: function () { deleteWholeChat(chat); },
+            });
+          return items;
+        }
+        const other = otherPerson(chat);
+        let items = [mute];
+        if (other && isFriend(other.id))
+          items = friendMenuItems(other.id).filter(function (item) {
+            return !item.label.startsWith("💬"); // you're already in the chat
+          });
+        items.push({
+          label: "🗑 Delete chat",
+          red: true,
+          action: function () { deleteWholeChat(chat); },
+        });
+        return items;
+      }
+
+      // ----- Things you can do to a person -----
+      function isFriend(id) {
+        return friends.some(function (f) {
+          return f.id === id && f.state === "friends";
+        });
+      }
+      async function editNickname(id) {
+        const typed = prompt(
+          "Your own name for " +
+            nameOf(id) +
+            " (only you see it). Leave it empty to use their real name:",
+          nicknames[id] || "",
+        );
+        if (typed === null) return; // Cancel
+        const nickname = typed.trim().slice(0, 30);
+        try {
+          await Server.setNickname(id, nickname === "" ? null : nickname);
+          if (nickname === "") delete nicknames[id];
+          else nicknames[id] = nickname;
+        } catch (problem) {
+          setChatStatus(friendlyError(problem));
+        }
+        chatHeaderKey = ""; // redraw the chat's top line too
+        refreshFriends();
+        renderChatList();
+        renderChatHeader();
+      }
+      function unfriend(id) {
+        if (
+          confirm(
+            "Unfriend " +
+              nameOf(id) +
+              "? You won't be able to message each other any more.",
+          )
+        )
+          friendJob(function () {
+            return Server.removeFriend(id);
+          });
+      }
+      function block(id) {
+        if (
+          confirm(
+            "Block " +
+              nameOf(id) +
+              "? You stop being friends, and they can't message you or send you friend requests. They won't be told.",
+          )
+        )
+          friendJob(function () {
+            return Server.blockUser(id);
+          });
+      }
+
       // ----- Friends tab -----
       async function refreshFriends() {
         if (currentUser === null) return;
         try {
           friends = await Server.myFriends();
+          blocked = await Server.myBlocked();
         } catch (problem) {
           setChatStatus(friendlyError(problem));
           return;
+        }
+        await learnPeople(
+          friends.map(function (f) {
+            return f.id;
+          }),
+        );
+        for (const f of friends) {
+          if (f.state === "friends") onlineNow[f.id] = Boolean(f.online);
+          else delete onlineNow[f.id];
         }
         const incoming = friends.filter(function (f) {
           return f.state === "incoming";
@@ -6006,99 +7668,114 @@
           ["outgoing", "Waiting for them to accept"],
         ];
         for (const [state, heading] of groups) {
-          const people = friends.filter(function (f) {
+          const group = friends.filter(function (f) {
             return f.state === state;
           });
-          if (people.length === 0) continue;
-          const title = document.createElement("div");
-          title.textContent = heading;
-          title.style.cssText = "font-weight: bold; margin: 8px 0 2px 0";
-          list.appendChild(title);
-          for (const person of people) list.appendChild(friendRow(person));
+          if (group.length === 0) continue;
+          list.appendChild(sectionTitle(heading));
+          for (const person of group) list.appendChild(friendRow(person));
         }
-        if (friends.length === 0)
+        if (blocked.length > 0) {
+          list.appendChild(sectionTitle("Blocked"));
+          for (const person of blocked) {
+            const row = personLine(person.id, person.display_name, person.username);
+            row.appendChild(
+              smallButton("Unblock", function () {
+                friendJob(function () {
+                  return Server.unblockUser(person.id);
+                });
+              }),
+            );
+            list.appendChild(row);
+          }
+        }
+        if (friends.length === 0 && blocked.length === 0)
           list.textContent =
             "No friends yet. Type a friend's username above to send them a friend request.";
         renderChatHeader(); // the "Add a friend" list there might change
       }
 
+      function sectionTitle(text) {
+        const title = document.createElement("div");
+        title.textContent = text;
+        title.style.cssText = "font-weight: bold; margin: 8px 0 2px 0";
+        return title;
+      }
+
+      // A person's picture, name (or nickname) and @username
+      function personLine(id, displayName, username) {
+        const row = document.createElement("div");
+        row.style.cssText =
+          "display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 3px 0";
+        row.appendChild(avatarWithDot(id, 22));
+        const name = document.createElement("span");
+        name.textContent = nameOf(id, displayName);
+        row.appendChild(name);
+        const at = document.createElement("span");
+        at.textContent = "@" + username;
+        at.style.color = "#777";
+        row.appendChild(at);
+        return row;
+      }
+
       // One person in the Friends tab, with their buttons
       function friendRow(person) {
-        const row = document.createElement("div");
-        row.style.cssText = "padding: 3px 0";
-        const name = document.createElement("span");
-        name.textContent = person.display_name;
-        row.appendChild(name);
-        const username = document.createElement("span");
-        username.textContent = " @" + person.username;
-        username.style.color = "#777";
-        row.appendChild(username);
-
-        async function act(job) {
-          try {
-            await job();
-          } catch (problem) {
-            setChatStatus(friendlyError(problem));
-          }
-          refreshFriends();
-          refreshChats();
-        }
+        const row = personLine(person.id, person.display_name, person.username);
         if (person.state === "incoming") {
           row.appendChild(
             smallButton("✔ Accept", function () {
-              act(function () {
+              friendJob(function () {
                 return Server.acceptFriend(person.id);
               });
             }),
           );
           row.appendChild(
             smallButton("Decline", function () {
-              act(function () {
+              friendJob(function () {
                 return Server.removeFriend(person.id);
               });
             }),
           );
-        } else if (person.state === "friends") {
-          row.appendChild(
-            smallButton("💬 Message", async function () {
-              try {
-                const chatId = await Server.startDirectChat(person.id);
-                await refreshChats();
-                showChatTab("chats");
-                openChat(chatId);
-              } catch (problem) {
-                setChatStatus(friendlyError(problem));
-              }
-            }),
-          );
           row.appendChild(
             smallButton(
-              "Remove",
+              "🚫 Block",
               function () {
-                if (
-                  confirm(
-                    "Remove " +
-                      person.display_name +
-                      " from your friends? You won't be able to message each other.",
-                  )
-                )
-                  act(function () {
-                    return Server.removeFriend(person.id);
-                  });
+                block(person.id);
               },
               true,
             ),
           );
+        } else if (person.state === "friends") {
+          const chat = directChatWith(person.id);
+          if (chat && chat.muted) row.appendChild(document.createTextNode("🔕"));
+          row.appendChild(
+            dotsButton(function () {
+              return friendMenuItems(person.id);
+            }),
+          );
         } else {
           row.appendChild(
             smallButton("Cancel request", function () {
-              act(function () {
+              friendJob(function () {
                 return Server.removeFriend(person.id);
               });
             }),
           );
         }
         return row;
+      }
+
+      async function messageFriend(id) {
+        // No chat with them yet, and you already have 10? Say so
+        if (!directChatWith(id) && tooManyChats()) return;
+        try {
+          const chatId = await Server.startDirectChat(id);
+          await refreshChats();
+          showChatTab("chats");
+          openChat(chatId);
+        } catch (problem) {
+          setChatStatus(friendlyError(problem));
+        }
       }
 
       // Add a friend: send a request by username
@@ -6120,9 +7797,11 @@
           message.textContent = {
             sent: "Request sent! " + name + " will see it in their Friends tab.",
             accepted: "You're now friends with " + name + "!",
-            already: "You've already asked " + name + ", or you're already friends.",
+            already:
+              "You've already asked " + name + ", or you're already friends.",
             "not-found": "Nobody has the username " + name + ".",
             yourself: "That's you!",
+            blocked: "You blocked " + name + ". Unblock them first (below).",
             "too-many": "You've sent lots of requests. Try again later.",
           }[result];
           if (result === "sent" || result === "accepted") box.value = "";
@@ -6130,22 +7809,31 @@
         });
 
       // ----- Chats tab -----
-      function chatTitle(chat) {
-        if (chat.is_group) return chat.name;
-        const other = (chat.members || []).find(function (m) {
+      // The other person in a 1-to-1 chat
+      function otherPerson(chat) {
+        return (chat.members || []).find(function (m) {
           return m.id !== currentUser.id;
         });
-        return other ? other.display_name : "(nobody)";
+      }
+      function chatTitle(chat) {
+        if (chat.is_group) return chat.name;
+        const other = otherPerson(chat);
+        return other ? nameOf(other.id, other.display_name) : "(nobody)";
       }
 
-      // Is there a message you haven't read? (Not counting the open chat)
-      function isUnread(chat) {
-        return (
-          chat.id !== openChatId &&
-          chat.last_at !== null &&
-          chat.last_sender !== currentUser.id &&
-          new Date(chat.last_at) > new Date(chat.last_read_at)
-        );
+      // How many messages you haven't read (none for the open chat)
+      function unreadCount(chat) {
+        if (chat.id === openChatId) return 0;
+        return Number(chat.unread_count) || 0;
+      }
+
+      // What the last message was, in a few words
+      function lastMessageText(chat) {
+        if (chat.last_at === null) return "No messages yet";
+        const what =
+          chat.last_body ||
+          (chat.last_kind === "video" ? "🎬 Video" : "📷 Photo");
+        return (chat.last_sender === currentUser.id ? "You: " : "") + what;
       }
 
       async function refreshChats() {
@@ -6156,7 +7844,15 @@
           setChatStatus(friendlyError(problem));
           return;
         }
-        // Left the open group, or it's gone? Close it
+        const ids = [];
+        for (const chat of chats)
+          for (const member of chat.members || []) {
+            ids.push(member.id);
+            if (member.id !== currentUser.id && typeof member.online === "boolean")
+              onlineNow[member.id] = member.online;
+          }
+        await learnPeople(ids);
+        // Left the open chat, or it was deleted? Close it
         if (
           openChatId !== null &&
           !chats.some(function (c) {
@@ -6166,37 +7862,80 @@
           openChatId = null;
           document.getElementById("messageList").innerHTML = "";
         }
+        // New messages this device hasn't said it got yet? Say so now
+        // (that's what makes "Delivered" show for the sender)
+        for (const chat of chats) {
+          if (
+            chat.last_at !== null &&
+            chat.last_sender !== currentUser.id &&
+            new Date(chat.last_at) > new Date(chat.last_delivered_at)
+          ) {
+            chat.last_delivered_at = new Date().toISOString();
+            Server.markDelivered(chat.id).catch(function () {});
+          }
+        }
         renderChatList();
         renderChatHeader();
+        updateMessageMeta();
+      }
+
+      // You can be in up to 10 chats (the server checks this too)
+      const mostChats = 10;
+      function tooManyChats() {
+        if (chats.length < mostChats) return false;
+        setChatStatus(
+          "You can have up to " + mostChats + " chats. Delete or leave one first.",
+        );
+        return true;
       }
 
       function renderChatList() {
+        const count = document.getElementById("chatCount");
+        count.textContent = chats.length + " of " + mostChats + " chats";
+        count.style.color = chats.length >= mostChats ? "#cc0000" : "#777";
         const list = document.getElementById("chatList");
         list.innerHTML = "";
         let unread = 0;
         for (const chat of chats) {
           const row = document.createElement("div");
           row.className = "chatRow";
-          if (chat.id === openChatId) row.style.background = "#d6e4f7";
+          row.style.display = "flex";
+          row.style.gap = "6px";
+          row.style.alignItems = "center";
+          if (chat.id === openChatId) row.style.background = "#ffe6d8";
+          const other = otherPerson(chat);
+          if (!chat.is_group && other) row.appendChild(avatarWithDot(other.id, 26));
+          const words = document.createElement("div");
+          words.style.cssText = "min-width: 0; flex: 1";
           const title = document.createElement("div");
+          title.style.cssText = "overflow: hidden; text-overflow: ellipsis";
           title.textContent =
-            (chat.is_group ? "👥 " : "") + chatTitle(chat);
-          if (isUnread(chat)) {
-            unread++;
-            title.textContent = "● " + title.textContent;
+            (chat.is_group ? "👥 " : "") + chatTitle(chat) + (chat.muted ? " 🔕" : "");
+          const count = unreadCount(chat);
+          if (count > 0 && !chat.muted) {
+            unread += count;
             title.style.fontWeight = "bold";
           }
-          row.appendChild(title);
+          words.appendChild(title);
           // The last message, small and grey
           const last = document.createElement("div");
           last.style.cssText =
             "color: #777; font-size: 12px; overflow: hidden; text-overflow: ellipsis";
-          last.textContent =
-            chat.last_body === null
-              ? "No messages yet"
-              : (chat.last_sender === currentUser.id ? "You: " : "") +
-                chat.last_body;
-          row.appendChild(last);
+          last.textContent = lastMessageText(chat);
+          words.appendChild(last);
+          row.appendChild(words);
+          // The red circle (muted chats never get one)
+          if (count > 0 && !chat.muted) {
+            const circle = document.createElement("span");
+            circle.className = "unreadCount";
+            circle.textContent = count > 99 ? "99+" : String(count);
+            row.appendChild(circle);
+          }
+          row.appendChild(
+            dotsButton(function () {
+              return chatMenuItems(chat);
+            }),
+          );
           row.addEventListener("click", function () {
             openChat(chat.id);
           });
@@ -6205,57 +7944,97 @@
         if (chats.length === 0)
           list.innerHTML =
             '<div style="padding: 8px; color: #777">No chats yet.</div>';
-        document.getElementById("chatsBadge").textContent = unread || "";
+        document.getElementById("chatsBadge").textContent =
+          unread > 99 ? "99+" : unread || "";
       }
 
       // The open chat's top line: its name, who's in it, and buttons
       function renderChatHeader() {
+        if (currentUser === null) return;
         const header = document.getElementById("chatHeader");
+        const form = document.getElementById("messageForm");
         const chat = chats.find(function (c) {
           return c.id === openChatId;
         });
-        document.getElementById("messageForm").style.display = chat
-          ? "flex"
-          : "none";
+        const other = chat && !chat.is_group ? otherPerson(chat) : null;
+        const isBlocked =
+          other &&
+          blocked.some(function (b) {
+            return b.id === other.id;
+          });
+        // 1-to-1 chats only work while you're friends
+        const canSend = chat && (chat.is_group || (other && isFriend(other.id)));
+        form.style.display = canSend ? "flex" : "none";
         // Friends who could be added to this group
-        const canAdd = !chat || !chat.is_group
-          ? []
-          : friends.filter(function (f) {
-              return (
-                f.state === "friends" &&
-                !chat.members.some(function (m) {
-                  return m.id === f.id;
-                })
-              );
-            });
+        const canAdd =
+          !chat || !chat.is_group
+            ? []
+            : friends.filter(function (f) {
+                return (
+                  f.state === "friends" &&
+                  !chat.members.some(function (m) {
+                    return m.id === f.id;
+                  })
+                );
+              });
         // Nothing changed? Leave it alone (so an open list doesn't snap shut)
-        const key = JSON.stringify([chat && chat.id, chat && chat.members, canAdd]);
+        const key = JSON.stringify([
+          chat && chat.id,
+          chat && chat.muted,
+          other && onlineNow[other.id],
+          chat &&
+            chat.members.map(function (m) {
+              return m.id;
+            }),
+          canAdd,
+          canSend,
+          isBlocked,
+          nicknames,
+        ]);
         if (key === chatHeaderKey) return;
         chatHeaderKey = key;
         header.innerHTML = "";
 
         if (!chat) {
           header.textContent =
-            currentUser === null
-              ? "Log in to chat with your friends."
-              : "Pick a chat on the left, or go to 👥 Friends and press 💬 Message.";
+            "Pick a chat on the left, or go to 👥 Friends and press 💬 Message.";
           header.style.color = "#777";
           return;
         }
         header.style.color = "";
+        if (other) header.appendChild(avatarWithDot(other.id, 24));
         const title = document.createElement("b");
         title.textContent = chatTitle(chat);
         header.appendChild(title);
-        if (!chat.is_group) return;
 
-        // Groups: who's in it, add a friend, leave
+        if (chat.muted) header.appendChild(document.createTextNode("🔕"));
+        if (!chat.is_group) {
+          if (!(other && isFriend(other.id))) {
+            const note = document.createElement("span");
+            note.style.cssText = "color: #777; font-size: 12px";
+            note.textContent = isBlocked
+              ? "You blocked them, so you can't send messages here."
+              : "You're not friends any more, so you can't send messages here.";
+            header.appendChild(note);
+          }
+          const dots = dotsButton(function () {
+            return chatMenuItems(chat);
+          });
+          dots.style.marginLeft = "auto";
+          header.appendChild(dots);
+          return;
+        }
+
+        // Groups: who's in it, add a friend, leave, delete
         const who = document.createElement("span");
         who.style.cssText = "color: #777; font-size: 12px";
         who.textContent =
           "(" +
           chat.members
             .map(function (m) {
-              return m.id === currentUser.id ? "you" : m.display_name;
+              return m.id === currentUser.id
+                ? "you"
+                : nameOf(m.id, m.display_name);
             })
             .join(", ") +
           ")";
@@ -6270,7 +8049,7 @@
           for (const f of canAdd) {
             const option = document.createElement("option");
             option.value = f.id;
-            option.textContent = f.display_name;
+            option.textContent = nameOf(f.id, f.display_name);
             add.appendChild(option);
           }
           add.addEventListener("change", async function () {
@@ -6284,31 +8063,80 @@
           });
           header.appendChild(add);
         }
-        header.appendChild(
-          smallButton(
-            "Leave group",
-            async function () {
-              if (!confirm('Leave "' + chat.name + '"?')) return;
-              try {
-                await Server.leaveGroup(chat.id);
-              } catch (problem) {
-                setChatStatus(friendlyError(problem));
-                return;
-              }
-              openChatId = null;
-              document.getElementById("messageList").innerHTML = "";
-              refreshChats();
-            },
-            true,
-          ),
-        );
+        const dots = dotsButton(function () {
+          return chatMenuItems(chat);
+        });
+        dots.style.marginLeft = "auto";
+        header.appendChild(dots);
+      }
+
+      // Close the open chat (it was left or deleted)
+      function closeOpenChat() {
+        openChatId = null;
+        leaveChatChannel();
+        stopEditing();
+        document.getElementById("messageList").innerHTML = "";
+        refreshChats();
+      }
+
+      // Delete a chat with everything in it: its photos and videos first,
+      // then the chat (the database deletes its messages with it)
+      async function deleteWholeChat(chat) {
+        const what = chat.is_group ? "group" : "chat";
+        if (
+          !confirm(
+            "Delete this " +
+              what +
+              " and all its messages, photos and videos, for everyone in it? This can't be undone.",
+          )
+        )
+          return;
+        try {
+          await Server.removeChatFiles(await Server.chatFiles(chat.id));
+          await Server.deleteChat(chat.id);
+        } catch (problem) {
+          setChatStatus(friendlyError(problem));
+          return;
+        }
+        closeOpenChat();
+      }
+
+      // Leave a group. The last one out deletes it (and everything in it)
+      async function leaveGroup(chat) {
+        const last = chat.members.length === 1;
+        if (
+          !confirm(
+            last
+              ? 'You\'re the last one in "' +
+                  chat.name +
+                  '". Leaving deletes the group and all its messages. Leave?'
+              : 'Leave "' + chat.name + '"?',
+          )
+        )
+          return;
+        try {
+          if (last) await Server.removeChatFiles(await Server.chatFiles(chat.id));
+          await Server.leaveGroup(chat.id);
+        } catch (problem) {
+          setChatStatus(friendlyError(problem));
+          return;
+        }
+        closeOpenChat();
       }
 
       async function openChat(chatId) {
+        if (openChatId !== chatId) stopEditing();
         openChatId = chatId;
         shownMessages = new Set();
+        joinChatChannel(chatId);
         const list = document.getElementById("messageList");
         list.innerHTML = "";
+        // A reminder at the top of every chat
+        const note = document.createElement("div");
+        note.textContent = "🕒 Messages are deleted after 7 days.";
+        note.style.cssText =
+          "align-self: center; color: #999; font-size: 11px; margin: 2px 0 6px 0";
+        list.appendChild(note);
         renderChatList();
         renderChatHeader();
         let messages;
@@ -6337,7 +8165,71 @@
         if (chat) chat.last_read_at = new Date().toISOString();
       }
 
-      // Add one message bubble to the open chat.
+      // A photo or video in a message
+      function mediaElement(message) {
+        const holder = document.createElement("div");
+        holder.textContent =
+          message.file_kind === "video" ? "Loading video…" : "Loading photo…";
+        holder.style.cssText =
+          "font-size: 12px; color: #777; padding: 4px 0; max-width: 260px";
+        const mine = message.sender === currentUser.id;
+        getChatFile(message, mine).then(
+          function (address) {
+            let media;
+            if (message.file_kind === "video") {
+              media = document.createElement("video");
+              media.controls = true;
+              media.preload = "metadata";
+              media.playsInline = true;
+            } else {
+              media = document.createElement("img");
+              media.alt = "Photo";
+              media.style.cursor = "zoom-in";
+              media.title = "Open it full size";
+              media.addEventListener("click", function () {
+                window.open(address, "_blank", "noopener");
+              });
+            }
+            media.src = address;
+            media.style.display = "block";
+            media.style.maxWidth = "100%";
+            media.style.maxHeight = "220px";
+            media.style.borderRadius = "8px";
+            holder.textContent = "";
+            holder.appendChild(media);
+          },
+          function () {
+            holder.textContent =
+              (message.file_kind === "video" ? "🎬 Video" : "📷 Photo") +
+              " no longer available (it was only kept on the device that received it).";
+          },
+        );
+        return holder;
+      }
+
+      // The photo or video for a message, as an address the page can show.
+      // Uses the copy saved in this browser if there is one. Otherwise it
+      // downloads it, saves a copy, and tells the server you've got it.
+      // When everyone has it, it's deleted from the server.
+      async function getChatFile(message, mine) {
+        const path = message.file_path;
+        let file = await keptFile(path);
+        if (!file) {
+          file = await Server.downloadChatFile(path);
+          await keepFile(path, file);
+          if (!mine) {
+            try {
+              if (await Server.fileReceived(message.id))
+                await Server.removeChatFiles([path]);
+            } catch (problem) {
+              // It'll be deleted after 7 days anyway
+            }
+          }
+        }
+        return URL.createObjectURL(file);
+      }
+
+      // Add one message to the open chat.
       // textContent (not innerHTML) means a message is only ever shown as
       // text, so nobody can send a message that runs code on your computer
       function showMessage(message) {
@@ -6353,28 +8245,274 @@
         });
 
         const holder = document.createElement("div");
+        holder.dataset.messageId = message.id;
         holder.style.cssText =
           "display: flex; flex-direction: column; align-items: " +
           (mine ? "flex-end" : "flex-start");
-        // In groups, say who sent it
+        // In groups, say who sent it (with their picture)
         if (!mine && chat && chat.is_group) {
-          const sender = chat.members.find(function (m) {
-            return m.id === message.sender;
-          });
-          const name = document.createElement("div");
-          name.textContent = sender ? sender.display_name : "Someone";
-          name.style.cssText = "font-size: 11px; color: #777; margin-top: 4px";
-          holder.appendChild(name);
+          const from = document.createElement("div");
+          from.style.cssText =
+            "display: flex; align-items: center; gap: 4px; font-size: 11px; color: #777; margin-top: 4px";
+          from.appendChild(avatarElement(message.sender, 16));
+          from.appendChild(document.createTextNode(nameOf(message.sender)));
+          holder.appendChild(from);
         }
         const bubble = document.createElement("div");
         bubble.className = "bubble";
-        bubble.textContent = message.body;
-        bubble.style.background = mine ? "#1a73e8" : "#e4e6eb";
+        bubble.style.background = mine
+          ? "linear-gradient(135deg, #ff7e5f, #ff9f43)"
+          : "#fff0e6";
         bubble.style.color = mine ? "white" : "black";
         bubble.title = new Date(message.created_at).toLocaleString();
+        if (message.file_path) {
+          filesOfMessages[message.id] = message.file_path;
+          bubble.appendChild(mediaElement(message));
+        }
+        if (message.body) {
+          const words = document.createElement("div");
+          words.className = "words";
+          words.textContent = message.body;
+          bubble.appendChild(words);
+        }
         holder.appendChild(bubble);
+        // Small grey words under it: "Delivered", "Read", "Edited"
+        const meta = document.createElement("div");
+        meta.className = "metaLine";
+        holder.appendChild(meta);
+        holder.dataset.mine = mine ? "1" : "";
+        holder.dataset.time = message.created_at;
+        holder.dataset.edited = message.edited_at ? "1" : "";
+        shownMessageData[message.id] = message;
+        // Your own messages: hold down (or right-click) for Edit and Unsend
+        if (mine) addHoldMenu(bubble, message.id);
         list.appendChild(holder);
+        delete typingPeople[message.sender]; // they've sent it
+        showTyping();
+        updateMessageMeta();
         if (atBottom || mine) list.scrollTop = list.scrollHeight;
+      }
+
+      const shownMessageData = {}; // message id → the message (kept up to date)
+
+      // The grey words under messages. Your newest message says Sent,
+      // Delivered or Read (and "Edited" if you changed it). Any other
+      // message that was changed says "Edited"
+      function updateMessageMeta() {
+        const chat = chats.find(function (c) {
+          return c.id === openChatId;
+        });
+        const holders = Array.from(
+          document.querySelectorAll("#messageList [data-message-id]"),
+        );
+        const mine = holders.filter(function (h) {
+          return h.dataset.mine === "1";
+        });
+        const lastMine = mine[mine.length - 1];
+        for (const holder of holders) {
+          const parts = [];
+          if (holder === lastMine && chat) parts.push(deliveryStatus(chat, holder.dataset.time));
+          if (holder.dataset.edited === "1") parts.push("Edited");
+          holder.querySelector(".metaLine").textContent = parts.join(" · ");
+        }
+      }
+
+      // Has everyone else got / read a message sent at this time?
+      function deliveryStatus(chat, time) {
+        const sent = new Date(time);
+        const others = chat.members.filter(function (m) {
+          return m.id !== currentUser.id;
+        });
+        if (others.length === 0) return "Sent";
+        const readBy = others.filter(function (m) {
+          return new Date(m.last_read_at) >= sent;
+        }).length;
+        if (readBy === others.length) return "Read";
+        if (chat.is_group && readBy > 0) return "Read by " + readBy;
+        const gotIt = others.every(function (m) {
+          return new Date(m.last_delivered_at) >= sent;
+        });
+        return gotIt ? "Delivered" : "Sent";
+      }
+
+      // Hold down on your message (or right-click it) to get Edit and Unsend
+      function addHoldMenu(bubble, messageId) {
+        // Stop phones selecting the words or showing their own menu
+        bubble.style.userSelect = "none";
+        bubble.style.webkitUserSelect = "none";
+        bubble.style.webkitTouchCallout = "none";
+        bubble.style.cursor = "pointer";
+        let timer = null;
+        let startX = 0;
+        let startY = 0;
+        function open() {
+          const message = shownMessageData[messageId];
+          if (!message) return;
+          const items = [];
+          if (message.body)
+            items.push({ label: "✏ Edit", action: function () { startEditing(message); } });
+          items.push({ label: "Unsend", red: true, action: function () { unsendMessage(message); } });
+          showMenu(bubble, items);
+        }
+        bubble.addEventListener("pointerdown", function (event) {
+          startX = event.clientX;
+          startY = event.clientY;
+          clearTimeout(timer);
+          timer = setTimeout(open, 500); // held for half a second
+        });
+        bubble.addEventListener("pointermove", function (event) {
+          if (Math.hypot(event.clientX - startX, event.clientY - startY) > 8)
+            clearTimeout(timer); // it's a scroll, not a hold
+        });
+        for (const what of ["pointerup", "pointerleave", "pointercancel"])
+          bubble.addEventListener(what, function () {
+            clearTimeout(timer);
+          });
+        bubble.addEventListener("contextmenu", function (event) {
+          event.preventDefault(); // our menu instead of the browser's
+          open();
+        });
+      }
+
+      // ----- Editing a message -----
+      let editingMessage = null; // the message being edited (or null)
+      function startEditing(message) {
+        editingMessage = message;
+        const box = document.getElementById("messageInput");
+        box.value = message.body;
+        document.getElementById("editBar").style.display = "flex";
+        box.focus();
+        sendTyping();
+      }
+      function stopEditing() {
+        if (editingMessage === null) return;
+        editingMessage = null;
+        document.getElementById("editBar").style.display = "none";
+        document.getElementById("messageInput").value = "";
+        sendTyping();
+      }
+      // A message was edited (by you, or the server told us)
+      function applyEdit(message) {
+        const known = shownMessageData[message.id];
+        if (known) {
+          known.body = message.body;
+          known.edited_at = message.edited_at;
+          const holder = document.querySelector(
+            '#messageList [data-message-id="' + Number(message.id) + '"]',
+          );
+          if (holder) {
+            const words = holder.querySelector(".words");
+            if (words) words.textContent = message.body;
+            holder.dataset.edited = "1";
+          }
+          updateMessageMeta();
+        }
+        soon(refreshChats); // the chat list shows the newest words
+      }
+
+      // ----- "Alex is typing…" -----
+      let chatLink = null; // the open chat's typing channel
+      const typingPeople = {}; // who's typing: id → { mode, until }
+      let lastTypingSent = 0;
+      let typingSentMode = "stopped";
+
+      function joinChatChannel(chatId) {
+        leaveChatChannel();
+        try {
+          chatLink = Server.joinChat(chatId, {
+            typing: function (payload) {
+              if (!payload || typeof payload.id !== "string") return;
+              if (payload.mode === "typing" || payload.mode === "editing")
+                typingPeople[payload.id] = { mode: payload.mode, until: Date.now() + 5000 };
+              else delete typingPeople[payload.id];
+              showTyping();
+            },
+          });
+        } catch (problem) {
+          chatLink = null; // no typing signs, but chat still works
+        }
+      }
+      function leaveChatChannel() {
+        if (chatLink) chatLink.stop();
+        chatLink = null;
+        for (const id in typingPeople) delete typingPeople[id];
+        lastTypingSent = 0;
+        typingSentMode = "stopped";
+        showTyping();
+      }
+
+      // Tell the others what you're doing: "typing", "editing" or "stopped".
+      // While you type, it's sent every 2 seconds at most
+      function sendTyping() {
+        if (!chatLink || currentUser === null) return;
+        const box = document.getElementById("messageInput");
+        const mode =
+          box.value.trim() === "" ? "stopped" : editingMessage ? "editing" : "typing";
+        const now = Date.now();
+        if (mode === typingSentMode && (mode === "stopped" || now - lastTypingSent < 2000))
+          return;
+        typingSentMode = mode;
+        lastTypingSent = now;
+        chatLink.send({ id: currentUser.id, mode });
+      }
+      document.getElementById("messageInput").addEventListener("input", sendTyping);
+      document.getElementById("messageInput").addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && editingMessage) stopEditing();
+      });
+
+      // Show who's typing, right above the message box
+      function showTyping() {
+        const now = Date.now();
+        const typing = [];
+        const editing = [];
+        for (const id in typingPeople) {
+          if (typingPeople[id].until < now) {
+            delete typingPeople[id];
+            continue;
+          }
+          (typingPeople[id].mode === "editing" ? editing : typing).push(nameOf(id));
+        }
+        function say(names, doing) {
+          if (names.length === 0) return "";
+          if (names.length === 1) return names[0] + " is " + doing + "…";
+          return names.slice(0, -1).join(", ") + " and " + names[names.length - 1] + " are " + doing + "…";
+        }
+        document.getElementById("typingNote").textContent = [say(typing, "typing"), say(editing, "editing")]
+          .filter(Boolean)
+          .join(" · ");
+      }
+      setInterval(showTyping, 1000); // so it goes away when they stop
+
+      const filesOfMessages = {}; // message id → its file's path (for unsending)
+
+      // Unsend: delete your message (and its photo or video) for everyone
+      async function unsendMessage(message) {
+        if (!confirm("Unsend this message? It disappears for everyone.")) return;
+        try {
+          if (message.file_path) {
+            // (It might already be gone from the server, if everyone has it)
+            await Server.removeChatFiles([message.file_path]).catch(function () {});
+          }
+          await Server.unsendMessage(message.id);
+        } catch (problem) {
+          setChatStatus(friendlyError(problem));
+          return;
+        }
+        onUnsentMessage({ id: message.id });
+      }
+
+      // A message was unsent (by you, or someone else)
+      function onUnsentMessage(old) {
+        const shown = document.querySelector(
+          '#messageList [data-message-id="' + Number(old.id) + '"]',
+        );
+        if (shown) shown.remove();
+        delete shownMessageData[Number(old.id)];
+        if (editingMessage && editingMessage.id === Number(old.id)) stopEditing();
+        updateMessageMeta();
+        const path = filesOfMessages[Number(old.id)];
+        if (path) forgetFile(path); // and the copy saved in this browser
+        soon(refreshChats);
       }
 
       // The server told us about a new message
@@ -6394,9 +8532,25 @@
           const box = document.getElementById("messageInput");
           const body = box.value.trim();
           if (body === "" || openChatId === null) return;
+          // Editing a message? Save the new words instead of sending
+          if (editingMessage) {
+            const message = editingMessage;
+            if (body !== message.body) {
+              try {
+                await Server.editMessage(message.id, body);
+              } catch (problem) {
+                setChatStatus(friendlyError(problem));
+                return;
+              }
+              applyEdit({ id: message.id, body, edited_at: new Date().toISOString() });
+            }
+            stopEditing();
+            return;
+          }
           box.value = "";
+          sendTyping(); // "stopped"
           try {
-            showMessage(await Server.sendMessage(openChatId, body));
+            showMessage(await Server.sendMessage(openChatId, body, null));
             soon(refreshChats);
           } catch (problem) {
             box.value = body; // put it back, so it isn't lost
@@ -6404,8 +8558,174 @@
           }
         });
 
+      // ----- Sending photos and videos -----
+      const videoEndings = {
+        "video/mp4": "mp4",
+        "video/webm": "webm",
+        "video/quicktime": "mov",
+      };
+      const biggestVideo = 5 * 1024 * 1024; // 5 MB
+      const biggestPhoto = 1024 * 1024; // 1 MB
+
+      // Shrink a photo so it's at most 1 MB: at most 1280 pixels across,
+      // saved as JPG (see-through parts become white). If it's still too
+      // big, try lower quality, then smaller. Gives back { file, ending }
+      function shrinkPhoto(file) {
+        return new Promise(function (resolve, reject) {
+          const address = URL.createObjectURL(file);
+          const img = new Image();
+          img.onload = async function () {
+            URL.revokeObjectURL(address);
+            const tries = [
+              [1280, 0.85],
+              [1280, 0.7],
+              [1024, 0.7],
+              [800, 0.65],
+              [600, 0.6],
+            ];
+            for (const [longest, quality] of tries) {
+              const scale = Math.min(1, longest / Math.max(img.width, img.height));
+              const small = document.createElement("canvas");
+              small.width = Math.max(1, Math.round(img.width * scale));
+              small.height = Math.max(1, Math.round(img.height * scale));
+              const p = small.getContext("2d");
+              p.fillStyle = "white"; // JPG can't be see-through
+              p.fillRect(0, 0, small.width, small.height);
+              p.drawImage(img, 0, 0, small.width, small.height);
+              const blob = await new Promise(function (done) {
+                small.toBlob(done, "image/jpeg", quality);
+              });
+              if (blob && blob.size <= biggestPhoto) {
+                resolve({ file: blob, ending: "jpg" });
+                return;
+              }
+            }
+            reject(new Error("Sorry, that photo is too big to send, even after shrinking it."));
+          };
+          img.onerror = function () {
+            URL.revokeObjectURL(address);
+            reject(new Error("Sorry, that photo can't be opened. Try a JPG or PNG."));
+          };
+          img.src = address;
+        });
+      }
+
+      async function sendChatFile(file) {
+        if (openChatId === null) {
+          setChatStatus("Open a chat first, then send the photo or video.");
+          return;
+        }
+        const chatId = openChatId;
+        let upload = file;
+        let ending;
+        let kind;
+        if (file.type.startsWith("image/")) {
+          kind = "image";
+        } else if (videoEndings[file.type]) {
+          kind = "video";
+          ending = videoEndings[file.type];
+          if (file.size > biggestVideo) {
+            setChatStatus("Videos can be up to 5 MB. That one is too big.");
+            return;
+          }
+        } else {
+          setChatStatus("You can send photos, and videos that are MP4, WebM or MOV.");
+          return;
+        }
+        setChatStatus(kind === "video" ? "Sending video…" : "Sending photo…", true);
+        try {
+          if (kind === "image") {
+            const shrunk = await shrinkPhoto(file);
+            upload = shrunk.file;
+            ending = shrunk.ending;
+          }
+          const path = await Server.uploadChatFile(chatId, upload, ending);
+          await keepFile(path, upload); // your own copy, in this browser
+          try {
+            showMessage(await Server.sendMessage(chatId, "", { path, kind }));
+          } catch (problem) {
+            Server.removeChatFiles([path]).catch(function () {}); // don't leave it lying around
+            throw problem;
+          }
+          setChatStatus("");
+          soon(refreshChats);
+        } catch (problem) {
+          setChatStatus(friendlyError(problem));
+        }
+      }
+
+      // 📎 button
+      document
+        .getElementById("chatFileInput")
+        .addEventListener("change", function () {
+          const file = this.files[0];
+          this.value = ""; // so picking the same file again still works
+          if (file) sendChatFile(file);
+        });
+
+      // A picture from a website, as a file we can send
+      function webPictureToFile(address) {
+        return new Promise(function (resolve, reject) {
+          const img = new Image();
+          if (!address.startsWith("data:")) img.crossOrigin = "anonymous";
+          img.onload = function () {
+            const copy = document.createElement("canvas");
+            copy.width = img.naturalWidth;
+            copy.height = img.naturalHeight;
+            copy.getContext("2d").drawImage(img, 0, 0);
+            copy.toBlob(function (blob) {
+              if (blob) resolve(new File([blob], "picture.png", { type: "image/png" }));
+              else reject(new Error("web-picture"));
+            }, "image/png");
+          };
+          img.onerror = function () {
+            reject(new Error("web-picture"));
+          };
+          img.src = address;
+        });
+      }
+
+      // Drag a photo or video into the chat (from your computer or a website)
+      const chatDropBox = document.getElementById("chatsView");
+      chatDropBox.addEventListener("dragover", function (event) {
+        if (!isDraggingPicture(event)) return;
+        event.preventDefault(); // = "yes, you can drop here"
+        event.dataTransfer.dropEffect = "copy";
+        chatDropBox.style.outline = "3px dashed #ff7e5f";
+        chatDropBox.style.outlineOffset = "-4px";
+      });
+      chatDropBox.addEventListener("dragleave", function (event) {
+        if (!chatDropBox.contains(event.relatedTarget))
+          chatDropBox.style.outline = "";
+      });
+      chatDropBox.addEventListener("drop", async function (event) {
+        if (!isDraggingPicture(event)) return;
+        event.preventDefault();
+        chatDropBox.style.outline = "";
+        const file = Array.from(event.dataTransfer.files).find(function (f) {
+          return f.type.startsWith("image/") || f.type.startsWith("video/");
+        });
+        if (file) {
+          sendChatFile(file);
+          return;
+        }
+        const address = droppedPictureAddress(event.dataTransfer);
+        if (!address) {
+          setChatStatus("That isn't a photo or video.");
+          return;
+        }
+        try {
+          sendChatFile(await webPictureToFile(address));
+        } catch (problem) {
+          setChatStatus(
+            "That website won't let Sunrise copy its picture. Save it first, then drag the saved file in.",
+          );
+        }
+      });
+
       // ＋ New group
       function openGroupDialog() {
+        if (tooManyChats()) return;
         const list = document.getElementById("groupFriends");
         list.innerHTML = "";
         const myFriends = friends.filter(function (f) {
@@ -6415,12 +8735,14 @@
           list.textContent = "Add some friends first (in the 👥 Friends tab).";
         for (const f of myFriends) {
           const label = document.createElement("label");
-          label.style.cssText = "display: block; padding: 3px 0";
+          label.style.cssText =
+            "display: flex; align-items: center; gap: 6px; padding: 3px 0";
           const tick = document.createElement("input");
           tick.type = "checkbox";
           tick.value = f.id;
           label.appendChild(tick);
-          label.appendChild(document.createTextNode(" " + f.display_name));
+          label.appendChild(avatarElement(f.id, 20));
+          label.appendChild(document.createTextNode(nameOf(f.id, f.display_name)));
           list.appendChild(label);
         }
         document.getElementById("groupName").value = "";
@@ -6460,6 +8782,677 @@
           showChatTab("chats");
           openChat(chatId);
         });
+
+      // ===== Sharing drawings with friends =====
+      // 📤 Share: the owner picks friends. They get it in their 📥 Inbox
+      // (on their home page). Once they say yes, you can draw it together.
+      let sharingId = null; // the drawing the Share panel is for
+      async function openShareDialog(drawingId) {
+        if (!drawingId) return;
+        sharingId = drawingId;
+        const dialog = document.getElementById("shareDialog");
+        const list = document.getElementById("shareFriends");
+        const message = document.getElementById("shareMessage");
+        message.textContent = "";
+        list.textContent = "Loading…";
+        dialog.showModal();
+        let drawing;
+        let members;
+        try {
+          drawing = await Server.getDrawing(drawingId);
+          members = await Server.drawingMembers(drawingId);
+        } catch (problem) {
+          list.textContent = friendlyError(problem);
+          return;
+        }
+        if (!drawing) {
+          list.textContent = "This drawing isn't saved yet. Try again in a moment.";
+          return;
+        }
+        await learnPeople(
+          members
+            .map(function (m) {
+              return m.user_id;
+            })
+            .concat([drawing.owner]),
+        );
+        const mine = drawing.owner === currentUser.id;
+        document.getElementById("shareTitle").textContent =
+          'Share "' + drawing.title + '"';
+        document.getElementById("shareSubmit").style.display = mine ? "" : "none";
+        document.getElementById("shareIntro").textContent = mine
+          ? "Tick friends to draw this together. They'll get it in their 📥 Inbox."
+          : "Shared with you by " +
+            nameOf(drawing.owner) +
+            ". Only they can share it with more people.";
+        list.innerHTML = "";
+
+        // Everyone it's shared with already
+        const statusOf = {};
+        for (const m of members) statusOf[m.user_id] = m.status;
+        for (const m of members) {
+          if (m.user_id === currentUser.id) continue;
+          const row = personLine(
+            m.user_id,
+            nameOf(m.user_id),
+            (people[m.user_id] && people[m.user_id].username) || "",
+          );
+          const state = document.createElement("span");
+          state.style.cssText = "color: #777; font-size: 12px";
+          state.textContent =
+            m.status === "accepted" ? "✓ Shared" : "⏳ Waiting for them";
+          row.appendChild(state);
+          if (mine)
+            row.appendChild(
+              smallButton(
+                "Stop sharing",
+                async function () {
+                  try {
+                    await Server.removeDrawingMember(drawingId, m.user_id);
+                  } catch (problem) {
+                    message.textContent = friendlyError(problem);
+                    return;
+                  }
+                  openShareDialog(drawingId); // show the new list
+                },
+                true,
+              ),
+            );
+          list.appendChild(row);
+        }
+        if (!mine) {
+          // The owner too, and a way to leave
+          list.insertBefore(
+            personLine(drawing.owner, nameOf(drawing.owner), (people[drawing.owner] || {}).username || ""),
+            list.firstChild,
+          );
+          const leave = smallButton(
+            "Leave this drawing",
+            function () {
+              leaveDrawing(drawingId);
+            },
+            true,
+          );
+          leave.style.marginTop = "10px";
+          list.appendChild(leave);
+          return;
+        }
+
+        // Friends it isn't shared with yet: a tick box each
+        const notYet = friends.filter(function (f) {
+          return f.state === "friends" && !statusOf[f.id];
+        });
+        if (notYet.length > 0) list.appendChild(sectionTitle("Your friends"));
+        for (const f of notYet) {
+          const label = document.createElement("label");
+          label.style.cssText =
+            "display: flex; align-items: center; gap: 6px; padding: 3px 0";
+          const tick = document.createElement("input");
+          tick.type = "checkbox";
+          tick.value = f.id;
+          label.appendChild(tick);
+          label.appendChild(avatarElement(f.id, 20));
+          label.appendChild(document.createTextNode(nameOf(f.id, f.display_name)));
+          list.appendChild(label);
+        }
+        if (notYet.length === 0 && members.length === 0)
+          list.textContent =
+            "Add some friends first (in the 👥 Friends tab of the chat panel).";
+      }
+
+      document
+        .getElementById("shareForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+          const message = document.getElementById("shareMessage");
+          const ids = Array.from(
+            document.querySelectorAll("#shareFriends input:checked"),
+            function (tick) {
+              return tick.value;
+            },
+          );
+          if (ids.length === 0) {
+            message.style.color = "#cc0000";
+            message.textContent = "Tick at least one friend.";
+            return;
+          }
+          // Make sure the latest version is saved before they open it
+          if (currentDrawing && currentDrawing.id === sharingId) await saveNow();
+          try {
+            await Server.shareDrawing(sharingId, ids);
+          } catch (problem) {
+            message.style.color = "#cc0000";
+            message.textContent = friendlyError(problem);
+            return;
+          }
+          await openShareDialog(sharingId);
+          message.style.color = "#1a7f37";
+          message.textContent =
+            "Sent! They'll see it in their 📥 Inbox on the home page.";
+        });
+
+      // Leave a drawing someone shared with you
+      async function leaveDrawing(drawingId) {
+        if (
+          !confirm(
+            "Leave this drawing? It goes from your drawings. The owner can share it with you again.",
+          )
+        )
+          return;
+        try {
+          await Server.removeDrawingMember(drawingId, currentUser.id);
+        } catch (problem) {
+          document.getElementById("shareMessage").textContent =
+            friendlyError(problem);
+          return;
+        }
+        document.getElementById("shareDialog").close();
+        if (currentDrawing && currentDrawing.id === drawingId) {
+          stopLive();
+          currentDrawing = null;
+          await showHome();
+        } else {
+          await refreshDrawingList();
+        }
+      }
+
+      // ----- 📥 Inbox (on the home page) -----
+      async function refreshInbox() {
+        if (currentUser === null) return;
+        let invites;
+        try {
+          invites = await Server.myInbox();
+        } catch (problem) {
+          return;
+        }
+        await learnPeople(
+          invites.map(function (i) {
+            return i.from_id;
+          }),
+        );
+        const list = document.getElementById("inboxList");
+        list.innerHTML = "";
+        document.getElementById("inboxBox").style.display =
+          invites.length > 0 ? "" : "none";
+        document.getElementById("inboxBadge").textContent = invites.length || "";
+        for (const invite of invites) {
+          const card = document.createElement("div");
+          card.style.cssText =
+            "display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background: white; border: 1px solid #ccc; border-radius: 8px; padding: 8px";
+          const picture = document.createElement("img");
+          picture.alt = "";
+          if (String(invite.thumbnail).startsWith("data:image/"))
+            picture.src = invite.thumbnail;
+          picture.style.cssText =
+            "width: 80px; height: 56px; object-fit: contain; background: #eee; border-radius: 4px";
+          card.appendChild(picture);
+          if (invite.from_id) card.appendChild(avatarElement(invite.from_id, 28));
+          const words = document.createElement("div");
+          words.style.cssText = "flex: 1; min-width: 160px";
+          const who = document.createElement("b");
+          who.textContent = nameOf(invite.from_id, invite.from_name || "Someone");
+          words.appendChild(who);
+          words.appendChild(
+            document.createTextNode(' wants to draw "' + invite.title + '" with you.'),
+          );
+          card.appendChild(words);
+          const answer = async function (yes) {
+            try {
+              await Server.answerShare(invite.drawing_id, yes);
+            } catch (problem) {
+              document.getElementById("homeMessage").textContent =
+                friendlyError(problem);
+            }
+            refreshInbox();
+            refreshDrawingList();
+          };
+          card.appendChild(
+            smallButton("✔ Accept", function () {
+              answer(true);
+            }),
+          );
+          card.appendChild(
+            smallButton("Decline", function () {
+              answer(false);
+            }),
+          );
+          list.appendChild(card);
+        }
+      }
+
+      // ===== Drawing together, live =====
+      // Everyone who has a shared drawing open joins its own private
+      // channel. After every change (each time Undo takes a snapshot), we
+      // work out what's different and send just that:
+      //   items    = the text boxes, shapes and photos that changed (or null = deleted)
+      //   order    = which items are in front of which
+      //   patch    = the part of the brush drawing that changed, as a small picture
+      //   pictures = photos and stickers the others haven't got yet
+      // Everyone else puts those changes onto their own screen.
+      // Too big to send (like a huge photo)? We save first, then send
+      // "refresh", and the others load the saved drawing instead.
+      let live = null; // { drawingId, link, people, lastItems, lastPixels, lastImage, lastLineEnds, lastTitle, sentPictures }
+      let applyingRemote = false; // true while putting someone else's change on screen
+      const biggestLiveMessage = 200000; // characters (Supabase's limit is about 256 KB)
+
+      // Changes that arrive while you're pressing (drawing, dragging) wait
+      // until you let go, so they don't get mixed up with yours
+      let pointerBusy = false;
+      const waitingChanges = [];
+      document.addEventListener(
+        "pointerdown",
+        function () {
+          pointerBusy = true;
+        },
+        true,
+      );
+      for (const what of ["pointerup", "pointercancel"]) {
+        window.addEventListener(
+          what,
+          function () {
+            pointerBusy = false;
+            setTimeout(applyWaitingChanges, 0); // after your own change is saved
+          },
+          true,
+        );
+      }
+
+      // A new, random name for an item, so everyone can tell which is which
+      function newItemId() {
+        return "i" + randomText().slice(0, 10);
+      }
+
+      // Every item, written down: id → its data as text
+      function itemsNow() {
+        const items = new Map();
+        for (const item of document.querySelectorAll(".canvasItem"))
+          items.set(item.dataset.id, JSON.stringify(itemToData(item)));
+        return items;
+      }
+
+      function canvasPixels() {
+        return pen.getImageData(0, 0, canvas.width, canvas.height);
+      }
+
+      function startLive(drawingId) {
+        stopLive();
+        if (currentUser === null) return;
+        live = {
+          drawingId,
+          people: [],
+          sentPictures: new Set(),
+          othersWhenJoined: null, // how many were already here when you came
+          changedSinceJoining: false, // drawn anything, or got anything, yet?
+        };
+        rememberLiveState();
+        try {
+          live.link = Server.joinDrawing(drawingId, currentUser, {
+            change: function (payload) {
+              waitingChanges.push(payload);
+              if (!pointerBusy) applyWaitingChanges();
+            },
+            people: showEditingNow,
+            status: function (status) {
+              // Just joined, and someone else was already here? They save
+              // when they see you arrive, so load that in a moment (but
+              // only if nothing has changed here since, so nothing is lost)
+              if (status === "SUBSCRIBED")
+                setTimeout(function () {
+                  if (
+                    live &&
+                    live.drawingId === drawingId &&
+                    live.othersWhenJoined > 0 &&
+                    !live.changedSinceJoining
+                  )
+                    catchUp();
+                }, 3000);
+            },
+          });
+        } catch (problem) {
+          live = null; // can't draw together right now, but you can still draw
+        }
+      }
+
+      function stopLive() {
+        if (live && live.link) live.link.stop();
+        live = null;
+        waitingChanges.length = 0;
+        document.getElementById("editingNow").innerHTML = "";
+      }
+
+      // Remember how everything looks now, to compare with next time
+      function rememberLiveState() {
+        if (!live) return;
+        live.lastItems = itemsNow();
+        live.lastOrder = Array.from(live.lastItems.keys()).join(",");
+        live.lastPixels = canvasPixels();
+        live.lastImage = lastImage;
+        live.lastLineEnds = JSON.stringify(lineEnds);
+        live.lastTitle = currentDrawing ? currentDrawing.title : "";
+      }
+
+      // The small "who's editing" sign next to the drawing's name
+      async function showEditingNow(list) {
+        if (!live) return;
+        const before = live.people.map(function (p) {
+          return p.id;
+        });
+        live.people = list;
+        if (live.othersWhenJoined === null) live.othersWhenJoined = list.length;
+        // Someone new arrived? Save, so they get the very latest version
+        if (
+          list.some(function (p) {
+            return !before.includes(p.id);
+          })
+        )
+          saveNow();
+        await learnPeople(
+          list.map(function (p) {
+            return p.id;
+          }),
+        );
+        const sign = document.getElementById("editingNow");
+        sign.innerHTML = "";
+        if (list.length === 0) return;
+        for (const person of list.slice(0, 4)) {
+          const face = avatarElement(person.id, 20);
+          face.title = nameOf(person.id, person.name) + " is editing";
+          face.style.outline = "2px solid #1a7f37";
+          sign.appendChild(face);
+        }
+        const first = nameOf(list[0].id, list[0].name);
+        sign.appendChild(
+          document.createTextNode(
+            list.length === 1
+              ? first + " is editing"
+              : first + " and " + (list.length - 1) + " more are editing",
+          ),
+        );
+      }
+
+      // Work out what changed, and send it to everyone else
+      function sendLiveChanges() {
+        if (!live || !live.link || applyingRemote) return;
+        const payload = {};
+        const now = itemsNow();
+        const changed = {};
+        let anyItems = false;
+        for (const [id, text] of now) {
+          if (live.lastItems.get(id) !== text) {
+            changed[id] = JSON.parse(text);
+            anyItems = true;
+          }
+        }
+        for (const id of live.lastItems.keys()) {
+          if (!now.has(id)) {
+            changed[id] = null;
+            anyItems = true;
+          }
+        }
+        const order = Array.from(now.keys()).join(",");
+        if (anyItems || order !== live.lastOrder) {
+          payload.items = changed;
+          payload.order = Array.from(now.keys());
+          // Photos and stickers the others haven't been sent yet
+          const pictures = {};
+          for (const id in changed) {
+            const data = changed[id];
+            if (data && data.kind === "image" && !live.sentPictures.has(data.picture))
+              pictures[data.picture] = pictureStore[data.picture];
+          }
+          if (Object.keys(pictures).length > 0) payload.pictures = pictures;
+        }
+        const ends = JSON.stringify(lineEnds);
+        if (ends !== live.lastLineEnds) payload.lineEnds = ends;
+        if (lastImage !== live.lastImage) {
+          const patch = changedPart();
+          if (patch) payload.patch = patch;
+        }
+        live.lastItems = now;
+        live.lastOrder = order;
+        live.lastLineEnds = ends;
+        live.lastImage = lastImage;
+        if (Object.keys(payload).length === 0) return; // nothing to send
+        live.changedSinceJoining = true;
+
+        if (JSON.stringify(payload).length > biggestLiveMessage) {
+          // Too big: save it, then tell the others to load the saved one
+          const link = live.link;
+          saveNow().then(function () {
+            link.send({ refresh: true });
+          });
+        } else {
+          live.link.send(payload);
+        }
+        for (const name in payload.pictures || {}) live.sentPictures.add(name);
+      }
+
+      // Send a new drawing name
+      function sendLiveTitle() {
+        if (!live || !live.link || !currentDrawing) return;
+        if (currentDrawing.title === live.lastTitle) return;
+        live.lastTitle = currentDrawing.title;
+        live.link.send({ title: currentDrawing.title });
+      }
+
+      // The part of the brush drawing that changed since last time: the
+      // smallest box round every pixel that's different, as a picture
+      function changedPart() {
+        const now = canvasPixels();
+        const before = live.lastPixels;
+        live.lastPixels = now;
+        const w = now.width;
+        const h = now.height;
+        let left = w;
+        let top = h;
+        let right = -1;
+        let bottom = -1;
+        if (!before || before.width !== w || before.height !== h) {
+          left = 0;
+          top = 0;
+          right = w - 1;
+          bottom = h - 1;
+        } else {
+          // Compare 4 bytes (one whole pixel) at a time, which is quick
+          const a = new Uint32Array(now.data.buffer);
+          const b = new Uint32Array(before.data.buffer);
+          for (let y = 0; y < h; y++) {
+            const row = y * w;
+            for (let x = 0; x < w; x++) {
+              if (a[row + x] !== b[row + x]) {
+                if (x < left) left = x;
+                if (x > right) right = x;
+                if (y < top) top = y;
+                bottom = y;
+              }
+            }
+          }
+        }
+        if (right < 0) return null; // nothing changed
+        const width = right - left + 1;
+        const height = bottom - top + 1;
+        const piece = document.createElement("canvas");
+        piece.width = width;
+        piece.height = height;
+        piece.getContext("2d").putImageData(now, -left, -top, left, top, width, height);
+        return { x: left, y: top, image: piece.toDataURL("image/png") };
+      }
+
+      async function applyWaitingChanges() {
+        while (waitingChanges.length > 0 && !pointerBusy) {
+          await applyChange(waitingChanges.shift());
+        }
+      }
+
+      // Put someone else's change onto your screen.
+      // (It comes from a friend's browser, so check it looks right first)
+      async function applyChange(payload) {
+        if (!live || !payload || typeof payload !== "object") return;
+        live.changedSinceJoining = true;
+        if (payload.refresh) {
+          await catchUp();
+          return;
+        }
+        if (typeof payload.title === "string" && currentDrawing) {
+          const title = payload.title.slice(0, 60) || "Untitled drawing";
+          currentDrawing.title = title;
+          live.lastTitle = title;
+          if (document.activeElement.id !== "drawingTitle")
+            document.getElementById("drawingTitle").value = title;
+          return;
+        }
+        applyingRemote = true;
+        try {
+          for (const name in payload.pictures || {}) {
+            const picture = payload.pictures[name];
+            if (typeof picture === "string" && picture.startsWith("data:image/"))
+              pictureStore[name] = picture;
+          }
+          if (payload.patch) await applyPatch(payload.patch);
+          if (payload.items && typeof payload.items === "object")
+            applyItems(payload.items, payload.order);
+          if (typeof payload.lineEnds === "string") {
+            try {
+              const ends = JSON.parse(payload.lineEnds);
+              lineEnds.length = 0;
+              for (const end of ends) lineEnds.push(end);
+            } catch (problem) {
+              // ignore odd line ends
+            }
+          }
+          afterRemoteChange();
+          // A photo we haven't got? Get it from the saved drawing in a moment
+          for (const item of document.querySelectorAll(".imageItem")) {
+            if (!pictureStore[item.dataset.picture]) {
+              setTimeout(fetchMissingPictures, 2500);
+              break;
+            }
+          }
+        } finally {
+          applyingRemote = false;
+        }
+      }
+
+      // Paint a changed part of the brush drawing
+      function applyPatch(patch) {
+        return new Promise(function (resolve) {
+          if (typeof patch.image !== "string" || !patch.image.startsWith("data:image/png")) {
+            resolve();
+            return;
+          }
+          const img = new Image();
+          img.onload = function () {
+            const x = Math.max(0, Math.round(Number(patch.x)) || 0);
+            const y = Math.max(0, Math.round(Number(patch.y)) || 0);
+            const sizeBefore = canvas.width + "x" + canvas.height;
+            fitCanvas(x + img.width, y + img.height);
+            if (canvas.width + "x" + canvas.height !== sizeBefore) setPen();
+            pen.save();
+            pen.globalCompositeOperation = "source-over"; // even if you're using the eraser
+            pen.clearRect(x, y, img.width, img.height);
+            pen.drawImage(img, x, y);
+            pen.restore();
+            canvasChanged = true;
+            resolve();
+          };
+          img.onerror = resolve;
+          img.src = patch.image;
+        });
+      }
+
+      // Add, change or remove items, then put them in the right order
+      function applyItems(changes, order) {
+        const box = stage;
+        function find(id) {
+          return Array.from(box.querySelectorAll(".canvasItem")).find(function (item) {
+            return item.dataset.id === id;
+          });
+        }
+        for (const id in changes) {
+          const old = find(id);
+          // You're typing in this text box: keep yours
+          if (old && old.contains(document.activeElement) && document.activeElement.isContentEditable)
+            continue;
+          const wasSelected = old && old === selectedItem;
+          if (wasSelected) selectItem(null);
+          const data = changes[id];
+          if (data === null || typeof data !== "object") {
+            if (old) old.remove();
+            continue;
+          }
+          data.id = id;
+          const item = dataToItem(data);
+          if (old) old.replaceWith(item);
+          if (wasSelected) selectItem(item);
+        }
+        if (Array.isArray(order)) {
+          for (const id of order) {
+            const item = find(String(id));
+            if (item) box.appendChild(item);
+          }
+        }
+        setTool(tool); // make the changed items behave like the others
+      }
+
+      // After someone else's change: remember how things look now, and
+      // start Undo again from here (so Undo never undoes a friend's work)
+      function afterRemoteChange() {
+        undoHistory.length = 0;
+        undoHistory.push(makeState());
+        updateUndoButton();
+        rememberLiveState();
+      }
+
+      // Get photos and stickers we haven't got from the saved drawing
+      async function fetchMissingPictures() {
+        if (!live) return;
+        let record;
+        try {
+          record = await Server.getDrawing(live.drawingId);
+        } catch (problem) {
+          return;
+        }
+        if (!record) return;
+        for (const name in record.pictures || {}) {
+          if (pictureStore[name]) continue;
+          pictureStore[name] = record.pictures[name];
+          for (const item of document.querySelectorAll(".imageItem")) {
+            if (item.dataset.picture === name)
+              item.querySelector("img").src = record.pictures[name];
+          }
+        }
+      }
+
+      // Load the saved drawing (to catch up with everyone else), if it's
+      // newer than the one on screen
+      let catchingUp = false;
+      async function catchUp() {
+        if (!live || catchingUp) return;
+        catchingUp = true;
+        const drawingId = live.drawingId;
+        try {
+          const record = await Server.getDrawing(drawingId);
+          if (!live || live.drawingId !== drawingId) return;
+          if (!record) {
+            setSaveStatus("⚠ This drawing was deleted, or isn't shared with you any more.");
+            return;
+          }
+          if (record.updated_at === currentDrawing.updatedAt) return; // nothing new
+          currentDrawing.updatedAt = record.updated_at;
+          applyingRemote = true;
+          Object.assign(pictureStore, record.pictures || {});
+          currentDrawing.savedPictures = pictureList(record.pictures || {});
+          const img = await loadPicture(record.state.image);
+          fitCanvas(img.width, img.height);
+          await restoreState(record.state);
+          afterRemoteChange();
+        } catch (problem) {
+          // Try again with the next change
+        } finally {
+          applyingRemote = false;
+          catchingUp = false;
+        }
+      }
 
       // ===== Moving drawings from the old "this browser only" accounts =====
       // Before online accounts, accounts and drawings were kept in this
@@ -6676,7 +9669,7 @@
               message.textContent =
                 "Moving drawing " + (moved + 1) + " of " + drawings.length + "…";
               if (old.state)
-                await Server.saveDrawing({
+                await Server.addDrawing({
                   id: newDrawingId(),
                   title: String(old.title || "Untitled drawing").slice(0, 60),
                   state: old.state,
@@ -6708,130 +9701,6 @@
           await refreshDrawingList();
           checkLocalDrawings();
         });
-
-      // ===== Sharing (project files) =====
-      // A .drawlab project file has everything needed to keep editing:
-      // the drawing, every item, and the photos and stickers.
-      // It's written as JSON (a way of writing data as text).
-      async function shareProject() {
-        if (currentDrawing === null) return;
-        if (document.activeElement.isContentEditable)
-          document.activeElement.blur(); // finish typing
-        saveNow();
-        // Made from what's on screen, so it works even without internet
-        const state = undoHistory[undoHistory.length - 1];
-        shareRecord({
-          title: currentDrawing.title,
-          state: state,
-          pictures: picturesUsedBy(state),
-        });
-      }
-
-      async function shareRecord(record) {
-        const project = {
-          format: "drawlab-project",
-          version: 1,
-          title: record.title,
-          state: record.state,
-          pictures: record.pictures || {},
-        };
-        // File names can't have some characters, like / or ?
-        const name =
-          (record.title.replace(/[\\/:*?"<>|]+/g, "").trim() || "drawing") +
-          ".drawlab";
-        const file = new File([JSON.stringify(project)], name, {
-          type: "application/json",
-        });
-
-        // Phones and tablets: open the share menu (Messages, email, AirDrop...)
-        if (
-          touchScreen &&
-          navigator.canShare &&
-          navigator.canShare({ files: [file] })
-        ) {
-          try {
-            await navigator.share({ files: [file], title: record.title });
-            return;
-          } catch (problem) {
-            if (problem.name === "AbortError") return; // pressed Cancel
-          }
-        }
-        // Laptops and PCs (or if sharing didn't work): download the file
-        downloadFile(file, name);
-        if (currentScreen === "editor") showSavedMessage();
-        else
-          document.getElementById("homeMessage").textContent =
-            "Saved " +
-            name +
-            ' to your downloads. Send it to someone, and they can open it with "Open a project file".';
-      }
-
-      // Open a project file: it becomes a new drawing in your account
-      document
-        .getElementById("projectInput")
-        .addEventListener("change", async function () {
-          const file = this.files[0];
-          this.value = ""; // so opening the same file again still works
-          if (!file) return;
-          let project = null;
-          try {
-            project = JSON.parse(await file.text());
-          } catch (problem) {
-            project = null;
-          }
-          if (!isProjectOk(project)) {
-            document.getElementById("homeMessage").textContent =
-              "Sorry, that file isn't a Drawlab project (it should end in .drawlab).";
-            return;
-          }
-          await openDrawing({
-            id: newDrawingId(),
-            title:
-              String(project.title || "").trim().slice(0, 60) ||
-              "Shared drawing",
-            state: project.state,
-            pictures: project.pictures,
-          });
-          await saveNow(); // add it to your account straight away
-        });
-
-      // Check a project file has what we need, and nothing odd,
-      // because a file from someone else could have anything in it
-      function isProjectOk(project) {
-        if (!project || project.format !== "drawlab-project" || !project.state)
-          return false;
-        const state = project.state;
-        if (
-          typeof state.image !== "string" ||
-          !state.image.startsWith("data:image/")
-        )
-          return false;
-        if (
-          typeof state.items !== "string" ||
-          typeof state.lineEnds !== "string"
-        )
-          return false;
-        try {
-          if (
-            !Array.isArray(JSON.parse(state.items)) ||
-            !Array.isArray(JSON.parse(state.lineEnds))
-          )
-            return false;
-        } catch (problem) {
-          return false;
-        }
-        const pictures = project.pictures || {};
-        if (typeof pictures !== "object") return false;
-        for (const id in pictures) {
-          if (
-            typeof pictures[id] !== "string" ||
-            !pictures[id].startsWith("data:image/")
-          )
-            return false;
-        }
-        project.pictures = pictures;
-        return true;
-      }
 
       // Text boxes are saved as HTML (so each bit keeps its own font and
       // colour). HTML from a file could hide a program inside it, so only
@@ -6875,6 +9744,21 @@
       //   arrow:   from = [x, y], to = [x, y]
       const templates = [
         { title: "Blank canvas", emoji: "⬜", card: "#ffffff", parts: [] },
+        // Vertical pages: a fixed portrait page, saved at exactly this size
+        {
+          title: "Vertical (phone)",
+          emoji: "📱",
+          card: "#fff1e6",
+          page: { w: 1080, h: 1920 }, // a phone screen, like a story
+          parts: [],
+        },
+        {
+          title: "Vertical (A4)",
+          emoji: "📄",
+          card: "#fff8e1",
+          page: { w: 1240, h: 1754 }, // A4 paper, standing up
+          parts: [],
+        },
         {
           title: "Birthday card",
           emoji: "🎂",
@@ -7313,11 +10197,25 @@
 
       // Template card pressed: make a new drawing from it
       async function startFromTemplate(template) {
+        if (myDrawingCount >= mostDrawings) {
+          const message = document.getElementById("homeMessage");
+          message.textContent =
+            "You can have up to " +
+            mostDrawings +
+            " drawings. Delete one to make a new one.";
+          message.style.color = "#cc0000";
+          message.scrollIntoView({ behavior: "smooth", block: "center" });
+          return;
+        }
+        myDrawingCount++;
         await openDrawing({
           id: newDrawingId(),
           title:
-            template.parts.length === 0 ? "Untitled drawing" : template.title,
+            template.parts.length === 0 && !template.page
+              ? "Untitled drawing"
+              : template.title,
           state: null,
+          page: template.page || null, // vertical templates have a page
         });
         applyTemplate(template);
         // The template is where Undo starts, so you can't undo it away
@@ -7328,9 +10226,8 @@
 
       // Put a template's parts on the canvas
       function applyTemplate(template) {
-        const box = document.getElementById("canvasBox");
-        const W = box.clientWidth;
-        const H = box.clientHeight;
+        const W = areaSize().w;
+        const H = areaSize().h;
         const unit = Math.min(W, H); // the shorter side
 
         for (const part of template.parts) {

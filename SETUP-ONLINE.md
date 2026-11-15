@@ -1,6 +1,6 @@
-# Setting up Drawlab's online accounts
+# Setting up Sunrise's online accounts
 
-Drawlab keeps accounts, drawings, friends and chats in **Supabase**, a free
+Sunrise keeps accounts, drawings, friends and chats in **Supabase**, a free
 online database. Supabase also hosts the logins. The website itself is put
 online with **GitHub Pages**, so it opens on any computer, phone or tablet.
 
@@ -15,7 +15,7 @@ You only need to do this once. It takes about 15 minutes.
 2. Press **New project**.
    - **Name:** `drawlab`
    - **Database password:** press **Generate a password**, then save it
-     somewhere safe, like a password manager. Drawlab doesn't need it, but
+     somewhere safe, like a password manager. Sunrise doesn't need it, but
      you might later.
    - **Region:** the one nearest to you.
    - Plan: **Free**.
@@ -28,10 +28,31 @@ You only need to do this once. It takes about 15 minutes.
    paste it in.
 3. Press **Run**. It should say *Success. No rows returned*.
 
-> ⚠ Running it again later deletes every drawing, friend and message.
-> Only do that if you want to start completely fresh.
+This also makes a private storage area called `chat-files` for chat photos
+and videos (you can see it under **Storage**).
 
-## 3. Connect Drawlab to your project
+> ⚠ Running it again later deletes every drawing, friend and message.
+> Only do that if you want to start completely fresh, or when a new Sunrise
+> feature needs it. Afterwards, delete the old accounts too, in
+> **Authentication → Users** (their usernames are lost, so they can't log
+> in properly any more).
+
+### Updates
+
+Some new Sunrise features need a small database change. Those come as
+`supabase-update-N-....sql` files. Run each one once, the same way (SQL
+Editor → New query → paste → Run). Unlike the full setup, **updates keep all
+your data**. If you set up a brand new project with `supabase-setup.sql`,
+you don't need them, because it already includes them.
+
+- `supabase-update-1-auto-delete.sql`: chat messages are deleted after 7 days.
+- `supabase-update-2-files.sql`: chat photos and videos are deleted once everyone has them; photos up to 1 MB, videos up to 5 MB, 50 MB a week each.
+- `supabase-update-3-drawing-limit.sql`: each person can own up to 20 drawings.
+- `supabase-update-4-chat-extras.sql`: Delivered/Read, unread numbers, Mute, editing messages, and "typing…".
+- `supabase-update-5-online.sql`: green (online) and grey (offline) dots, only for friends.
+- `supabase-update-6-chat-limit.sql`: each person can be in up to 10 chats.
+
+## 3. Connect Sunrise to your project
 
 1. In the left menu, open **Project Settings**, then **Data API**, and copy
    the **Project URL**. It looks like `https://abcdefgh.supabase.co`.
@@ -50,7 +71,7 @@ You only need to do this once. It takes about 15 minutes.
 > page's code, and that's fine. What people can actually see or change is
 > decided by the rules from step 2, which the database checks every time.
 >
-> ⛔ **Never** paste the **service_role** or **secret** key into Drawlab.
+> ⛔ **Never** paste the **service_role** or **secret** key into Sunrise.
 > That one skips all the rules.
 
 ## 4. Login settings
@@ -58,7 +79,7 @@ You only need to do this once. It takes about 15 minutes.
 In the left menu, open **Authentication**.
 
 1. **Sign In / Providers → Email:**
-   - Turn **Confirm email** **off**. Drawlab accounts don't need an email,
+   - Turn **Confirm email** **off**. Sunrise accounts don't need an email,
      so there's nothing to confirm when you sign up. (Behind the scenes, an
      account without an email gets a pretend one like
      `sam@drawlab.invalid`, because Supabase needs one. `.invalid` addresses
@@ -68,7 +89,7 @@ In the left menu, open **Authentication**.
      arrive.
    - Keep **Email** itself turned **on**.
 2. **Password settings** (on the same page, or under **Policies**): set the
-   **minimum password length** to **8**, to match Drawlab.
+   **minimum password length** to **8**, to match Sunrise.
 3. **URL Configuration:**
    - **Site URL:** `https://luffy2025.github.io/Learn-web/hello.html`
    - **Redirect URLs:** add the same address. Then add
@@ -83,7 +104,7 @@ In the left menu, open **Authentication**.
    **Settings → Pages**.
 3. Under **Build and deployment**, set **Source** to *Deploy from a branch*,
    set **Branch** to `main` and `/ (root)`, then press **Save**.
-4. After a minute or two, Drawlab is live at
+4. After a minute or two, Sunrise is live at
    **https://luffy2025.github.io/Learn-web/**
 
 Every time you push to `main`, the website updates by itself within a
@@ -97,7 +118,7 @@ couple of minutes.
   hundred drawings with photos. You can see how much you're using on the
   Supabase dashboard.
 - **Paused projects:** free projects are paused after a week with nobody
-  using them. If Drawlab says it can't reach the server, log in to
+  using them. If Sunrise says it can't reach the server, log in to
   supabase.com and press **Restore project**.
 - **Emails:** Supabase's built-in email sender only sends a few emails an
   hour, for resetting passwords. That's fine for
