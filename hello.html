@@ -1,0 +1,2241 @@
+<!doctype html>
+<html>
+  <head>
+    <!-- Lets the page show special characters like ▾ properly -->
+    <meta charset="utf-8" />
+    <!-- Phones and tablets: show the page at the real screen size,
+         instead of shrinking a big desktop page down to fit -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- The title shows on the browser tab -->
+    <title>Drawlab!!</title>
+  </head>
+  <!-- margin: 0 removes the gap browsers put around the page.
+       overflow: hidden stops scroll bars from showing.
+       touch-action: manipulation stops double-tap zooming on phones -->
+  <body style="margin: 0; overflow: hidden; touch-action: manipulation">
+    <!-- ===== Drawing area ===== -->
+    <!-- This outer box holds the top panel, canvas and side panel.
+         height: 100vh means "100% of the window's height".
+         100dvh is the same, but on phones it leaves out the address bar
+         (browsers that don't know dvh just use the 100vh)
+         flex-direction: column stacks the things inside it top to bottom -->
+    <div
+      style="
+        height: 100vh;
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px;
+        box-sizing: border-box;
+      "
+    >
+
+    <!-- ===== Top panel ===== -->
+    <div
+      style="
+        padding: 10px;
+        border: 2px solid black;
+        background: #dde6f0;
+      "
+    >
+      <!-- Row 1: title, menu buttons, save/new.
+           flex-wrap: wrap lets buttons move onto a new line on small screens -->
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+        <strong style="font-size: 20px">My Drawing App</strong>
+
+        <!-- Menu buttons. Each one shows/hides its own options row below -->
+        <button id="homeButton" onclick="toggleMenu('home')">Home</button>
+        <button id="insertButton" onclick="toggleMenu('insert')">Insert</button>
+        <button>Tools</button>
+
+        <!-- margin-left: auto pushes these buttons to the right side -->
+        <button id="undoButton" onclick="undo()" style="margin-left: auto" title="Undo (Ctrl+Z)">↶ Undo</button>
+        <!-- Delete: for phones and tablets, which have no Delete key.
+             Greyed out until a text box or shape is selected -->
+        <button id="deleteButton" onclick="deleteSelected()" title="Delete the selected item (Delete key)">🗑 Delete</button>
+        <button onclick="savePicture()">Save Picture</button>
+        <button onclick="clearDrawing()">New Drawing</button>
+      </div>
+
+      <!-- Row 2: the Home options, side by side.
+           display: none hides it here, but the app opens Home on start up -->
+      <div
+        id="homeOptions"
+        style="
+          display: none;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 10px 20px;
+          margin-top: 10px;
+          padding-top: 10px;
+          border-top: 1px solid #999;
+        "
+      >
+        <!-- Tool buttons: Cursor (click text to edit it), Brush (draw)
+             or Eraser (rub out drawing). Only one is picked at a time -->
+        <span>
+          Tool:
+          <button id="cursorTool" onclick="setTool('cursor')">Cursor</button>
+          <button id="brushTool" onclick="setTool('brush')">Brush</button>
+          <button id="eraserTool" onclick="setTool('eraser')">Eraser</button>
+        </span>
+
+        <!-- Colour picker -->
+        <label>
+          Colour:
+          <input type="color" id="brushColour" value="#000000" />
+        </label>
+
+        <!-- Quick colour buttons: click one to pick that colour -->
+        <span>
+          Quick colours:
+          <button onclick="setColour('#000000')" style="background: black; width: 30px; height: 30px"></button>
+          <button onclick="setColour('#ff0000')" style="background: red; width: 30px; height: 30px"></button>
+          <button onclick="setColour('#0000ff')" style="background: blue; width: 30px; height: 30px"></button>
+          <button onclick="setColour('#00aa00')" style="background: green; width: 30px; height: 30px"></button>
+        </span>
+
+        <!-- ===== Brush size =====
+             A slider (1 to 40) plus 3 quick buttons, and a preview dot
+             that's exactly as wide as the brush. Only NEW lines use the
+             new size, and it never changes the colour -->
+        <span style="display: inline-flex; align-items: center; gap: 6px">
+          Size: <span id="sizeShow">5</span>
+          <input type="range" id="brushSize" min="1" max="40" value="5"
+                 oninput="showBrushSize()" />
+
+          <!-- Quick size buttons -->
+          <button class="sizePreset" data-size="2" onclick="setBrushSize(2)">Thin</button>
+          <button class="sizePreset" data-size="10" onclick="setBrushSize(10)">Medium</button>
+          <button class="sizePreset" data-size="30" onclick="setBrushSize(30)">Thick</button>
+
+          <!-- The preview dot. The box is 44px so the biggest dot (40) fits -->
+          <span
+            title="Brush size preview"
+            style="
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              width: 44px;
+              height: 44px;
+              background: white;
+              border: 1px solid #999;
+            "
+          >
+            <span
+              id="sizePreview"
+              style="display: block; width: 5px; height: 5px; border-radius: 50%; background: #333"
+            ></span>
+          </span>
+        </span>
+
+
+        <button onclick="clearDrawing()">Clear</button>
+
+        <!-- A hint that tells you what to do next -->
+        <span id="homeHint" style="color: #555"></span>
+      </div>
+
+      <!-- Row 2 (Insert): the Insert options. Also hidden at the start -->
+      <div
+        id="insertOptions"
+        style="
+          display: none;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 10px 20px;
+          margin-top: 10px;
+          padding-top: 10px;
+          border-top: 1px solid #999;
+        "
+      >
+        <!-- Text box: press this, then click on the canvas -->
+        <button id="textBoxButton" onclick="startTextBox()">Text Box</button>
+
+        <!-- Shapes: press one, then click on the canvas.
+             They use the brush colour and size from Home -->
+        <span>
+          Shapes:
+          <button onclick="startPlacing('rectangle')">▭ Rectangle</button>
+          <button onclick="startPlacing('circle')">◯ Circle</button>
+          <button onclick="startPlacing('triangle')">△ Triangle</button>
+          <button onclick="startPlacing('line')">╱ Line</button>
+        </span>
+
+        <!-- How big the text will be -->
+        <label>
+          Text size:
+          <input type="number" id="textSize" min="8" max="100" value="24" style="width: 50px" />
+        </label>
+
+        <!-- A hint that tells you what to do next -->
+        <span id="insertHint" style="color: #555"></span>
+      </div>
+    </div>
+
+    <!-- This box holds the left panel, the canvas and the bottom panel.
+         flex: 1 makes it stretch to fill all the height that's left -->
+    <div style="flex: 1; display: flex; min-height: 0">
+
+      <!-- ===== Properties panel (on the left) =====
+           Shows the options for the selected text box, shape or line.
+           overflow-y: auto adds a scroll bar if it doesn't all fit -->
+      <div
+        id="leftPanel"
+        style="
+          width: 210px;
+          flex-shrink: 0;
+          padding: 10px;
+          box-sizing: border-box;
+          overflow-x: hidden;
+          overflow-y: auto;
+          border: 2px solid black;
+          background: #f0f0f0;
+        "
+      >
+        <h4 style="margin: 0 0 8px 0">Properties</h4>
+
+        <!-- Shown when nothing is selected -->
+        <div id="propsNothing" style="color: #777">
+          Select a text box, shape or line to change it.
+        </div>
+
+        <!-- Colour: for text boxes, shapes and lines.
+             For text, highlight some letters to colour just those -->
+        <div id="propsColour" style="display: none">
+          <!-- Says "Text colour" or "Outline colour", see updatePropertiesPanel -->
+          <div id="colourHeading" style="font-weight: bold; margin-bottom: 4px">Colour</div>
+
+          <!-- The colour squares get added in here by the JavaScript -->
+          <div id="textColourSquares"></div>
+
+          <!-- The colour wheel, for any colour you like -->
+          <label style="display: block; margin-top: 6px">
+            More colours:
+            <input type="color" id="textColourWheel" value="#000000" />
+          </label>
+
+          <!-- RGB sliders: mix Red, Green and Blue light (each 0 to 255).
+               0,0,0 is black. 255,255,255 is white. 255,0,0 is red -->
+          <div id="rgbSliders" style="margin-top: 6px">
+            <div>
+              R <input type="range" id="rgbR" min="0" max="255" value="0" style="width: 120px" />
+              <span id="rgbRShow">0</span>
+            </div>
+            <div>
+              G <input type="range" id="rgbG" min="0" max="255" value="0" style="width: 120px" />
+              <span id="rgbGShow">0</span>
+            </div>
+            <div>
+              B <input type="range" id="rgbB" min="0" max="255" value="0" style="width: 120px" />
+              <span id="rgbBShow">0</span>
+            </div>
+            <!-- Shows the colour you've mixed -->
+            <div
+              id="rgbPreview"
+              style="height: 20px; margin-top: 4px; border: 1px solid #333; background: rgb(0, 0, 0)"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Thickness: one slider for text boxes, shapes and lines.
+             Shapes and lines: how thick the outline is (1 to 40).
+             Text: 0 is normal, higher makes the letters thicker.
+             For text, highlight letters to change just those -->
+        <div id="propsThickness" style="display: none; margin-top: 14px">
+          <!-- Says "Text thickness" or "Outline thickness" -->
+          <div id="thicknessHeading" style="font-weight: bold; margin-bottom: 4px">Thickness</div>
+          <input
+            type="range"
+            id="thickness"
+            min="1"
+            max="40"
+            value="5"
+            style="width: 120px; vertical-align: middle"
+          />
+          <span id="thicknessShow">5</span>
+          <!-- Shapes only (not lines): untick to hide the outline -->
+          <label id="shapeOutlineLabel" style="display: block; margin-top: 4px">
+            <input type="checkbox" id="shapeOutlineOn" checked /> Show outline
+          </label>
+        </div>
+
+        <!-- Box outline: a border round a text box (text boxes only).
+             It starts hidden. Picking a colour or thickness shows it -->
+        <div id="propsBoxOutline" style="display: none; margin-top: 14px">
+          <div style="font-weight: bold; margin-bottom: 4px">Box outline</div>
+          <label style="display: block">
+            <input type="checkbox" id="boxOutlineOn" /> Show outline
+          </label>
+          <label style="display: block; margin-top: 4px">
+            Colour <input type="color" id="boxOutlineColour" value="#000000" />
+          </label>
+          <div style="margin-top: 4px">
+            Thickness
+            <input
+              type="range"
+              id="boxOutlineWidth"
+              min="1"
+              max="20"
+              value="2"
+              style="width: 90px; vertical-align: middle"
+            />
+            <span id="boxOutlineWidthShow">2</span>
+          </div>
+        </div>
+
+        <!-- Fill: a colour inside a text box or shape (not lines).
+             It starts empty. Picking a colour turns it on -->
+        <div id="propsFill" style="display: none; margin-top: 14px">
+          <div style="font-weight: bold; margin-bottom: 4px">Fill</div>
+          <label>
+            <input type="checkbox" id="fillOn" /> Fill
+          </label>
+          <input type="color" id="fillColour" value="#fff59d" style="vertical-align: middle" />
+        </div>
+
+        <!-- Size: type a number to change it.
+             Shapes and lines: width and height. Text boxes: text size -->
+        <div id="propsSize" style="display: none; margin-top: 14px">
+          <div style="font-weight: bold; margin-bottom: 4px">Size</div>
+          <div id="sizeShape">
+            <label>W <input type="number" id="itemWidth" min="10" max="3000" style="width: 60px" /></label>
+            <label>H <input type="number" id="itemHeight" min="10" max="3000" style="width: 60px" /></label>
+          </div>
+          <div id="sizeText">
+            <label>Text size <input type="number" id="itemTextSize" min="8" max="300" style="width: 60px" /></label>
+          </div>
+        </div>
+
+        <!-- Rotation: type an angle in degrees, like 90 -->
+        <div id="propsRotation" style="display: none; margin-top: 14px">
+          <div style="font-weight: bold; margin-bottom: 4px">Rotation</div>
+          <label><input type="number" id="itemAngle" min="0" max="359" style="width: 60px" /> °</label>
+        </div>
+
+        <!-- Font: for text boxes only.
+             Highlight some letters to change just those -->
+        <div id="propsFont" style="display: none; margin-top: 14px">
+          <div style="font-weight: bold; margin-bottom: 4px">Font</div>
+          <!-- The font buttons get added in here by the JavaScript -->
+          <div id="fontList"></div>
+        </div>
+      </div>
+
+      <!-- The bar between the left panel and the canvas.
+           Drag it left or right to make the left panel smaller or bigger.
+           The background draws a thin grey line down the middle -->
+      <div
+        id="leftSplitter"
+        title="Drag to resize"
+        style="
+          width: 10px;
+          flex-shrink: 0;
+          cursor: col-resize;
+          touch-action: none;
+          background: linear-gradient(to right, transparent 4px, #aaa 4px, #aaa 6px, transparent 6px);
+        "
+      ></div>
+
+      <!-- The canvas with the bottom panel under it.
+           flex-direction: column stacks them top to bottom -->
+      <div style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+        <!-- overflow: hidden: if the canvas is bigger than this box,
+             hide the extra (it's still there, just out of sight) -->
+        <div
+          id="canvasBox"
+          style="flex: 1; position: relative; min-height: 0; overflow: hidden; border: 2px solid black"
+        >
+          <!-- canvas is a blank area you can draw on.
+               Its size gets set by the JavaScript (see fitCanvas) -->
+          <canvas
+            id="drawArea"
+            style="
+              position: absolute;
+              left: 0;
+              top: 0;
+              background: white;
+              touch-action: none;
+            "
+          ></canvas>
+        </div>
+
+        <!-- The bar between the canvas and the bottom panel.
+             Drag it up or down to make the bottom panel bigger or smaller -->
+        <div
+          id="bottomSplitter"
+          title="Drag to resize"
+          style="
+            height: 10px;
+            flex-shrink: 0;
+            cursor: row-resize;
+            touch-action: none;
+            background: linear-gradient(to bottom, transparent 4px, #aaa 4px, #aaa 6px, transparent 6px);
+          "
+        ></div>
+
+        <!-- ===== Bottom panel (not used yet) ===== -->
+        <div
+          id="bottomPanel"
+          style="
+            height: 100px;
+            flex-shrink: 0;
+            padding: 10px;
+            box-sizing: border-box;
+            overflow: hidden;
+            border: 2px solid black;
+            background: #f0f0f0;
+            color: #777;
+          "
+        >
+          Bottom panel (not used yet)
+        </div>
+      </div>
+    </div>
+
+    </div>
+    <!-- end of the outer box -->
+
+    <!-- JavaScript makes the buttons do things -->
+    <script>
+      // ===== Drawing code =====
+      const canvas = document.getElementById("drawArea");
+      const pen = canvas.getContext("2d"); // the "pen" we draw with
+      let drawing = false; // is the mouse button held down?
+
+      // Make sure the canvas is big enough to fill its box.
+      // The canvas only ever gets BIGGER, never smaller. If the box gets
+      // smaller (like when you make a panel bigger), the extra part of the
+      // canvas is just hidden, so you never lose any of your drawing.
+      function fitCanvas() {
+        const box = document.getElementById("canvasBox");
+        const newWidth = Math.max(canvas.width, box.clientWidth);
+        const newHeight = Math.max(canvas.height, box.clientHeight);
+        if (newWidth === canvas.width && newHeight === canvas.height) return; // big enough
+
+        // Changing a canvas's size wipes it, so copy the drawing first
+        const copy = document.createElement("canvas");
+        copy.width = canvas.width;
+        copy.height = canvas.height;
+        if (canvas.width > 0 && canvas.height > 0) {
+          copy.getContext("2d").drawImage(canvas, 0, 0);
+        }
+
+        // Make it bigger (on the screen too, so 1 drawing pixel = 1 screen pixel)
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+        canvas.style.width = newWidth + "px";
+        canvas.style.height = newHeight + "px";
+
+        // Wipe it, then put the drawing back
+        clearCanvas();
+        if (copy.width > 0 && copy.height > 0) {
+          pen.drawImage(copy, 0, 0);
+        }
+      }
+      // Run fitCanvas whenever the canvas's box changes size, for any reason:
+      // the window, a menu opening, or a panel being dragged
+      new ResizeObserver(fitCanvas).observe(document.getElementById("canvasBox"));
+
+      // ===== Resizable panels =====
+      // Drag a splitter bar to make its panel bigger or smaller.
+      //   splitter = the bar you drag
+      //   panel    = the panel that changes size
+      //   side     = "left" (drag left/right) or "bottom" (drag up/down)
+      function makeSplitter(splitter, panel, side) {
+        splitter.addEventListener("pointerdown", function (event) {
+          event.preventDefault();
+          splitter.setPointerCapture(event.pointerId);
+          const startMouse = side === "left" ? event.clientX : event.clientY;
+          const startSize = side === "left" ? panel.offsetWidth : panel.offsetHeight;
+
+          function onMove(e) {
+            if (side === "left") {
+              // Dragging right makes the left panel wider
+              const size = startSize + (e.clientX - startMouse);
+              // Keep it between 40px and half the window
+              panel.style.width = Math.max(40, Math.min(window.innerWidth / 2, size)) + "px";
+            } else {
+              // Dragging UP makes the bottom panel taller, so it's minus
+              const size = startSize - (e.clientY - startMouse);
+              panel.style.height = Math.max(40, Math.min(window.innerHeight / 2, size)) + "px";
+            }
+          }
+
+          function onUp() {
+            splitter.removeEventListener("pointermove", onMove);
+            splitter.removeEventListener("pointerup", onUp);
+          }
+
+          splitter.addEventListener("pointermove", onMove);
+          splitter.addEventListener("pointerup", onUp);
+        });
+      }
+      makeSplitter(document.getElementById("leftSplitter"), document.getElementById("leftPanel"), "left");
+      makeSplitter(document.getElementById("bottomSplitter"), document.getElementById("bottomPanel"), "bottom");
+
+      // Touch screens: make the splitter bars wider, so a finger can grab them
+      if (window.matchMedia("(pointer: coarse)").matches) {
+        const left = document.getElementById("leftSplitter");
+        left.style.width = "20px";
+        left.style.background =
+          "linear-gradient(to right, transparent 8px, #aaa 8px, #aaa 12px, transparent 12px)";
+        const bottom = document.getElementById("bottomSplitter");
+        bottom.style.height = "20px";
+        bottom.style.background =
+          "linear-gradient(to bottom, transparent 8px, #aaa 8px, #aaa 12px, transparent 12px)";
+      }
+
+      // Small screens (like phones): start the panels small,
+      // so there's more room to draw. You can still drag them bigger
+      if (window.innerWidth < 700) {
+        document.getElementById("leftPanel").style.width = "50px";
+        document.getElementById("bottomPanel").style.height = "50px";
+      }
+
+      // Mouse pressed: start a new line where the mouse is
+      canvas.addEventListener("pointerdown", function (event) {
+        // If we're placing a text box or shape, put it here instead of drawing
+        if (placing !== null) {
+          const what = placing;
+          placing = null;
+          event.preventDefault(); // stop this click from un-focusing the box
+          document.getElementById("insertHint").textContent = "";
+          if (what === "text") makeTextBox(event.offsetX, event.offsetY);
+          else makeShape(what, event.offsetX, event.offsetY);
+          return;
+        }
+        // Cursor tool + clicked on empty canvas = un-select the text box
+        if (tool === "cursor") selectItem(null);
+        // Only draw when the Brush or Eraser tool is picked
+        if (tool !== "brush" && tool !== "eraser") return;
+        // Already drawing with one finger? Ignore a second finger
+        if (drawing) return;
+
+        // Phones and tablets "lock" a finger to the thing it first touched,
+        // so it keeps drawing even after the finger slides off the canvas.
+        // Unlock it, so leaving the canvas stops the line (like a mouse)
+        if (canvas.hasPointerCapture(event.pointerId)) {
+          canvas.releasePointerCapture(event.pointerId);
+        }
+
+        drawing = true;
+        drawingPointer = event.pointerId; // remember which finger/mouse this is
+        straight = false;
+        startX = event.offsetX;
+        startY = event.offsetY;
+        // Touch screens can't hover, so the blue dot never showed.
+        // Check for a nearby line end now, at the moment you press
+        if (snapPoint === null) {
+          checkForLineEnd(startX, startY, event.pointerType);
+        }
+        // Blue dot showing? Start exactly at that line's end, so they join up
+        if (snapPoint !== null) {
+          startX = snapPoint.x;
+          startY = snapPoint.y;
+        }
+        hideDot();
+        lastX = startX;
+        lastY = startY;
+        // Take a "photo" of the canvas before this line, so we can
+        // rub the wobbly line out later if it turns into a straight one
+        before = pen.getImageData(0, 0, canvas.width, canvas.height);
+
+        // Draw a dot where you pressed, so a click (without moving) still
+        // leaves a mark. The dot is a filled circle as wide as the brush
+        setPen();
+        pen.fillStyle = pen.strokeStyle;
+        pen.beginPath();
+        pen.arc(startX, startY, pen.lineWidth / 2, 0, Math.PI * 2);
+        pen.fill();
+
+        // Then start the line from the same spot
+        pen.beginPath();
+        pen.moveTo(startX, startY);
+        timerX = startX;
+        timerY = startY;
+        restartStillTimer();
+      });
+
+      // Mouse moved: if drawing, draw a line to the new spot
+      canvas.addEventListener("pointermove", function (event) {
+        // Not drawing? Check if the mouse is near the end of a line
+        if (!drawing) {
+          checkForLineEnd(event.offsetX, event.offsetY, event.pointerType);
+          return;
+        }
+        // A different finger from the one drawing? Ignore it
+        if (event.pointerId !== drawingPointer) return;
+        // Ignore "moves" that didn't really move
+        if (event.offsetX === lastX && event.offsetY === lastY) return;
+        lastX = event.offsetX;
+        lastY = event.offsetY;
+        setPen();
+
+        if (straight) {
+          // Already a straight line: keep it straight, with the end
+          // following the mouse
+          drawStraightLine();
+        } else {
+          // Normal drawing: add a bit more line
+          pen.lineTo(lastX, lastY);
+          pen.stroke();
+          // You moved, so start counting the 2 seconds again. Fingers
+          // always wobble a little, so tiny moves (under 5px) don't count
+          if (Math.hypot(lastX - timerX, lastY - timerY) >= 5) {
+            timerX = lastX;
+            timerY = lastY;
+            restartStillTimer();
+          }
+        }
+      });
+
+      // Stop drawing when:
+      //   pointerup     = you let go of the mouse button / lift your finger
+      //   pointerleave  = the mouse or finger leaves the canvas. The line
+      //                   stays stopped, even if you come back still pressing
+      //   pointercancel = the phone/tablet interrupts the touch (like a
+      //                   pop-up or a palm touching the screen)
+      canvas.addEventListener("pointerup", stopDrawing);
+      canvas.addEventListener("pointerleave", stopDrawing);
+      canvas.addEventListener("pointercancel", stopDrawing);
+
+      let drawingPointer = null; // which mouse/finger is drawing
+      let timerX, timerY; // where the 2-second timer was last restarted
+
+      function stopDrawing(event) {
+        // A different finger from the one drawing? Ignore it
+        if (drawing && event && event.pointerId !== drawingPointer) return;
+        clearTimeout(stillTimer); // don't straighten after you let go
+        // Remember both ends of the line you just drew (if you drew one).
+        // Not for the eraser (white), because that isn't really a line
+        const isEraser = tool === "eraser";
+        if (drawing && !isEraser && (lastX !== startX || lastY !== startY)) {
+          lineEnds.push({ x: startX, y: startY });
+          lineEnds.push({ x: lastX, y: lastY });
+        }
+        // Drew something (a dot, line or eraser stroke)? Remember it for Undo.
+        // Every press draws at least a dot, so this is any press
+        const drewSomething = drawing;
+        drawing = false;
+        hideDot();
+        if (drewSomething) {
+          canvasChanged = true;
+          saveState();
+        }
+      }
+
+      // ===== Joining lines =====
+      // When the mouse is close to the end of a line, a blue dot shows
+      // on that end. Start drawing while it shows and your new line
+      // starts exactly there, so the two lines are joined.
+      const lineEnds = [];  // the start and end point of every line drawn
+      let snapPoint = null; // the line end the blue dot is on (or null)
+      const closeEnough = 15; // how close (in pixels) the mouse needs to be
+      const closeEnoughTouch = 30; // fingers are less exact, so allow more
+
+      // The blue dot. pointerEvents "none" means it can't be clicked,
+      // so clicks go through it to the canvas
+      const dot = document.createElement("div");
+      dot.style.position = "absolute";
+      dot.style.width = "12px";
+      dot.style.height = "12px";
+      dot.style.borderRadius = "50%"; // makes the square a circle
+      dot.style.background = "#0078d7";
+      dot.style.border = "2px solid white";
+      dot.style.boxSizing = "border-box";
+      dot.style.pointerEvents = "none";
+      dot.style.display = "none";
+      document.getElementById("canvasBox").appendChild(dot);
+
+      // Find the closest line end to the mouse. Show the dot on it if it's close
+      // pointerType is "mouse", "touch" (finger) or "pen" (like Apple Pencil)
+      function checkForLineEnd(x, y, pointerType) {
+        if (tool !== "brush") return hideDot();
+
+        let closest = null;
+        let closestDistance = pointerType === "touch" ? closeEnoughTouch : closeEnough;
+        for (const end of lineEnds) {
+          // Distance between two points (Pythagoras: a² + b² = c²)
+          const distance = Math.hypot(end.x - x, end.y - y);
+          if (distance < closestDistance) {
+            closest = end;
+            closestDistance = distance;
+          }
+        }
+
+        if (closest === null) return hideDot();
+        snapPoint = closest;
+        // Centre the 12px dot on the line end (so move it back 6px)
+        dot.style.left = closest.x - 6 + "px";
+        dot.style.top = closest.y - 6 + "px";
+        dot.style.display = "block";
+      }
+
+      function hideDot() {
+        snapPoint = null;
+        dot.style.display = "none";
+      }
+
+      // ===== Straight lines =====
+      // Hold the mouse still for 2 seconds while drawing and the line
+      // turns into a straight line from where you started to where you are.
+      let straight = false;  // has this line become straight?
+      let startX, startY;    // where this line started
+      let lastX, lastY;      // where the mouse is now
+      let before = null;     // the "photo" of the canvas before this line
+      let stillTimer = null; // counts the 2 seconds
+
+      // Start counting 2 seconds again (from zero)
+      function restartStillTimer() {
+        clearTimeout(stillTimer);
+        stillTimer = setTimeout(makeStraight, 2000); // 2000 ms = 2 seconds
+      }
+
+      // 2 seconds without moving: straighten the line
+      function makeStraight() {
+        if (!drawing) return;
+        straight = true;
+        setPen();
+        drawStraightLine();
+      }
+
+      // Rub out the wobbly line (put the photo back),
+      // then draw a straight line from the start to the mouse
+      function drawStraightLine() {
+        pen.putImageData(before, 0, 0);
+        pen.beginPath();
+        pen.moveTo(startX, startY);
+        pen.lineTo(lastX, lastY);
+        pen.stroke();
+      }
+
+      // Set the pen's colour and size from the Home options
+      // ===== Brush size =====
+      // Thin/Medium/Thick buttons: move the slider to that size
+      function setBrushSize(size) {
+        document.getElementById("brushSize").value = size;
+        showBrushSize();
+      }
+
+      // Show the size: the number, the preview dot, and which quick
+      // button (if any) matches. This only shows the size. It doesn't
+      // change any lines already drawn, or the colour
+      function showBrushSize() {
+        const size = Number(document.getElementById("brushSize").value);
+        document.getElementById("sizeShow").textContent = size;
+        const dot = document.getElementById("sizePreview");
+        dot.style.width = size + "px";
+        dot.style.height = size + "px";
+        for (const button of document.querySelectorAll(".sizePreset")) {
+          button.style.fontWeight = Number(button.dataset.size) === size ? "bold" : "normal";
+        }
+      }
+      showBrushSize(); // show the starting size (5)
+
+      // The Eraser really removes drawing. "destination-out" means
+      // "wherever the pen goes, cut the drawing away" so those pixels become
+      // see-through, instead of being painted over. The white you see behind
+      // is the canvas's background colour, which isn't part of the drawing.
+      // (The Eraser doesn't change the colour picker)
+      function setPen() {
+        pen.globalCompositeOperation = tool === "eraser" ? "destination-out" : "source-over";
+        pen.strokeStyle = document.getElementById("brushColour").value;
+        pen.lineWidth = document.getElementById("brushSize").value;
+        pen.lineCap = "round"; // makes the line ends smooth
+        pen.lineJoin = "round"; // makes the corners smooth
+      }
+
+      // Menu buttons (Home, Insert): show that menu's options row.
+      // Only one row shows at a time. Clicking an open menu closes it.
+      // name is "home" or "insert" (matches the ids homeOptions, insertButton...)
+      function toggleMenu(name) {
+        const menus = ["home", "insert"];
+        const wasOpen =
+          document.getElementById(name + "Options").style.display === "flex";
+
+        // First close every menu
+        for (const menu of menus) {
+          document.getElementById(menu + "Options").style.display = "none";
+          document.getElementById(menu + "Button").style.fontWeight = "normal";
+        }
+
+        // Then open the one you clicked (unless it was already open)
+        if (!wasOpen) {
+          document.getElementById(name + "Options").style.display = "flex";
+          document.getElementById(name + "Button").style.fontWeight = "bold";
+        }
+
+        // The canvas area just got shorter or taller, so resize it
+        fitCanvas();
+      }
+
+      // ===== Inserting things (text boxes and shapes) =====
+      // What to put on the canvas when you next click it:
+      // null (nothing), "text", "rectangle", "circle", "triangle" or "line"
+      let placing = null;
+
+      // Text Box button
+      function startTextBox() {
+        startPlacing("text");
+      }
+
+      // Text Box / shape buttons: get ready to put one on the canvas
+      function startPlacing(what) {
+        placing = what;
+        canvas.style.cursor = what === "text" ? "text" : "crosshair";
+        document.getElementById("insertHint").textContent =
+          "Click on the canvas where you want the " + what + ".";
+      }
+
+      // ===== Items =====
+      // Text boxes and shapes are both "items": boxes that sit on top of
+      // the canvas. With the Cursor tool you can click one to select it,
+      // drag it, pull its corners to resize it, and press Delete to delete it.
+      //
+      // makeItem makes the outer box with all of that, at (x, y).
+      // makeTextBox and makeShape then put a text or a shape inside it.
+      function makeItem(x, y) {
+        const item = document.createElement("div");
+        item.className = "canvasItem"; // so we can find all items later
+        item.style.position = "absolute";
+        item.style.left = x + "px";
+        item.style.top = y + "px";
+        item.style.border = "1px dashed transparent";
+        item.style.cursor = "move"; // the 4-arrow "you can drag this" pointer
+        item.style.touchAction = "none"; // let a finger drag it too
+
+        addCornerHandles(item);
+        addDragging(item);
+        document.getElementById("canvasBox").appendChild(item);
+        return item;
+      }
+
+      // ===== Text boxes =====
+      // Each text box is made of:
+      //   item   = the outer box. It has the position and the dashed border
+      //   text   = the part inside it you type in
+      //   4 handles = little squares on the corners for making it bigger
+      // Text Box button + click: make a new text box and start typing in it
+      function makeTextBox(x, y) {
+        const size = document.getElementById("textSize").value;
+        const colour = document.getElementById("brushColour").value;
+        const item = buildTextBox(x, y, size, colour);
+
+        // Switch to the Cursor tool so you can type in the new box
+        setTool("cursor");
+        // Wait a moment before focusing, so the click doesn't steal it back
+        const text = item.querySelector(".textInside");
+        setTimeout(function () { text.focus(); }, 0);
+      }
+
+      // Build a text box and give it back. (Undo uses this too, to put
+      // text boxes back the way they were.)
+      function buildTextBox(x, y, size, colour) {
+        const item = makeItem(x, y);
+        item.classList.add("textItem"); // so we can find all text boxes later
+        item.dataset.size = size; // remember the text size
+        // No box outline or fill to start with (see applyTextBoxLook)
+        item.dataset.boxOutline = "off";
+        item.dataset.boxOutlineColour = "#000000";
+        item.dataset.boxOutlineWidth = 2;
+        item.dataset.fill = "none";
+
+        // The text you type in. contentEditable lets you type straight into it
+        const text = document.createElement("div");
+        text.className = "textInside";
+        text.contentEditable = "true";
+        text.style.fontSize = size + "px";
+        text.style.fontFamily = "Arial";
+        text.style.lineHeight = "1.2";
+        text.style.color = colour;
+        text.style.whiteSpace = "pre"; // keep it on one line
+        // Thickness draws an outline round each letter. "stroke fill" draws
+        // the outline first and the letter on top, so it only grows outwards
+        text.style.paintOrder = "stroke fill";
+        text.style.webkitTextStrokeColor = "currentcolor"; // same colour as the text
+        text.style.minWidth = "10px";
+        text.style.padding = "2px";
+        text.style.outline = "none";
+        // Put the text first, before the corner handles
+        item.insertBefore(text, item.firstChild);
+
+        // What the text was when you started typing, so we can tell
+        // afterwards if you changed it (for Undo)
+        let textBefore = "";
+
+        // While you're typing, show a dark dashed border
+        text.addEventListener("focus", function () {
+          textBefore = text.innerHTML;
+          selectItem(item);
+          updateBorder(item);
+          item.style.cursor = "text";
+          document.getElementById("insertHint").textContent =
+            "Type your text, then press Enter (or click somewhere else).";
+        });
+
+        // When you click away: remove the box if it's empty
+        text.addEventListener("blur", function () {
+          if (text.textContent.trim() === "") {
+            if (selectedItem === item) selectedItem = null;
+            item.remove();
+          } else {
+            updateBorder(item);
+            item.style.cursor = "move";
+          }
+          document.getElementById("insertHint").textContent = "";
+          // You changed the text? Remember it for Undo
+          if (text.innerHTML !== textBefore) saveState();
+        });
+
+        // Enter or Escape = done typing
+        text.addEventListener("keydown", function (event) {
+          if (event.key === "Enter" || event.key === "Escape") {
+            event.preventDefault(); // don't add a new line
+            text.blur();
+          }
+        });
+
+        return item;
+      }
+
+      // ===== Shapes =====
+      // The shape is drawn with SVG, a way of drawing shapes with code.
+      // viewBox "0 0 100 100" means the shape is drawn on a 100 x 100 grid,
+      // and preserveAspectRatio "none" stretches that grid to fill the box,
+      // so the shape stretches when you resize the box.
+      // Shape button + click: make a new shape
+      function makeShape(type, x, y) {
+        const colour = document.getElementById("brushColour").value;
+        const thickness = document.getElementById("brushSize").value;
+        // Circles and triangles start square, the others start wider
+        const startsSquare = type === "circle" || type === "triangle";
+        const width = (startsSquare ? 100 : 140) + "px";
+        const height = (startsSquare ? 100 : 80) + "px";
+        const item = buildShape(type, x, y, colour, thickness, width, height);
+
+        // Select the new shape so you can move and resize it straight away
+        setTool("cursor");
+        selectItem(item);
+        saveState(); // remember it for Undo
+      }
+
+      // Build a shape and give it back. (Undo uses this too.)
+      function buildShape(type, x, y, colour, thickness, width, height) {
+        const item = makeItem(x, y);
+        item.classList.add("shapeItem");
+        item.dataset.shape = type;
+        item.dataset.colour = colour;
+        item.dataset.thickness = thickness;
+        item.style.width = width;
+        item.style.height = height;
+
+        // SVG things have to be made with createElementNS and this address
+        const svgAddress = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(svgAddress, "svg");
+        svg.setAttribute("viewBox", "0 0 100 100");
+        svg.setAttribute("preserveAspectRatio", "none");
+        svg.style.width = "100%";
+        svg.style.height = "100%";
+        svg.style.display = "block";
+        svg.style.overflow = "visible"; // don't cut off thick outlines
+
+        let shape;
+        if (type === "rectangle") {
+          shape = document.createElementNS(svgAddress, "rect");
+          shape.setAttribute("x", 0);
+          shape.setAttribute("y", 0);
+          shape.setAttribute("width", 100);
+          shape.setAttribute("height", 100);
+        } else if (type === "circle") {
+          shape = document.createElementNS(svgAddress, "ellipse");
+          shape.setAttribute("cx", 50); // centre
+          shape.setAttribute("cy", 50);
+          shape.setAttribute("rx", 50); // half the width
+          shape.setAttribute("ry", 50); // half the height
+        } else if (type === "triangle") {
+          shape = document.createElementNS(svgAddress, "polygon");
+          shape.setAttribute("points", "50,0 100,100 0,100"); // top, bottom-right, bottom-left
+        } else {
+          // Line: from the bottom-left corner to the top-right corner
+          shape = document.createElementNS(svgAddress, "line");
+          shape.setAttribute("x1", 0);
+          shape.setAttribute("y1", 100);
+          shape.setAttribute("x2", 100);
+          shape.setAttribute("y2", 0);
+        }
+        shape.setAttribute("stroke-linecap", "round");
+        shape.setAttribute("stroke-linejoin", "round");
+        // Keep the outline the same thickness when the shape is stretched
+        shape.setAttribute("vector-effect", "non-scaling-stroke");
+        svg.appendChild(shape);
+
+        // Put the shape first, before the corner handles
+        item.insertBefore(svg, item.firstChild);
+        applyShapeLook(item); // colour, thickness, outline and fill
+        return item;
+      }
+
+      // Show a shape the way its dataset says:
+      //   dataset.colour    = outline colour
+      //   dataset.thickness = outline thickness
+      //   dataset.outline   = "off" hides the outline (lines always show it)
+      //   dataset.fill      = colour inside, or "none" (lines have no inside)
+      function applyShapeLook(item) {
+        const shape = item.querySelector("svg").firstChild;
+        const isLine = item.dataset.shape === "line";
+        const showOutline = isLine || item.dataset.outline !== "off";
+        const fill = item.dataset.fill || "none";
+        shape.setAttribute("stroke", showOutline ? item.dataset.colour : "none");
+        shape.setAttribute("stroke-width", item.dataset.thickness);
+        shape.setAttribute("fill", isLine ? "none" : fill);
+      }
+
+      // Change a shape's colour (its outline)
+      function setShapeColour(item, colour) {
+        item.dataset.colour = colour;
+        applyShapeLook(item);
+      }
+
+      // Change how thick a shape's (or line's) outline is
+      function setShapeThickness(item, thickness) {
+        item.dataset.thickness = thickness;
+        applyShapeLook(item);
+      }
+
+      // Show a text box's outline and fill the way its dataset says:
+      //   dataset.boxOutline       = "on" or "off" (starts "off")
+      //   dataset.boxOutlineColour = outline colour
+      //   dataset.boxOutlineWidth  = outline thickness
+      //   dataset.fill             = colour inside, or "none"
+      // The box keeps its middle in the same place, because the outline
+      // makes the box a little bigger.
+      function applyTextBoxLook(item) {
+        const text = item.querySelector(".textInside");
+        const showOutline = item.dataset.boxOutline === "on";
+        const fill = item.dataset.fill || "none";
+        resizeAroundMiddle(item, function () {
+          text.style.border = showOutline
+            ? item.dataset.boxOutlineWidth + "px solid " + item.dataset.boxOutlineColour
+            : "none";
+          text.style.background = fill === "none" ? "transparent" : fill;
+          // With an outline or fill, give the text a bit of room inside
+          text.style.padding = showOutline || fill !== "none" ? "4px 8px" : "2px";
+        });
+      }
+
+      // Either kind of item
+      function applyLook(item) {
+        if (item.classList.contains("shapeItem")) applyShapeLook(item);
+        else applyTextBoxLook(item);
+      }
+
+      // ===== Corner handles =====
+      // Is this a touch screen (phone or tablet)? "pointer: coarse" means
+      // the main way to point is something big, like a finger.
+      // Then the handles are made bigger so they're easy to grab.
+      const touchScreen = window.matchMedia("(pointer: coarse)").matches;
+      const handleSize = touchScreen ? 18 : 8;     // corner squares
+      const rotatorSize = touchScreen ? 24 : 12;   // round rotate handle
+      const stemLength = touchScreen ? 28 : 22;    // line up to the rotate handle
+
+      // Add a little white square on each corner of an item
+      function addCornerHandles(item) {
+        for (const corner of ["top-left", "top-right", "bottom-left", "bottom-right"]) {
+          const handle = document.createElement("div");
+          handle.className = "handle";
+          handle.style.position = "absolute";
+          handle.style.width = handleSize + "px";
+          handle.style.height = handleSize + "px";
+          handle.style.background = "white";
+          handle.style.border = "1px solid #333";
+          handle.style.touchAction = "none"; // let a finger drag it
+          // Put it on its corner, poking half outside the box
+          const offset = -(handleSize / 2 + 1) + "px";
+          if (corner.includes("top")) handle.style.top = offset;
+          else handle.style.bottom = offset;
+          if (corner.includes("left")) handle.style.left = offset;
+          else handle.style.right = offset;
+          // Diagonal arrow pointer, pointing the right way for each corner
+          handle.style.cursor =
+            corner === "top-left" || corner === "bottom-right"
+              ? "nwse-resize"
+              : "nesw-resize";
+          item.appendChild(handle);
+          addResizing(item, handle, corner);
+        }
+
+        // The rotate handle: a round dot above the middle of the top edge,
+        // joined to the item by a short line (the "stem")
+        const stem = document.createElement("div");
+        stem.className = "handle";
+        stem.style.position = "absolute";
+        stem.style.left = "50%";
+        stem.style.top = -stemLength + "px";
+        stem.style.width = "1px";
+        stem.style.height = stemLength + "px";
+        stem.style.background = "#0078d7";
+        stem.style.pointerEvents = "none"; // just for show
+        item.appendChild(stem);
+
+        const rotator = document.createElement("div");
+        rotator.className = "handle";
+        rotator.title = "Drag to rotate (hold Shift to snap)";
+        rotator.style.position = "absolute";
+        rotator.style.left = "50%";
+        rotator.style.top = -(stemLength + rotatorSize) + "px";
+        rotator.style.width = rotatorSize + "px";
+        rotator.style.height = rotatorSize + "px";
+        rotator.style.marginLeft = -rotatorSize / 2 + "px"; // centre it
+        rotator.style.touchAction = "none"; // let a finger drag it
+        rotator.style.borderRadius = "50%"; // round
+        rotator.style.background = "white";
+        rotator.style.border = "2px solid #0078d7";
+        rotator.style.boxSizing = "border-box";
+        rotator.style.cursor = "grab";
+        item.appendChild(rotator);
+        addRotating(item, rotator);
+      }
+
+      // ===== Rotating =====
+      // Drag the round handle around the item to spin it.
+      // The angle is stored in item.dataset.angle (in degrees)
+      // and shown with the CSS "transform: rotate(...)".
+      function addRotating(item, rotator) {
+        rotator.addEventListener("mousedown", function (event) {
+          event.preventDefault(); // don't stop your typing
+        });
+
+        rotator.addEventListener("pointerdown", function (event) {
+          if (tool !== "cursor") return;
+          event.preventDefault();
+          event.stopPropagation(); // don't also start dragging the item
+          selectItem(item);
+          rotator.setPointerCapture(event.pointerId);
+          rotator.style.cursor = "grabbing";
+
+          // The middle of the item, on the screen. Things spin around this
+          const box = item.getBoundingClientRect();
+          const centreX = box.left + box.width / 2;
+          const centreY = box.top + box.height / 2;
+
+          // Which way the mouse is from the middle, as an angle.
+          // atan2 turns "how far across, how far down" into an angle
+          function mouseAngle(e) {
+            return Math.atan2(e.clientY - centreY, e.clientX - centreX) * 180 / Math.PI;
+          }
+          const startMouse = mouseAngle(event);
+          const startAngle = Number(item.dataset.angle || 0);
+          showAngleLabel(startAngle, event.clientX, event.clientY);
+
+          function onMove(e) {
+            // Turn the item by however much the mouse has turned
+            let angle = startAngle + (mouseAngle(e) - startMouse);
+            // Shift held: snap to steps of 15 degrees
+            if (e.shiftKey) angle = Math.round(angle / 15) * 15;
+            setAngle(item, angle);
+            showAngleLabel(Number(item.dataset.angle), e.clientX, e.clientY);
+          }
+
+          function onUp() {
+            angleLabel.style.display = "none"; // done rotating, hide the degrees
+            rotator.style.cursor = "grab";
+            rotator.removeEventListener("pointermove", onMove);
+            rotator.removeEventListener("pointerup", onUp);
+            saveState(); // remember the new angle for Undo
+          }
+
+          rotator.addEventListener("pointermove", onMove);
+          rotator.addEventListener("pointerup", onUp);
+        });
+      }
+
+      // The little label that shows the degrees while you rotate.
+      // position: fixed places it by screen position, so it doesn't spin
+      // with the item. pointerEvents "none" means it can't be clicked
+      const angleLabel = document.createElement("div");
+      angleLabel.style.position = "fixed";
+      angleLabel.style.zIndex = "20"; // on top of everything
+      angleLabel.style.padding = "2px 6px";
+      angleLabel.style.borderRadius = "4px";
+      angleLabel.style.background = "#0078d7";
+      angleLabel.style.color = "white";
+      angleLabel.style.font = "bold 14px Arial";
+      angleLabel.style.pointerEvents = "none";
+      angleLabel.style.display = "none";
+      document.body.appendChild(angleLabel);
+
+      // Show the angle next to the mouse (or finger)
+      function showAngleLabel(angle, mouseX, mouseY) {
+        angleLabel.textContent = Math.round(angle) % 360 + "°";
+        // Up and to the right of the mouse. On touch screens, further
+        // away, so your finger doesn't cover it
+        const gap = touchScreen ? 40 : 15;
+        angleLabel.style.left = mouseX + gap + "px";
+        angleLabel.style.top = mouseY - gap - 20 + "px";
+        angleLabel.style.display = "block";
+      }
+
+      // Turn an item to an angle (in degrees). It spins around its middle
+      function setAngle(item, angle) {
+        angle = ((angle % 360) + 360) % 360; // keep it between 0 and 359
+        item.dataset.angle = angle;
+        item.style.transform = "rotate(" + angle + "deg)";
+        if (item === selectedItem) showItemNumbers(); // keep the Rotation box up to date
+      }
+
+      // ===== Dragging =====
+      // Press on an item and move the mouse = drag it.
+      // For text boxes: press and let go without moving = click into it to
+      // edit the text. (If you're already typing in it, the mouse selects
+      // text instead of dragging.)
+      function addDragging(item) {
+        // Stop the browser starting to edit text the moment you press,
+        // because we don't know yet if you want to drag or edit
+        item.addEventListener("mousedown", function (event) {
+          const text = item.querySelector(".textInside");
+          if (text === null || document.activeElement !== text) {
+            event.preventDefault();
+          }
+        });
+
+        item.addEventListener("pointerdown", function (event) {
+          if (tool !== "cursor") return;
+          const text = item.querySelector(".textInside"); // null for shapes
+          if (text !== null && document.activeElement === text) return; // typing
+          event.preventDefault();
+
+          // Stop typing in any other text box, and select this item
+          if (document.activeElement.className === "textInside") {
+            document.activeElement.blur();
+          }
+          selectItem(item);
+
+          // Remember where the mouse and item started
+          const startMouseX = event.clientX;
+          const startMouseY = event.clientY;
+          const startLeft = parseFloat(item.style.left);
+          const startTop = parseFloat(item.style.top);
+          let moved = false;
+
+          // Keep getting mouse moves even if the mouse leaves the item
+          item.setPointerCapture(event.pointerId);
+
+          function onMove(e) {
+            const dx = e.clientX - startMouseX; // how far the mouse moved
+            const dy = e.clientY - startMouseY;
+            // Ignore tiny wobbles, so a click doesn't count as a drag
+            if (!moved && Math.abs(dx) + Math.abs(dy) < 4) return;
+            moved = true;
+
+            // Move the item, but keep it inside the canvas
+            const area = document.getElementById("canvasBox");
+            const maxLeft = area.clientWidth - item.offsetWidth;
+            const maxTop = area.clientHeight - item.offsetHeight;
+            item.style.left = Math.max(0, Math.min(maxLeft, startLeft + dx)) + "px";
+            item.style.top = Math.max(0, Math.min(maxTop, startTop + dy)) + "px";
+          }
+
+          function onUp() {
+            item.removeEventListener("pointermove", onMove);
+            item.removeEventListener("pointerup", onUp);
+            if (moved) saveState(); // remember the new place for Undo
+            // A text box that was clicked (not dragged): start editing,
+            // with the typing cursor at the end of the text
+            if (!moved && text !== null) {
+              text.focus();
+              const range = document.createRange();
+              range.selectNodeContents(text);
+              range.collapse(false); // false = go to the end
+              window.getSelection().removeAllRanges();
+              window.getSelection().addRange(range);
+            }
+          }
+
+          item.addEventListener("pointermove", onMove);
+          item.addEventListener("pointerup", onUp);
+        });
+      }
+
+      // ===== Resizing =====
+      // Pulling a corner handle makes the item bigger or smaller.
+      // The corner on the opposite side stays where it is.
+      //   Text boxes: the text size changes
+      //   Shapes: the width and height change (so you can stretch them)
+      function addResizing(item, handle, corner) {
+        // Don't let pressing a handle start editing or stop your typing
+        handle.addEventListener("mousedown", function (event) {
+          event.preventDefault();
+        });
+
+        handle.addEventListener("pointerdown", function (event) {
+          if (tool !== "cursor") return;
+          event.preventDefault();
+          event.stopPropagation(); // don't also start dragging the item
+          selectItem(item);
+
+          const text = item.querySelector(".textInside"); // null for shapes
+
+          // Remember how things were when you started pulling
+          const startMouseX = event.clientX;
+          const startMouseY = event.clientY;
+          const startSize = Number(item.dataset.size);
+          const startWidth = item.offsetWidth;
+          const startHeight = item.offsetHeight;
+          const startLeft = parseFloat(item.style.left);
+          const startTop = parseFloat(item.style.top);
+          const isRight = corner.includes("right");
+          const isBottom = corner.includes("bottom");
+
+          handle.setPointerCapture(event.pointerId);
+
+          // Rotation maths. If the item is rotated, "right" for the item
+          // isn't "right" on the screen, so we use sin and cos to turn
+          // directions between the two.
+          const angle = Number(item.dataset.angle || 0) * Math.PI / 180; // in radians
+          const cos = Math.cos(angle);
+          const sin = Math.sin(angle);
+          const sx = isRight ? 1 : -1;  // which side the pulled corner is on
+          const sy = isBottom ? 1 : -1;
+
+          // Where the opposite corner is on the screen. It must stay there
+          const startMiddleX = startLeft + startWidth / 2;
+          const startMiddleY = startTop + startHeight / 2;
+          const cornerX = -sx * startWidth / 2;  // opposite corner, from the middle
+          const cornerY = -sy * startHeight / 2;
+          const anchorX = startMiddleX + (cornerX * cos - cornerY * sin);
+          const anchorY = startMiddleY + (cornerX * sin + cornerY * cos);
+
+          function onMove(e) {
+            const screenDx = e.clientX - startMouseX;
+            const screenDy = e.clientY - startMouseY;
+            // Turn the mouse movement into the item's own directions
+            let dx = screenDx * cos + screenDy * sin;
+            let dy = -screenDx * sin + screenDy * cos;
+            // Pulling a left or top corner outwards means moving left/up,
+            // so flip those so "outwards" is always positive
+            dx = dx * sx;
+            dy = dy * sy;
+
+            if (text !== null) {
+              // Text box: how much bigger should it be? (1 = same, 2 = double)
+              const scale = Math.max(
+                (startWidth + dx) / startWidth,
+                (startHeight + dy) / startHeight
+              );
+              // New text size, kept between 8 and 300
+              const newSize = Math.round(
+                Math.max(8, Math.min(300, startSize * scale))
+              );
+              item.dataset.size = newSize;
+              text.style.fontSize = newSize + "px";
+            } else {
+              // Shape: just change the width and height (at least 10px)
+              // (-2 because offsetWidth includes the 1px border on each side)
+              item.style.width = Math.max(10, startWidth - 2 + dx) + "px";
+              item.style.height = Math.max(10, startHeight - 2 + dy) + "px";
+            }
+
+            // Keep the opposite corner still on the screen (even if the
+            // item is rotated): work out where the middle needs to go
+            const newWidth = item.offsetWidth;
+            const newHeight = item.offsetHeight;
+            const x = -sx * newWidth / 2; // opposite corner, from the new middle
+            const y = -sy * newHeight / 2;
+            const middleX = anchorX - (x * cos - y * sin);
+            const middleY = anchorY - (x * sin + y * cos);
+            item.style.left = middleX - newWidth / 2 + "px";
+            item.style.top = middleY - newHeight / 2 + "px";
+            showItemNumbers(); // keep the Size boxes up to date
+          }
+
+          function onUp() {
+            handle.removeEventListener("pointermove", onMove);
+            handle.removeEventListener("pointerup", onUp);
+            saveState(); // remember the new size for Undo
+          }
+
+          handle.addEventListener("pointermove", onMove);
+          handle.addEventListener("pointerup", onUp);
+        });
+      }
+
+      // ===== Fonts =====
+      // The fonts you can pick from. These come with Windows.
+      const fonts = [
+        "Arial",
+        "Times New Roman",
+        "Courier New",
+        "Georgia",
+        "Verdana",
+        "Trebuchet MS",
+        "Comic Sans MS",
+        "Impact",
+      ];
+
+      // Make a button in the font list for each font,
+      // with its name written in that font so you can see what it looks like
+      for (const font of fonts) {
+        const option = document.createElement("button");
+        option.textContent = font;
+        option.style.fontFamily = font;
+        option.style.display = "block";
+        option.style.width = "100%";
+        option.style.textAlign = "left";
+        option.style.fontSize = "16px";
+        // Stop the click from un-highlighting your text
+        option.addEventListener("mousedown", function (event) {
+          event.preventDefault();
+        });
+        option.addEventListener("click", function () {
+          applyStyle("fontFamily", font);
+          saveState(); // remember it for Undo
+        });
+        document.getElementById("fontList").appendChild(option);
+      }
+
+      // ===== Thickness, Size and Rotation (Properties panel) =====
+      // Text thickness is an outline drawn around each letter in the
+      // text's own colour, so the letters look thicker. It's measured in
+      // "em" (1em = the text size), so it grows when the text gets bigger.
+      // Each step on the slider adds 0.01em.
+      const textThicknessStep = 0.01;
+
+      // Thickness slider
+      const thickness = document.getElementById("thickness");
+      // Pressing the slider un-highlights your text, so remember it first
+      thickness.addEventListener("mousedown", rememberHighlight);
+      thickness.addEventListener("input", function () {
+        document.getElementById("thicknessShow").textContent = thickness.value;
+        if (selectedItem === null) return;
+        if (selectedItem.classList.contains("shapeItem")) {
+          setShapeThickness(selectedItem, thickness.value);
+        } else {
+          // Text: just the highlighted letters, or the whole box
+          const amount = thickness.value * textThicknessStep + "em";
+          savedRange = applyStyle("webkitTextStrokeWidth", amount, savedRange);
+        }
+      });
+      thickness.addEventListener("change", saveState); // let go = one Undo step
+
+      // Turn a text box's outline ("0.03em") back into a slider number (3)
+      function textThicknessOf(textBox) {
+        const amount = parseFloat(textBox.style.webkitTextStrokeWidth) || 0;
+        return Math.round(amount / textThicknessStep);
+      }
+
+      // Change an item's size, but keep its middle in the same place.
+      // (Items spin around their middle, so this stops a rotated item
+      // jumping sideways when it changes size.)
+      // change is a function that does the actual resizing
+      function resizeAroundMiddle(item, change) {
+        const middleX = parseFloat(item.style.left) + item.offsetWidth / 2;
+        const middleY = parseFloat(item.style.top) + item.offsetHeight / 2;
+        change();
+        item.style.left = middleX - item.offsetWidth / 2 + "px";
+        item.style.top = middleY - item.offsetHeight / 2 + "px";
+      }
+
+      // Width and height boxes (shapes and lines)
+      const widthBox = document.getElementById("itemWidth");
+      const heightBox = document.getElementById("itemHeight");
+      for (const box of [widthBox, heightBox]) {
+        box.addEventListener("input", function () {
+          if (selectedItem === null || !selectedItem.classList.contains("shapeItem")) return;
+          const value = Number(box.value);
+          if (!(value >= 10)) return; // still typing, or too small: wait
+          resizeAroundMiddle(selectedItem, function () {
+            if (box === widthBox) selectedItem.style.width = Math.min(3000, value) + "px";
+            else selectedItem.style.height = Math.min(3000, value) + "px";
+          });
+        });
+      }
+
+      // Text size box (text boxes)
+      const textSizeBox = document.getElementById("itemTextSize");
+      textSizeBox.addEventListener("input", function () {
+        if (selectedItem === null || !selectedItem.classList.contains("textItem")) return;
+        const value = Number(textSizeBox.value);
+        if (!(value >= 8)) return; // still typing, or too small: wait
+        const size = Math.min(300, Math.round(value));
+        resizeAroundMiddle(selectedItem, function () {
+          selectedItem.dataset.size = size;
+          selectedItem.querySelector(".textInside").style.fontSize = size + "px";
+        });
+      });
+
+      // Rotation box: type 90 and the item turns to 90 degrees
+      const angleBox = document.getElementById("itemAngle");
+      angleBox.addEventListener("input", function () {
+        if (selectedItem === null || angleBox.value === "") return;
+        setAngle(selectedItem, Number(angleBox.value));
+      });
+
+      // Finished with a box (pressed Enter or clicked away):
+      // tidy up the numbers and remember the change for Undo
+      for (const box of [widthBox, heightBox, textSizeBox, angleBox]) {
+        box.addEventListener("change", function () {
+          if (selectedItem === null) return;
+          box.blur(); // so the box can show the tidied-up number
+          showItemNumbers();
+          saveState();
+        });
+      }
+
+      // ===== Outline and Fill (Properties panel) =====
+      const shapeOutlineOn = document.getElementById("shapeOutlineOn");
+      const boxOutlineOn = document.getElementById("boxOutlineOn");
+      const boxOutlineColour = document.getElementById("boxOutlineColour");
+      const boxOutlineWidth = document.getElementById("boxOutlineWidth");
+      const fillOn = document.getElementById("fillOn");
+      const fillColour = document.getElementById("fillColour");
+
+      // Shapes: the Show outline tick box
+      shapeOutlineOn.addEventListener("change", function () {
+        if (selectedItem === null || !selectedItem.classList.contains("shapeItem")) return;
+        selectedItem.dataset.outline = shapeOutlineOn.checked ? "on" : "off";
+        applyShapeLook(selectedItem);
+        saveState();
+      });
+
+      // Text boxes: the Box outline tick box, colour and thickness.
+      // Picking a colour or thickness turns the outline on, because
+      // you clearly want to see it.
+      function updateBoxOutline(turnOn) {
+        if (selectedItem === null || !selectedItem.classList.contains("textItem")) return;
+        if (turnOn) boxOutlineOn.checked = true;
+        selectedItem.dataset.boxOutline = boxOutlineOn.checked ? "on" : "off";
+        selectedItem.dataset.boxOutlineColour = boxOutlineColour.value;
+        selectedItem.dataset.boxOutlineWidth = boxOutlineWidth.value;
+        document.getElementById("boxOutlineWidthShow").textContent = boxOutlineWidth.value;
+        applyTextBoxLook(selectedItem);
+      }
+      boxOutlineOn.addEventListener("change", function () {
+        updateBoxOutline(false);
+        saveState();
+      });
+      boxOutlineColour.addEventListener("input", function () { updateBoxOutline(true); });
+      boxOutlineColour.addEventListener("change", saveState);
+      boxOutlineWidth.addEventListener("input", function () { updateBoxOutline(true); });
+      boxOutlineWidth.addEventListener("change", saveState);
+
+      // Fill (text boxes and shapes). Picking a colour turns the fill on
+      function updateFill(turnOn) {
+        if (selectedItem === null) return;
+        if (turnOn) fillOn.checked = true;
+        selectedItem.dataset.fill = fillOn.checked ? fillColour.value : "none";
+        applyLook(selectedItem);
+      }
+      fillOn.addEventListener("change", function () {
+        updateFill(false);
+        saveState();
+      });
+      fillColour.addEventListener("input", function () { updateFill(true); });
+      fillColour.addEventListener("change", saveState);
+
+      // Show the selected item's outline and fill in the Properties panel
+      function showItemLook() {
+        const item = selectedItem;
+        const fill = item.dataset.fill || "none";
+        fillOn.checked = fill !== "none";
+        if (fill !== "none") fillColour.value = fill;
+        if (item.classList.contains("shapeItem")) {
+          shapeOutlineOn.checked = item.dataset.outline !== "off";
+        } else {
+          boxOutlineOn.checked = item.dataset.boxOutline === "on";
+          boxOutlineColour.value = item.dataset.boxOutlineColour;
+          boxOutlineWidth.value = item.dataset.boxOutlineWidth;
+          document.getElementById("boxOutlineWidthShow").textContent = boxOutlineWidth.value;
+        }
+      }
+
+      // Show the selected item's numbers in the Properties panel.
+      // (Skips the box you're typing in, so it doesn't change under you.)
+      function showItemNumbers() {
+        if (selectedItem === null) return;
+        const typingIn = document.activeElement;
+        function show(box, value) {
+          if (box !== typingIn) box.value = value;
+        }
+        if (selectedItem.classList.contains("shapeItem")) {
+          thickness.min = 1;
+          thickness.max = 40;
+          thickness.value = selectedItem.dataset.thickness;
+          show(widthBox, Math.round(parseFloat(selectedItem.style.width)));
+          show(heightBox, Math.round(parseFloat(selectedItem.style.height)));
+        } else {
+          thickness.min = 0;
+          thickness.max = 10;
+          thickness.value = textThicknessOf(selectedItem.querySelector(".textInside"));
+          show(textSizeBox, selectedItem.dataset.size);
+        }
+        document.getElementById("thicknessShow").textContent = thickness.value;
+        show(angleBox, Math.round(Number(selectedItem.dataset.angle || 0)) % 360);
+      }
+
+      // ===== Text colours =====
+      const textColours = [
+        "#000000", "#ffffff", "#808080", "#ff0000",
+        "#ff9900", "#ffdd00", "#00aa00", "#00cccc",
+        "#0000ff", "#8800cc", "#ff66cc", "#8b4513",
+      ];
+
+      // Make a coloured square in the colour list for each colour
+      for (const colour of textColours) {
+        const square = document.createElement("button");
+        square.style.background = colour;
+        square.style.width = "30px";
+        square.style.height = "30px";
+        square.style.margin = "1px";
+        square.style.border = "1px solid #333";
+        // Stop the click from un-highlighting your text
+        square.addEventListener("mousedown", function (event) {
+          event.preventDefault();
+        });
+        square.addEventListener("click", function () {
+          // (The square's mousedown kept your highlight, so no need for savedRange)
+          applyStyle("color", colour);
+          saveState(); // remember it for Undo
+        });
+        document.getElementById("textColourSquares").appendChild(square);
+      }
+
+      // ===== Colour wheel (in the Properties panel) =====
+      // Clicking the colour wheel un-highlights your text, so we remember
+      // what was highlighted just before, in savedRange.
+      let savedRange = null;
+      const wheel = document.getElementById("textColourWheel");
+
+      // Pressing the wheel or a slider: remember what's highlighted.
+      // mousedown happens before the text gets un-highlighted.
+      //   - Text highlighted? Remember it.
+      //   - Coming from another slider or the wheel? Keep what we had,
+      //     so you can use several sliders on the same letters.
+      //   - Otherwise nothing is highlighted, so forget the old highlight
+      //     (then the colour changes the whole selected item)
+      function rememberHighlight() {
+        const range = getHighlight();
+        const fromPanel = document.getElementById("leftPanel").contains(document.activeElement);
+        if (range !== null) savedRange = range.cloneRange();
+        else if (!fromPanel) savedRange = null;
+      }
+      wheel.addEventListener("mousedown", rememberHighlight);
+
+      // "input" happens every time you move around the colour wheel,
+      // so the text changes colour as you go
+      wheel.addEventListener("input", function () {
+        savedRange = applyStyle("color", wheel.value, savedRange);
+        showRgb(wheel.value); // move the RGB sliders to match
+      });
+
+      // ===== RGB sliders (also in the Properties panel) =====
+      const sliderR = document.getElementById("rgbR");
+      const sliderG = document.getElementById("rgbG");
+      const sliderB = document.getElementById("rgbB");
+
+      // Pressing on a slider un-highlights your text too, so remember it first
+      document.getElementById("rgbSliders").addEventListener("mousedown", rememberHighlight);
+
+      // Moving any slider: mix the colour and change the text
+      for (const slider of [sliderR, sliderG, sliderB]) {
+        slider.addEventListener("input", function () {
+          const colour = "rgb(" + sliderR.value + ", " + sliderG.value + ", " + sliderB.value + ")";
+          savedRange = applyStyle("color", colour, savedRange);
+          updateRgbLabels();
+          wheel.value = rgbToHex(sliderR.value, sliderG.value, sliderB.value); // match the wheel
+        });
+        // "change" happens when you let go of the slider: remember it for Undo
+        slider.addEventListener("change", saveState);
+      }
+
+      // Show the slider numbers and the mixed colour
+      function updateRgbLabels() {
+        document.getElementById("rgbRShow").textContent = sliderR.value;
+        document.getElementById("rgbGShow").textContent = sliderG.value;
+        document.getElementById("rgbBShow").textContent = sliderB.value;
+        document.getElementById("rgbPreview").style.background =
+          "rgb(" + sliderR.value + ", " + sliderG.value + ", " + sliderB.value + ")";
+      }
+
+      // Move the sliders to match a colour like "#ff8800"
+      // (hex colours are R, G, B written as 2-digit base-16 numbers)
+      function showRgb(hex) {
+        sliderR.value = parseInt(hex.slice(1, 3), 16);
+        sliderG.value = parseInt(hex.slice(3, 5), 16);
+        sliderB.value = parseInt(hex.slice(5, 7), 16);
+        updateRgbLabels();
+      }
+
+      // Turn R, G, B numbers into a hex colour like "#ff8800",
+      // because the colour wheel only understands hex
+      function rgbToHex(r, g, b) {
+        let hex = "#";
+        for (const n of [r, g, b]) {
+          hex = hex + Number(n).toString(16).padStart(2, "0");
+        }
+        return hex;
+      }
+
+      // "change" happens when you close the colour wheel
+      wheel.addEventListener("change", function () {
+        saveState(); // remember it for Undo
+      });
+
+      // If some text in a text box is highlighted, give back that highlight.
+      // Otherwise give back null (nothing).
+      function getHighlight() {
+        const selection = window.getSelection();
+        if (selection.rangeCount === 0 || selection.isCollapsed) return null;
+        const range = selection.getRangeAt(0);
+        const box = textBoxOf(range);
+        if (box === null) return null;
+        // Only count a highlight in the selected item. (A highlight can be
+        // left behind in another text box after you click away from it)
+        if (selectedItem === null || !selectedItem.contains(box)) return null;
+        return range;
+      }
+
+      // Which text box is this range (highlight) in? null if none
+      function textBoxOf(range) {
+        let node = range.commonAncestorContainer;
+        // A plain piece of text isn't an element, so start from its parent
+        if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+        return node.closest(".textInside");
+      }
+
+      // Change the whole of a text box
+      // (style[property] means "the style called property",
+      //  so style["color"] is the same as style.color)
+      function styleWholeBox(textBox, property, value) {
+        textBox.style[property] = value;
+        for (const span of textBox.querySelectorAll("span")) {
+          span.style[property] = ""; // remove older ones inside it
+        }
+      }
+
+      // Change the text's font or colour.
+      // property is what to change: "fontFamily" (font) or "color" (colour)
+      // value is what to change it to, like "Arial" or "#ff0000"
+      // range (optional) is a highlight to use instead of the current one
+      //
+      // What gets changed:
+      //   1. If some text is highlighted: just that text
+      //   2. If you're typing in a box (nothing highlighted): the whole box
+      //   3. If a box is selected (blue border): the whole box
+      //
+      // Gives back the highlight afterwards, so the colour wheel can keep
+      // changing the same text.
+      function applyStyle(property, value, range) {
+        const hint = document.getElementById("homeHint");
+        hint.textContent = "";
+        if (!range || range.collapsed || !textBoxOf(range)) range = getHighlight();
+
+        // No highlight: change the whole box you're typing in, or the selected box
+        if (range === null) {
+          const typingIn = document.activeElement;
+          if (typingIn.className === "textInside") {
+            styleWholeBox(typingIn, property, value);
+          } else if (selectedItem !== null && selectedItem.classList.contains("shapeItem")) {
+            // A shape is selected: Colour changes its colour (fonts do nothing)
+            if (property === "color") setShapeColour(selectedItem, value);
+          } else if (selectedItem !== null) {
+            styleWholeBox(selectedItem.querySelector(".textInside"), property, value);
+          } else {
+            hint.textContent = "Click a text box, or highlight some text, first.";
+          }
+          return null;
+        }
+
+        // If the highlight is exactly one <span> we made before,
+        // just change that span (no need to make another one)
+        let span = range.commonAncestorContainer;
+        if (span.nodeType === Node.TEXT_NODE) span = span.parentElement;
+        if (span.tagName === "SPAN" && range.toString() === span.textContent) {
+          span.style[property] = value;
+        } else {
+          // Wrap the highlighted text in a new <span> that has the new style
+          span = document.createElement("span");
+          span.style[property] = value;
+          span.appendChild(range.extractContents()); // cut the highlighted bit out...
+          range.insertNode(span); // ...and put it back inside the span
+        }
+
+        // If the highlighted bit already had this style, remove it so the new one wins
+        for (const inner of span.querySelectorAll("span")) {
+          inner.style[property] = "";
+        }
+
+        // Highlight the text again, so you can try something else straight away
+        const newRange = document.createRange();
+        newRange.selectNodeContents(span);
+        if (document.activeElement === textBoxOf(newRange)) {
+          window.getSelection().removeAllRanges();
+          window.getSelection().addRange(newRange);
+        }
+        return newRange;
+      }
+
+      // ===== Tools: Cursor, Brush or Eraser =====
+      let tool = "brush"; // which tool is picked right now
+
+      // Cursor/Brush/Eraser buttons: pick a tool.
+      // The Eraser draws in white, but it never changes your colour,
+      // so when you go back to Brush, your colour is still there.
+      function setTool(name) {
+        tool = name;
+
+        // Make the picked tool's button bold
+        document.getElementById("cursorTool").style.fontWeight =
+          name === "cursor" ? "bold" : "normal";
+        document.getElementById("brushTool").style.fontWeight =
+          name === "brush" ? "bold" : "normal";
+        document.getElementById("eraserTool").style.fontWeight =
+          name === "eraser" ? "bold" : "normal";
+
+        // Brush and Eraser show a crosshair, Cursor shows the normal arrow
+        canvas.style.cursor = name === "cursor" ? "default" : "crosshair";
+
+        // Text boxes and shapes can only be clicked with the Cursor tool.
+        // pointerEvents "none" makes clicks go straight through to the canvas.
+        for (const item of document.querySelectorAll(".canvasItem")) {
+          item.style.pointerEvents = name === "cursor" ? "auto" : "none";
+        }
+        // No joining dot for the eraser
+        if (name !== "brush") hideDot();
+        // Switching to Brush or Eraser stops any typing and un-selects the item
+        if (name !== "cursor") {
+          if (document.activeElement.className === "textInside") {
+            document.activeElement.blur();
+          }
+          selectItem(null);
+        }
+        updateAllBorders();
+      }
+
+      // ===== Selected text box =====
+      // The text box you last clicked, dragged or resized.
+      // Font and Colour (in the Properties panel) change the whole of this box
+      // when no text is highlighted.
+      let selectedItem = null;
+
+      function selectItem(item) {
+        // A different item: forget any highlight saved for the colour wheel
+        if (item !== selectedItem) savedRange = null;
+        selectedItem = item;
+        updateAllBorders();
+
+        // Small screens start with a narrow panel. When you select
+        // something, open it up so you can see the Properties
+        const panel = document.getElementById("leftPanel");
+        if (item !== null && panel.offsetWidth < 150) panel.style.width = "180px";
+      }
+
+      // Show the Properties that fit what's selected:
+      //   nothing selected = a hint
+      //   shape or line    = Colour, Thickness, Size (W and H) and Rotation
+      //   text box         = Colour, Font, Thickness, Size (text size) and Rotation
+      function updatePropertiesPanel() {
+        const isText = selectedItem !== null && selectedItem.classList.contains("textItem");
+        const isShape = selectedItem !== null && selectedItem.classList.contains("shapeItem");
+        const anything = selectedItem !== null;
+        document.getElementById("propsNothing").style.display = anything ? "none" : "block";
+        document.getElementById("propsColour").style.display = anything ? "block" : "none";
+        document.getElementById("propsFont").style.display = isText ? "block" : "none";
+        document.getElementById("propsThickness").style.display = anything ? "block" : "none";
+        document.getElementById("propsSize").style.display = anything ? "block" : "none";
+        document.getElementById("sizeShape").style.display = isShape ? "block" : "none";
+        document.getElementById("sizeText").style.display = isText ? "block" : "none";
+        document.getElementById("propsRotation").style.display = anything ? "block" : "none";
+
+        // Outline and Fill. Lines have no inside, and their outline IS the
+        // line, so they get neither Fill nor the Show outline tick box
+        const isLine = isShape && selectedItem.dataset.shape === "line";
+        document.getElementById("propsBoxOutline").style.display = isText ? "block" : "none";
+        document.getElementById("propsFill").style.display = anything && !isLine ? "block" : "none";
+        document.getElementById("shapeOutlineLabel").style.display = isShape && !isLine ? "block" : "none";
+
+        // For text, Colour and Thickness are for the letters.
+        // For shapes and lines, they're for the outline
+        document.getElementById("colourHeading").textContent = isText ? "Text colour" : isLine ? "Line colour" : "Outline colour";
+        document.getElementById("thicknessHeading").textContent = isText ? "Text thickness" : isLine ? "Line thickness" : "Outline thickness";
+
+        showItemNumbers(); // fill in the selected item's own numbers
+        if (anything) showItemLook(); // and its outline and fill
+      }
+
+      // Delete key: delete the selected text box or shape.
+      // (Not while you're typing in it. Then Delete just deletes letters.)
+      document.addEventListener("keydown", function (event) {
+        if (event.key !== "Delete" && event.key !== "Backspace") return;
+        if (selectedItem === null) return;
+        // Typing in a text box (or any other box)? Let the key work normally
+        const active = document.activeElement;
+        if (active.isContentEditable || active.tagName === "INPUT") return;
+
+        event.preventDefault(); // stop Backspace doing anything else
+        deleteSelected();
+      });
+
+      // Delete key or 🗑 Delete button: delete the selected item
+      function deleteSelected() {
+        if (selectedItem === null) return;
+        selectedItem.remove();
+        selectItem(null);
+        saveState(); // remember it for Undo
+      }
+
+      // ===== Undo =====
+      // After every change, saveState() takes a "snapshot" of everything:
+      // the drawing, every text box and shape, and the line ends.
+      // The snapshots go in a list called undoHistory. Undo goes back to the
+      // snapshot before. There's no limit: every step is kept until you
+      // close or refresh the page.
+      const undoHistory = [];
+      let canvasChanged = true; // did the drawing change since the last snapshot?
+      let lastImage = null;     // the drawing in the last snapshot
+
+      function saveState() {
+        // Turning the canvas into a picture is slow-ish, so only do it
+        // when the drawing really changed. Otherwise reuse the last one
+        if (canvasChanged || lastImage === null) {
+          lastImage = canvas.toDataURL("image/png");
+          canvasChanged = false;
+        }
+
+        const state = {
+          image: lastImage,
+          // JSON.stringify turns the list into text, so we can easily
+          // check if anything changed
+          items: JSON.stringify(
+            Array.from(document.querySelectorAll(".canvasItem")).map(itemToData)
+          ),
+          lineEnds: JSON.stringify(lineEnds),
+        };
+
+        // Nothing changed since the last snapshot? Don't save a copy
+        const last = undoHistory[undoHistory.length - 1];
+        if (last && last.image === state.image && last.items === state.items) return;
+
+        undoHistory.push(state);
+        updateUndoButton();
+      }
+
+      // Undo button or Ctrl+Z: go back one step
+      function undo() {
+        if (undoHistory.length < 2) return; // nothing to undo
+        // Finish typing first, so the text box is saved properly
+        if (document.activeElement.className === "textInside") {
+          document.activeElement.blur();
+        }
+        undoHistory.pop(); // throw away the newest snapshot...
+        restoreState(undoHistory[undoHistory.length - 1]); // ...and go back to the one before
+        updateUndoButton();
+      }
+
+      // Put everything back the way it was in a snapshot
+      let restoreNumber = 0;
+      function restoreState(state) {
+        // The drawing: load the picture, then paint it onto the canvas.
+        // Loading takes a moment, so it happens in img.onload
+        const myNumber = ++restoreNumber;
+        const img = new Image();
+        img.onload = function () {
+          if (myNumber !== restoreNumber) return; // a newer undo started, skip this
+          clearCanvas();
+          pen.drawImage(img, 0, 0);
+        };
+        img.src = state.image;
+        lastImage = state.image;
+        canvasChanged = false;
+
+        // The text boxes and shapes: remove them all, then rebuild them
+        selectedItem = null;
+        for (const item of document.querySelectorAll(".canvasItem")) item.remove();
+        for (const data of JSON.parse(state.items)) dataToItem(data);
+        setTool(tool); // make the rebuilt items behave like the others
+
+        // The line ends (for the blue joining dot)
+        lineEnds.length = 0;
+        for (const end of JSON.parse(state.lineEnds)) lineEnds.push(end);
+        hideDot();
+      }
+
+      // Write down everything about an item, so it can be rebuilt later
+      function itemToData(item) {
+        const data = {
+          left: item.style.left,
+          top: item.style.top,
+          angle: item.dataset.angle || 0,
+          fill: item.dataset.fill || "none",
+        };
+        if (item.classList.contains("shapeItem")) {
+          data.kind = "shape";
+          data.shape = item.dataset.shape;
+          data.colour = item.dataset.colour;
+          data.thickness = item.dataset.thickness;
+          data.outline = item.dataset.outline;
+          data.width = item.style.width;
+          data.height = item.style.height;
+        } else {
+          const text = item.querySelector(".textInside");
+          data.kind = "text";
+          data.size = item.dataset.size;
+          data.colour = text.style.color;
+          data.font = text.style.fontFamily;
+          data.thickness = text.style.webkitTextStrokeWidth; // the whole box's thickness
+          data.boxOutline = item.dataset.boxOutline;
+          data.boxOutlineColour = item.dataset.boxOutlineColour;
+          data.boxOutlineWidth = item.dataset.boxOutlineWidth;
+          data.html = text.innerHTML; // the text, with its fonts and colours
+        }
+        return data;
+      }
+
+      // Rebuild an item from what itemToData wrote down
+      function dataToItem(data) {
+        const x = parseFloat(data.left);
+        const y = parseFloat(data.top);
+        let item;
+        if (data.kind === "shape") {
+          item = buildShape(data.shape, x, y, data.colour, data.thickness, data.width, data.height);
+        } else {
+          item = buildTextBox(x, y, data.size, data.colour);
+          const text = item.querySelector(".textInside");
+          text.style.fontFamily = data.font;
+          text.style.webkitTextStrokeWidth = data.thickness || "";
+          text.innerHTML = data.html;
+          item.dataset.boxOutline = data.boxOutline || "off";
+          item.dataset.boxOutlineColour = data.boxOutlineColour || "#000000";
+          item.dataset.boxOutlineWidth = data.boxOutlineWidth || 2;
+        }
+        item.dataset.fill = data.fill || "none";
+        if (data.kind === "shape") item.dataset.outline = data.outline || "on";
+        applyLook(item);
+        // applyLook keeps the middle still, which can nudge the box,
+        // so put it back exactly where it was
+        item.style.left = data.left;
+        item.style.top = data.top;
+        setAngle(item, Number(data.angle));
+      }
+
+      // Grey out the Undo button when there's nothing to undo
+      function updateUndoButton() {
+        document.getElementById("undoButton").disabled = undoHistory.length < 2;
+      }
+
+      // Ctrl+Z = Undo (but not while typing, where Ctrl+Z undoes your typing)
+      document.addEventListener("keydown", function (event) {
+        if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "z") return;
+        const active = document.activeElement;
+        if (active.isContentEditable || active.tagName === "INPUT") return;
+        event.preventDefault();
+        undo();
+      });
+
+      // Pick the right border for an item:
+      //   typing in it   = dark dashed
+      //   selected       = blue
+      //   not selected   = no border
+      // Only the selected item shows its corner and rotate handles.
+      function updateBorder(item) {
+        const text = item.querySelector(".textInside");
+        if (document.activeElement === text) {
+          item.style.border = "1px dashed #333";
+        } else if (item === selectedItem) {
+          item.style.border = "1px solid #0078d7";
+        } else {
+          item.style.border = "1px dashed transparent";
+        }
+
+        const showHandles = item === selectedItem && tool === "cursor";
+        for (const handle of item.querySelectorAll(".handle")) {
+          handle.style.display = showHandles ? "block" : "none";
+        }
+      }
+
+      function updateAllBorders() {
+        for (const item of document.querySelectorAll(".canvasItem")) {
+          updateBorder(item);
+        }
+        // The Delete button only works when something is selected.
+        // (Items can be removed elsewhere, so check it's still on the page)
+        if (selectedItem !== null && !selectedItem.isConnected) selectedItem = null;
+        document.getElementById("deleteButton").disabled = selectedItem === null;
+        updatePropertiesPanel();
+      }
+
+      // Quick colour buttons: change the colour picker's value.
+      // Picking a colour while the Eraser is on switches back to the Brush,
+      // because you clearly want to draw in that colour
+      function setColour(colour) {
+        document.getElementById("brushColour").value = colour;
+        if (tool === "eraser") setTool("brush");
+      }
+      document.getElementById("brushColour").addEventListener("input", function () {
+        if (tool === "eraser") setTool("brush");
+      });
+
+      // Save Picture button: downloads the drawing as a .png image.
+      // Text boxes and shapes aren't part of the canvas, so we make a copy
+      // of the drawing and paint them onto the copy before saving it.
+      function savePicture() {
+        // Only save the part of the canvas you can see
+        // (the canvas can be bigger than its box, see fitCanvas)
+        const box = document.getElementById("canvasBox");
+        const copy = document.createElement("canvas");
+        copy.width = box.clientWidth;
+        copy.height = box.clientHeight;
+        const copyPen = copy.getContext("2d");
+        // The drawing is see-through where nothing is drawn (or where it was
+        // erased), so give the saved picture a white background first
+        copyPen.fillStyle = "white";
+        copyPen.fillRect(0, 0, copy.width, copy.height);
+        copyPen.drawImage(canvas, 0, 0);
+
+        // Go through items in order, so ones on top stay on top
+        for (const item of document.querySelectorAll(".canvasItem")) {
+          // If the item is rotated, rotate the pen the same way around the
+          // item's middle. save() and restore() put the pen back after
+          copyPen.save();
+          const middleX = parseFloat(item.style.left) + item.offsetWidth / 2;
+          const middleY = parseFloat(item.style.top) + item.offsetHeight / 2;
+          copyPen.translate(middleX, middleY);
+          copyPen.rotate(Number(item.dataset.angle || 0) * Math.PI / 180);
+          copyPen.translate(-middleX, -middleY);
+
+          if (item.classList.contains("shapeItem")) {
+            drawShapeOnto(copyPen, item);
+          } else {
+            drawTextOnto(copyPen, item);
+          }
+          copyPen.restore();
+        }
+
+        const link = document.createElement("a");
+        link.download = "my-drawing.png";        // the file name
+        link.href = copy.toDataURL("image/png"); // the picture
+        link.click();                            // pretend to click it
+      }
+
+      // Paint a text box onto a canvas, for Save Picture
+      function drawTextOnto(copyPen, item) {
+        const text = item.querySelector(".textInside");
+        const size = Number(item.dataset.size);
+        const box = getComputedStyle(text);
+        const outline = parseFloat(box.borderLeftWidth) || 0; // box outline (0 = none)
+        const padLeft = parseFloat(box.paddingLeft);
+        const padTop = parseFloat(box.paddingTop);
+
+        // The box: +1 skips the item's own 1px border
+        const boxX = parseFloat(item.style.left) + 1;
+        const boxY = parseFloat(item.style.top) + 1;
+        const boxW = text.offsetWidth;
+        const boxH = text.offsetHeight;
+        // Fill first, so the text goes on top of it
+        if ((item.dataset.fill || "none") !== "none") {
+          copyPen.fillStyle = item.dataset.fill;
+          copyPen.fillRect(boxX, boxY, boxW, boxH);
+        }
+        // The outline sits just inside the box's edge
+        if (outline > 0) {
+          copyPen.strokeStyle = box.borderLeftColor;
+          copyPen.lineWidth = outline;
+          copyPen.lineJoin = "miter";
+          copyPen.strokeRect(boxX + outline / 2, boxY + outline / 2, boxW - outline, boxH - outline);
+        }
+
+        copyPen.textBaseline = "top";
+        // Skip the outline and padding. The 0.1 * size matches the line height.
+        let x = boxX + outline + padLeft;
+        const y = boxY + outline + padTop + 0.1 * size;
+
+        // Different bits of the text can have different fonts and colours,
+        // so paint each bit with its own font and colour, one after the other
+        const walker = document.createTreeWalker(text, NodeFilter.SHOW_TEXT);
+        while (walker.nextNode()) {
+          const piece = walker.currentNode;
+          const look = getComputedStyle(piece.parentElement);
+          copyPen.font = look.fontWeight + " " + size + "px " + look.fontFamily;
+          copyPen.fillStyle = look.color;
+          // Thickness: draw the outline first, then the letters on top
+          const letterOutline = parseFloat(look.webkitTextStrokeWidth) || 0;
+          if (letterOutline > 0) {
+            copyPen.strokeStyle = look.color;
+            copyPen.lineWidth = letterOutline;
+            copyPen.lineJoin = "round";
+            copyPen.strokeText(piece.textContent, x, y);
+          }
+          copyPen.fillText(piece.textContent, x, y);
+          x = x + copyPen.measureText(piece.textContent).width; // move along
+        }
+      }
+
+      // Paint a shape item onto a canvas, for Save Picture
+      function drawShapeOnto(p, item) {
+        // +1 skips the item's 1px border
+        const x = parseFloat(item.style.left) + 1;
+        const y = parseFloat(item.style.top) + 1;
+        const w = parseFloat(item.style.width);
+        const h = parseFloat(item.style.height);
+
+        p.strokeStyle = item.dataset.colour;
+        p.lineWidth = item.dataset.thickness;
+        p.lineCap = "round";
+        p.lineJoin = "round";
+        p.beginPath();
+        if (item.dataset.shape === "rectangle") {
+          p.rect(x, y, w, h);
+        } else if (item.dataset.shape === "circle") {
+          // centre x, centre y, half width, half height, turn, start, end angle
+          p.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
+        } else if (item.dataset.shape === "triangle") {
+          p.moveTo(x + w / 2, y);  // top middle
+          p.lineTo(x + w, y + h);  // bottom right
+          p.lineTo(x, y + h);      // bottom left
+          p.closePath();           // back to the top
+        } else {
+          p.moveTo(x, y + h);      // line: bottom left...
+          p.lineTo(x + w, y);      // ...to top right
+        }
+        // Fill first, then the outline on top (like the screen does)
+        const isLine = item.dataset.shape === "line";
+        if (!isLine && (item.dataset.fill || "none") !== "none") {
+          p.fillStyle = item.dataset.fill;
+          p.fill();
+        }
+        if (isLine || item.dataset.outline !== "off") p.stroke();
+      }
+
+      // Wipe the whole drawing, so it's completely see-through (empty).
+      // The white you see is the canvas's background, behind the drawing
+      function clearCanvas() {
+        pen.clearRect(0, 0, canvas.width, canvas.height);
+        // Back to normal drawing, so putting a picture back (for Undo or
+        // resizing) draws it, instead of erasing with it
+        pen.globalCompositeOperation = "source-over";
+      }
+
+      // Clear / New Drawing buttons: wipe the drawing, and remove all
+      // text boxes and shapes
+      function clearDrawing() {
+        clearCanvas();
+        selectItem(null);
+        lineEnds.length = 0; // forget all the line ends (empties the list)
+        hideDot();
+        for (const box of document.querySelectorAll(".canvasItem")) {
+          box.remove();
+        }
+        canvasChanged = true;
+        saveState(); // so you can Undo a Clear too
+      }
+
+      // Start with the Home tab open (this also sizes the canvas to fit)
+      toggleMenu("home");
+      // Start with the Brush tool picked
+      setTool("brush");
+      // The first snapshot: the empty canvas. Undo can go back to here
+      saveState();
+    </script>
+  </body>
+</html>
