@@ -30,372 +30,1055 @@
         box-sizing: border-box;
       "
     >
-
-    <!-- ===== Top panel ===== -->
-    <div
-      style="
-        padding: 10px;
-        border: 2px solid black;
-        background: #dde6f0;
-      "
-    >
-      <!-- Row 1: title, menu buttons, save/new.
+      <!-- ===== Top panel ===== -->
+      <div style="padding: 10px; border: 2px solid black; background: #dde6f0">
+        <!-- Row 1: title, menu buttons, save/new.
            flex-wrap: wrap lets buttons move onto a new line on small screens -->
-      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
-        <strong style="font-size: 20px">My Drawing App</strong>
+        <div
+          style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px"
+        >
+          <!-- Back to the home page (your drawings and the templates).
+             Everything is saved to your account automatically -->
+          <button
+            id="homePageButton"
+            onclick="goHome()"
+            title="Back to the home page"
+          >
+            ⌂ Home page
+          </button>
 
-        <!-- Menu buttons. Each one shows/hides its own options row below -->
-        <button id="homeButton" onclick="toggleMenu('home')">Home</button>
-        <button id="insertButton" onclick="toggleMenu('insert')">Insert</button>
-        <button>Tools</button>
+          <!-- The drawing's name. Type to rename it -->
+          <input
+            id="drawingTitle"
+            aria-label="Drawing name"
+            value="Untitled drawing"
+            maxlength="60"
+            style="font-size: 16px; font-weight: bold; width: 180px"
+          />
+          <!-- "Saving..." / "Saved", so you know your work is safe -->
+          <span id="saveStatus" style="color: #555; font-size: 13px"></span>
 
-        <!-- margin-left: auto pushes these buttons to the right side -->
-        <button id="undoButton" onclick="undo()" style="margin-left: auto" title="Undo (Ctrl+Z)">↶ Undo</button>
-        <!-- Delete: for phones and tablets, which have no Delete key.
+          <!-- Menu buttons. Each one shows/hides its own options row below -->
+          <button id="homeButton" onclick="toggleMenu('home')">Home</button>
+          <button id="insertButton" onclick="toggleMenu('insert')">
+            Insert
+          </button>
+          <button>Tools</button>
+
+          <!-- margin-left: auto pushes these buttons to the right side -->
+          <button
+            id="undoButton"
+            onclick="undo()"
+            style="margin-left: auto"
+            title="Undo (Ctrl+Z)"
+          >
+            ↶ Undo
+          </button>
+          <!-- Delete: for phones and tablets, which have no Delete key.
              Greyed out until a text box or shape is selected -->
-        <button id="deleteButton" onclick="deleteSelected()" title="Delete the selected item (Delete key)">🗑 Delete</button>
-        <button onclick="savePicture()">Save Picture</button>
-        <button onclick="clearDrawing()">New Drawing</button>
-      </div>
+          <button
+            id="deleteButton"
+            onclick="deleteSelected()"
+            title="Delete the selected item (Delete key)"
+          >
+            🗑 Delete
+          </button>
+          <!-- Share: makes a .drawlab project file you can send to someone.
+             When they open it in Drawlab, everything can still be edited -->
+          <button
+            onclick="shareProject()"
+            title="Make a project file to send to someone"
+          >
+            📤 Share
+          </button>
+          <!-- Save Picture, with a "Saved!" message that pops up just below it.
+             position: relative on the wrapper lets the message sit under the
+             button without pushing any other buttons around -->
+          <span style="position: relative; display: inline-block">
+            <!-- Opens the Export panel (see exportDialog below) -->
+            <button onclick="savePicture()">Save Picture</button>
+            <span
+              id="savedMessage"
+              style="
+                display: none;
+                position: absolute;
+                top: 100%;
+                right: 0;
+                margin-top: 4px;
+                padding: 2px 8px;
+                border-radius: 4px;
+                background: #1a7f37;
+                color: white;
+                font: bold 13px Arial;
+                white-space: nowrap;
+                z-index: 30;
+                pointer-events: none;
+              "
+              >Saved!</span
+            >
+          </span>
+        </div>
 
-      <!-- Row 2: the Home options, side by side.
+        <!-- Row 2: the Home options, side by side.
            display: none hides it here, but the app opens Home on start up -->
-      <div
-        id="homeOptions"
-        style="
-          display: none;
-          flex-wrap: wrap;
-          align-items: center;
-          gap: 10px 20px;
-          margin-top: 10px;
-          padding-top: 10px;
-          border-top: 1px solid #999;
-        "
-      >
-        <!-- Tool buttons: Cursor (click text to edit it), Brush (draw)
+        <div
+          id="homeOptions"
+          style="
+            display: none;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px 20px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #999;
+          "
+        >
+          <!-- Tool buttons: Cursor (click text to edit it), Brush (draw)
              or Eraser (rub out drawing). Only one is picked at a time -->
-        <span>
-          Tool:
-          <button id="cursorTool" onclick="setTool('cursor')">Cursor</button>
-          <button id="brushTool" onclick="setTool('brush')">Brush</button>
-          <button id="eraserTool" onclick="setTool('eraser')">Eraser</button>
-        </span>
+          <span>
+            Tool:
+            <button
+              id="cursorTool"
+              onclick="setTool('cursor')"
+              title="Cursor (V)"
+            >
+              Cursor
+            </button>
+            <button id="brushTool" onclick="setTool('brush')" title="Brush (B)">
+              Brush
+            </button>
+            <button
+              id="eraserTool"
+              onclick="setTool('eraser')"
+              title="Eraser (E)"
+            >
+              Eraser
+            </button>
+          </span>
 
-        <!-- Colour picker -->
-        <label>
-          Colour:
-          <input type="color" id="brushColour" value="#000000" />
-        </label>
+          <!-- Colour picker -->
+          <label>
+            Colour:
+            <input type="color" id="brushColour" value="#000000" />
+          </label>
 
-        <!-- Quick colour buttons: click one to pick that colour -->
-        <span>
-          Quick colours:
-          <button onclick="setColour('#000000')" style="background: black; width: 30px; height: 30px"></button>
-          <button onclick="setColour('#ff0000')" style="background: red; width: 30px; height: 30px"></button>
-          <button onclick="setColour('#0000ff')" style="background: blue; width: 30px; height: 30px"></button>
-          <button onclick="setColour('#00aa00')" style="background: green; width: 30px; height: 30px"></button>
-        </span>
+          <!-- Quick colour buttons: click one to pick that colour -->
+          <span>
+            Quick colours:
+            <button
+              onclick="setColour('#000000')"
+              style="background: black; width: 30px; height: 30px"
+            ></button>
+            <button
+              onclick="setColour('#ff0000')"
+              style="background: red; width: 30px; height: 30px"
+            ></button>
+            <button
+              onclick="setColour('#0000ff')"
+              style="background: blue; width: 30px; height: 30px"
+            ></button>
+            <button
+              onclick="setColour('#00aa00')"
+              style="background: green; width: 30px; height: 30px"
+            ></button>
+          </span>
 
-        <!-- ===== Brush size =====
+          <!-- ===== Brush size =====
              A slider (1 to 40) plus 3 quick buttons, and a preview dot
              that's exactly as wide as the brush. Only NEW lines use the
              new size, and it never changes the colour -->
-        <span style="display: inline-flex; align-items: center; gap: 6px">
-          Size: <span id="sizeShow">5</span>
-          <input type="range" id="brushSize" min="1" max="40" value="5"
-                 oninput="showBrushSize()" />
-
-          <!-- Quick size buttons -->
-          <button class="sizePreset" data-size="2" onclick="setBrushSize(2)">Thin</button>
-          <button class="sizePreset" data-size="10" onclick="setBrushSize(10)">Medium</button>
-          <button class="sizePreset" data-size="30" onclick="setBrushSize(30)">Thick</button>
-
-          <!-- The preview dot. The box is 44px so the biggest dot (40) fits -->
-          <span
-            title="Brush size preview"
-            style="
-              display: inline-flex;
-              align-items: center;
-              justify-content: center;
-              width: 44px;
-              height: 44px;
-              background: white;
-              border: 1px solid #999;
-            "
-          >
-            <span
-              id="sizePreview"
-              style="display: block; width: 5px; height: 5px; border-radius: 50%; background: #333"
-            ></span>
-          </span>
-        </span>
-
-
-        <button onclick="clearDrawing()">Clear</button>
-
-        <!-- A hint that tells you what to do next -->
-        <span id="homeHint" style="color: #555"></span>
-      </div>
-
-      <!-- Row 2 (Insert): the Insert options. Also hidden at the start -->
-      <div
-        id="insertOptions"
-        style="
-          display: none;
-          flex-wrap: wrap;
-          align-items: center;
-          gap: 10px 20px;
-          margin-top: 10px;
-          padding-top: 10px;
-          border-top: 1px solid #999;
-        "
-      >
-        <!-- Text box: press this, then click on the canvas -->
-        <button id="textBoxButton" onclick="startTextBox()">Text Box</button>
-
-        <!-- Shapes: press one, then click on the canvas.
-             They use the brush colour and size from Home -->
-        <span>
-          Shapes:
-          <button onclick="startPlacing('rectangle')">▭ Rectangle</button>
-          <button onclick="startPlacing('circle')">◯ Circle</button>
-          <button onclick="startPlacing('triangle')">△ Triangle</button>
-          <button onclick="startPlacing('line')">╱ Line</button>
-        </span>
-
-        <!-- How big the text will be -->
-        <label>
-          Text size:
-          <input type="number" id="textSize" min="8" max="100" value="24" style="width: 50px" />
-        </label>
-
-        <!-- A hint that tells you what to do next -->
-        <span id="insertHint" style="color: #555"></span>
-      </div>
-    </div>
-
-    <!-- This box holds the left panel, the canvas and the bottom panel.
-         flex: 1 makes it stretch to fill all the height that's left -->
-    <div style="flex: 1; display: flex; min-height: 0">
-
-      <!-- ===== Properties panel (on the left) =====
-           Shows the options for the selected text box, shape or line.
-           overflow-y: auto adds a scroll bar if it doesn't all fit -->
-      <div
-        id="leftPanel"
-        style="
-          width: 210px;
-          flex-shrink: 0;
-          padding: 10px;
-          box-sizing: border-box;
-          overflow-x: hidden;
-          overflow-y: auto;
-          border: 2px solid black;
-          background: #f0f0f0;
-        "
-      >
-        <h4 style="margin: 0 0 8px 0">Properties</h4>
-
-        <!-- Shown when nothing is selected -->
-        <div id="propsNothing" style="color: #777">
-          Select a text box, shape or line to change it.
-        </div>
-
-        <!-- Colour: for text boxes, shapes and lines.
-             For text, highlight some letters to colour just those -->
-        <div id="propsColour" style="display: none">
-          <!-- Says "Text colour" or "Outline colour", see updatePropertiesPanel -->
-          <div id="colourHeading" style="font-weight: bold; margin-bottom: 4px">Colour</div>
-
-          <!-- The colour squares get added in here by the JavaScript -->
-          <div id="textColourSquares"></div>
-
-          <!-- The colour wheel, for any colour you like -->
-          <label style="display: block; margin-top: 6px">
-            More colours:
-            <input type="color" id="textColourWheel" value="#000000" />
-          </label>
-
-          <!-- RGB sliders: mix Red, Green and Blue light (each 0 to 255).
-               0,0,0 is black. 255,255,255 is white. 255,0,0 is red -->
-          <div id="rgbSliders" style="margin-top: 6px">
-            <div>
-              R <input type="range" id="rgbR" min="0" max="255" value="0" style="width: 120px" />
-              <span id="rgbRShow">0</span>
-            </div>
-            <div>
-              G <input type="range" id="rgbG" min="0" max="255" value="0" style="width: 120px" />
-              <span id="rgbGShow">0</span>
-            </div>
-            <div>
-              B <input type="range" id="rgbB" min="0" max="255" value="0" style="width: 120px" />
-              <span id="rgbBShow">0</span>
-            </div>
-            <!-- Shows the colour you've mixed -->
-            <div
-              id="rgbPreview"
-              style="height: 20px; margin-top: 4px; border: 1px solid #333; background: rgb(0, 0, 0)"
-            ></div>
-          </div>
-        </div>
-
-        <!-- Thickness: one slider for text boxes, shapes and lines.
-             Shapes and lines: how thick the outline is (1 to 40).
-             Text: 0 is normal, higher makes the letters thicker.
-             For text, highlight letters to change just those -->
-        <div id="propsThickness" style="display: none; margin-top: 14px">
-          <!-- Says "Text thickness" or "Outline thickness" -->
-          <div id="thicknessHeading" style="font-weight: bold; margin-bottom: 4px">Thickness</div>
-          <input
-            type="range"
-            id="thickness"
-            min="1"
-            max="40"
-            value="5"
-            style="width: 120px; vertical-align: middle"
-          />
-          <span id="thicknessShow">5</span>
-          <!-- Shapes only (not lines): untick to hide the outline -->
-          <label id="shapeOutlineLabel" style="display: block; margin-top: 4px">
-            <input type="checkbox" id="shapeOutlineOn" checked /> Show outline
-          </label>
-        </div>
-
-        <!-- Box outline: a border round a text box (text boxes only).
-             It starts hidden. Picking a colour or thickness shows it -->
-        <div id="propsBoxOutline" style="display: none; margin-top: 14px">
-          <div style="font-weight: bold; margin-bottom: 4px">Box outline</div>
-          <label style="display: block">
-            <input type="checkbox" id="boxOutlineOn" /> Show outline
-          </label>
-          <label style="display: block; margin-top: 4px">
-            Colour <input type="color" id="boxOutlineColour" value="#000000" />
-          </label>
-          <div style="margin-top: 4px">
-            Thickness
+          <span style="display: inline-flex; align-items: center; gap: 6px">
+            Size: <span id="sizeShow">5</span>
             <input
               type="range"
-              id="boxOutlineWidth"
+              id="brushSize"
               min="1"
-              max="20"
-              value="2"
-              style="width: 90px; vertical-align: middle"
+              max="40"
+              value="5"
+              oninput="showBrushSize()"
             />
-            <span id="boxOutlineWidthShow">2</span>
-          </div>
+
+            <!-- Quick size buttons -->
+            <button class="sizePreset" data-size="2" onclick="setBrushSize(2)">
+              Thin
+            </button>
+            <button
+              class="sizePreset"
+              data-size="10"
+              onclick="setBrushSize(10)"
+            >
+              Medium
+            </button>
+            <button
+              class="sizePreset"
+              data-size="30"
+              onclick="setBrushSize(30)"
+            >
+              Thick
+            </button>
+
+            <!-- The preview dot. The box is 44px so the biggest dot (40) fits -->
+            <span
+              title="Brush size preview"
+              style="
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 44px;
+                height: 44px;
+                background: white;
+                border: 1px solid #999;
+              "
+            >
+              <span
+                id="sizePreview"
+                style="
+                  display: block;
+                  width: 5px;
+                  height: 5px;
+                  border-radius: 50%;
+                  background: #333;
+                "
+              ></span>
+            </span>
+          </span>
+
+          <!-- Clear: starts a new drawing. It asks first (see askToClear),
+             because clearing wipes your work. The red outline warns you.
+             It's kept here, away from Undo and Save Picture, so you don't
+             press it by accident. -->
+          <button
+            id="clearButton"
+            onclick="askToClear()"
+            title="Start a new drawing (asks first)"
+            style="
+              border: 2px solid #cc0000;
+              border-radius: 3px;
+              color: #cc0000;
+            "
+          >
+            Clear
+          </button>
+
+          <!-- A hint that tells you what to do next -->
+          <span id="homeHint" style="color: #555"></span>
         </div>
 
-        <!-- Fill: a colour inside a text box or shape (not lines).
-             It starts empty. Picking a colour turns it on -->
-        <div id="propsFill" style="display: none; margin-top: 14px">
-          <div style="font-weight: bold; margin-bottom: 4px">Fill</div>
+        <!-- Row 2 (Insert): the Insert options. Also hidden at the start -->
+        <div
+          id="insertOptions"
+          style="
+            display: none;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px 20px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #999;
+          "
+        >
+          <!-- Text box: press this, then click on the canvas -->
+          <button id="textBoxButton" onclick="startTextBox()">Text Box</button>
+
+          <!-- Shapes: press one, then click on the canvas.
+             They use the brush colour and size from Home -->
+          <span>
+            Shapes:
+            <button onclick="startPlacing('rectangle')">▭ Rectangle</button>
+            <button onclick="startPlacing('circle')">◯ Circle</button>
+            <button onclick="startPlacing('triangle')">△ Triangle</button>
+            <button onclick="startPlacing('line')">╱ Line</button>
+            <button onclick="startPlacing('arrowLine')">↗ Arrow line</button>
+            <button onclick="startPlacing('star')">☆ Star</button>
+            <button onclick="startPlacing('arrow')">⇨ Arrow</button>
+            <button onclick="startPlacing('bubble')">💬 Speech bubble</button>
+            <button onclick="startPlacing('polygon')">⬡ Polygon</button>
+          </span>
+
+          <!-- Photo: pick a picture from your computer, phone or tablet.
+             The real file box is hidden, and this button opens it -->
+          <button onclick="document.getElementById('photoInput').click()">
+            🖼 Photo
+          </button>
+          <input type="file" id="photoInput" accept="image/*" hidden />
+
+          <!-- Stickers: shows the sticker list below. Pick one, then click the canvas -->
+          <button id="stickerButton" onclick="toggleStickers()">
+            😀 Stickers
+          </button>
+          <div
+            id="stickerList"
+            style="display: none; width: 100%; flex-wrap: wrap; gap: 4px"
+          ></div>
+
+          <!-- How big the text will be -->
           <label>
-            <input type="checkbox" id="fillOn" /> Fill
+            Text size:
+            <input
+              type="number"
+              id="textSize"
+              min="8"
+              max="100"
+              value="24"
+              style="width: 50px"
+            />
           </label>
-          <input type="color" id="fillColour" value="#fff59d" style="vertical-align: middle" />
-        </div>
 
-        <!-- Size: type a number to change it.
-             Shapes and lines: width and height. Text boxes: text size -->
-        <div id="propsSize" style="display: none; margin-top: 14px">
-          <div style="font-weight: bold; margin-bottom: 4px">Size</div>
-          <div id="sizeShape">
-            <label>W <input type="number" id="itemWidth" min="10" max="3000" style="width: 60px" /></label>
-            <label>H <input type="number" id="itemHeight" min="10" max="3000" style="width: 60px" /></label>
-          </div>
-          <div id="sizeText">
-            <label>Text size <input type="number" id="itemTextSize" min="8" max="300" style="width: 60px" /></label>
-          </div>
-        </div>
-
-        <!-- Rotation: type an angle in degrees, like 90 -->
-        <div id="propsRotation" style="display: none; margin-top: 14px">
-          <div style="font-weight: bold; margin-bottom: 4px">Rotation</div>
-          <label><input type="number" id="itemAngle" min="0" max="359" style="width: 60px" /> °</label>
-        </div>
-
-        <!-- Font: for text boxes only.
-             Highlight some letters to change just those -->
-        <div id="propsFont" style="display: none; margin-top: 14px">
-          <div style="font-weight: bold; margin-bottom: 4px">Font</div>
-          <!-- The font buttons get added in here by the JavaScript -->
-          <div id="fontList"></div>
+          <!-- A hint that tells you what to do next -->
+          <span id="insertHint" style="color: #555"></span>
         </div>
       </div>
 
-      <!-- The bar between the left panel and the canvas.
-           Drag it left or right to make the left panel smaller or bigger.
-           The background draws a thin grey line down the middle -->
-      <div
-        id="leftSplitter"
-        title="Drag to resize"
-        style="
-          width: 10px;
-          flex-shrink: 0;
-          cursor: col-resize;
-          touch-action: none;
-          background: linear-gradient(to right, transparent 4px, #aaa 4px, #aaa 6px, transparent 6px);
-        "
-      ></div>
-
-      <!-- The canvas with the bottom panel under it.
-           flex-direction: column stacks them top to bottom -->
-      <div style="flex: 1; display: flex; flex-direction: column; min-width: 0">
-        <!-- overflow: hidden: if the canvas is bigger than this box,
-             hide the extra (it's still there, just out of sight) -->
+      <!-- This box holds the left panel, the canvas and the bottom panel.
+         flex: 1 makes it stretch to fill all the height that's left -->
+      <div style="flex: 1; display: flex; min-height: 0">
+        <!-- ===== Properties panel (on the left) =====
+           Shows the options for the selected text box, shape or line.
+           overflow-y: auto adds a scroll bar if it doesn't all fit -->
         <div
-          id="canvasBox"
-          style="flex: 1; position: relative; min-height: 0; overflow: hidden; border: 2px solid black"
-        >
-          <!-- canvas is a blank area you can draw on.
-               Its size gets set by the JavaScript (see fitCanvas) -->
-          <canvas
-            id="drawArea"
-            style="
-              position: absolute;
-              left: 0;
-              top: 0;
-              background: white;
-              touch-action: none;
-            "
-          ></canvas>
-        </div>
-
-        <!-- The bar between the canvas and the bottom panel.
-             Drag it up or down to make the bottom panel bigger or smaller -->
-        <div
-          id="bottomSplitter"
-          title="Drag to resize"
+          id="leftPanel"
           style="
-            height: 10px;
-            flex-shrink: 0;
-            cursor: row-resize;
-            touch-action: none;
-            background: linear-gradient(to bottom, transparent 4px, #aaa 4px, #aaa 6px, transparent 6px);
-          "
-        ></div>
-
-        <!-- ===== Bottom panel (not used yet) ===== -->
-        <div
-          id="bottomPanel"
-          style="
-            height: 100px;
+            width: 210px;
             flex-shrink: 0;
             padding: 10px;
             box-sizing: border-box;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
             border: 2px solid black;
             background: #f0f0f0;
-            color: #777;
           "
         >
-          Bottom panel (not used yet)
+          <h4 style="margin: 0 0 8px 0">Properties</h4>
+
+          <!-- Shown when nothing is selected -->
+          <div id="propsNothing" style="color: #777">
+            Select a text box, shape or line to change it.
+          </div>
+
+          <!-- Colour: for text boxes, shapes and lines.
+             For text, highlight some letters to colour just those -->
+          <div id="propsColour" style="display: none">
+            <!-- Says "Text colour" or "Outline colour", see updatePropertiesPanel -->
+            <div
+              id="colourHeading"
+              style="font-weight: bold; margin-bottom: 4px"
+            >
+              Colour
+            </div>
+
+            <!-- The colour squares get added in here by the JavaScript -->
+            <div id="textColourSquares"></div>
+
+            <!-- The colour wheel, for any colour you like -->
+            <label style="display: block; margin-top: 6px">
+              More colours:
+              <input type="color" id="textColourWheel" value="#000000" />
+            </label>
+
+            <!-- RGB sliders: mix Red, Green and Blue light (each 0 to 255).
+               0,0,0 is black. 255,255,255 is white. 255,0,0 is red -->
+            <div id="rgbSliders" style="margin-top: 6px">
+              <div>
+                R
+                <input
+                  type="range"
+                  id="rgbR"
+                  min="0"
+                  max="255"
+                  value="0"
+                  style="width: 120px"
+                />
+                <span id="rgbRShow">0</span>
+              </div>
+              <div>
+                G
+                <input
+                  type="range"
+                  id="rgbG"
+                  min="0"
+                  max="255"
+                  value="0"
+                  style="width: 120px"
+                />
+                <span id="rgbGShow">0</span>
+              </div>
+              <div>
+                B
+                <input
+                  type="range"
+                  id="rgbB"
+                  min="0"
+                  max="255"
+                  value="0"
+                  style="width: 120px"
+                />
+                <span id="rgbBShow">0</span>
+              </div>
+              <!-- Shows the colour you've mixed -->
+              <div
+                id="rgbPreview"
+                style="
+                  height: 20px;
+                  margin-top: 4px;
+                  border: 1px solid #333;
+                  background: rgb(0, 0, 0);
+                "
+              ></div>
+            </div>
+          </div>
+
+          <!-- Thickness: one slider for text boxes, shapes and lines.
+             Shapes and lines: how thick the outline is (1 to 40).
+             Text: 0 is normal, higher makes the letters thicker.
+             For text, highlight letters to change just those -->
+          <div id="propsThickness" style="display: none; margin-top: 14px">
+            <!-- Says "Text thickness" or "Outline thickness" -->
+            <div
+              id="thicknessHeading"
+              style="font-weight: bold; margin-bottom: 4px"
+            >
+              Thickness
+            </div>
+            <input
+              type="range"
+              id="thickness"
+              min="1"
+              max="40"
+              value="5"
+              style="width: 120px; vertical-align: middle"
+            />
+            <span id="thicknessShow">5</span>
+            <!-- Shapes only (not lines): untick to hide the outline -->
+            <label
+              id="shapeOutlineLabel"
+              style="display: block; margin-top: 4px"
+            >
+              <input type="checkbox" id="shapeOutlineOn" checked /> Show outline
+            </label>
+          </div>
+
+          <!-- Box outline: a border round a text box (text boxes only).
+             It starts hidden. Picking a colour or thickness shows it -->
+          <div id="propsBoxOutline" style="display: none; margin-top: 14px">
+            <div style="font-weight: bold; margin-bottom: 4px">Box outline</div>
+            <label style="display: block">
+              <input type="checkbox" id="boxOutlineOn" /> Show outline
+            </label>
+            <label style="display: block; margin-top: 4px">
+              Colour
+              <input type="color" id="boxOutlineColour" value="#000000" />
+            </label>
+            <div style="margin-top: 4px">
+              Thickness
+              <input
+                type="range"
+                id="boxOutlineWidth"
+                min="1"
+                max="20"
+                value="2"
+                style="width: 90px; vertical-align: middle"
+              />
+              <span id="boxOutlineWidthShow">2</span>
+            </div>
+          </div>
+
+          <!-- Fill: a colour inside a text box or shape (not lines).
+             It starts empty. Picking a colour turns it on -->
+          <div id="propsFill" style="display: none; margin-top: 14px">
+            <div style="font-weight: bold; margin-bottom: 4px">Fill</div>
+            <label> <input type="checkbox" id="fillOn" /> Fill </label>
+            <input
+              type="color"
+              id="fillColour"
+              value="#fff59d"
+              style="vertical-align: middle"
+            />
+          </div>
+
+          <!-- Size: type a number to change it.
+             Shapes and lines: width and height. Text boxes: text size -->
+          <div id="propsSize" style="display: none; margin-top: 14px">
+            <div style="font-weight: bold; margin-bottom: 4px">Size</div>
+            <div id="sizeShape">
+              <label
+                >W
+                <input
+                  type="number"
+                  id="itemWidth"
+                  min="10"
+                  max="3000"
+                  style="width: 60px"
+              /></label>
+              <label
+                >H
+                <input
+                  type="number"
+                  id="itemHeight"
+                  min="10"
+                  max="3000"
+                  style="width: 60px"
+              /></label>
+            </div>
+            <div id="sizeText">
+              <label
+                >Text size
+                <input
+                  type="number"
+                  id="itemTextSize"
+                  min="8"
+                  max="300"
+                  style="width: 60px"
+              /></label>
+            </div>
+          </div>
+
+          <!-- Rotation: type an angle in degrees, like 90 -->
+          <div id="propsRotation" style="display: none; margin-top: 14px">
+            <div style="font-weight: bold; margin-bottom: 4px">Rotation</div>
+            <label
+              ><input
+                type="number"
+                id="itemAngle"
+                min="0"
+                max="359"
+                style="width: 60px"
+              />
+              °</label
+            >
+          </div>
+
+          <!-- Sides: polygons only (3 = triangle, 6 = hexagon, 8 = octagon...) -->
+          <div id="propsSides" style="display: none; margin-top: 14px">
+            <div style="font-weight: bold; margin-bottom: 4px">Sides</div>
+            <input
+              type="number"
+              id="polygonSides"
+              min="3"
+              max="12"
+              value="6"
+              style="width: 60px"
+            />
+          </div>
+
+          <!-- Filters: photos and stickers only -->
+          <div id="propsFilters" style="display: none; margin-top: 14px">
+            <div style="font-weight: bold; margin-bottom: 4px">Filters</div>
+            <div>
+              Brightness
+              <input
+                type="range"
+                id="filterBrightness"
+                min="0"
+                max="200"
+                value="100"
+                style="width: 100px; vertical-align: middle"
+              />
+              <span id="filterBrightnessShow">100</span>%
+            </div>
+            <div>
+              Contrast
+              <input
+                type="range"
+                id="filterContrast"
+                min="0"
+                max="200"
+                value="100"
+                style="width: 100px; vertical-align: middle"
+              />
+              <span id="filterContrastShow">100</span>%
+            </div>
+            <div>
+              Blur
+              <input
+                type="range"
+                id="filterBlur"
+                min="0"
+                max="20"
+                value="0"
+                style="width: 100px; vertical-align: middle"
+              />
+              <span id="filterBlurShow">0</span>
+            </div>
+            <button id="filterReset" style="margin-top: 4px">
+              Reset filters
+            </button>
+          </div>
+
+          <!-- Font: for text boxes only.
+             Highlight some letters to change just those -->
+          <div id="propsFont" style="display: none; margin-top: 14px">
+            <div style="font-weight: bold; margin-bottom: 4px">Font</div>
+            <!-- The font buttons get added in here by the JavaScript -->
+            <div id="fontList"></div>
+          </div>
+        </div>
+
+        <!-- The bar between the left panel and the canvas.
+           Drag it left or right to make the left panel smaller or bigger.
+           The background draws a thin grey line down the middle -->
+        <div
+          id="leftSplitter"
+          title="Drag to resize"
+          style="
+            width: 10px;
+            flex-shrink: 0;
+            cursor: col-resize;
+            touch-action: none;
+            background: linear-gradient(
+              to right,
+              transparent 4px,
+              #aaa 4px,
+              #aaa 6px,
+              transparent 6px
+            );
+          "
+        ></div>
+
+        <!-- The canvas with the bottom panel under it.
+           flex-direction: column stacks them top to bottom -->
+        <div
+          style="flex: 1; display: flex; flex-direction: column; min-width: 0"
+        >
+          <!-- overflow: hidden: if the canvas is bigger than this box,
+             hide the extra (it's still there, just out of sight) -->
+          <div
+            id="canvasBox"
+            style="
+              flex: 1;
+              position: relative;
+              min-height: 0;
+              overflow: hidden;
+              border: 2px solid black;
+            "
+          >
+            <!-- canvas is a blank area you can draw on.
+               Its size gets set by the JavaScript (see fitCanvas) -->
+            <canvas
+              id="drawArea"
+              style="
+                position: absolute;
+                left: 0;
+                top: 0;
+                background: white;
+                touch-action: none;
+              "
+            ></canvas>
+          </div>
+
+          <!-- The bar between the canvas and the bottom panel.
+             Drag it up or down to make the bottom panel bigger or smaller -->
+          <div
+            id="bottomSplitter"
+            title="Drag to resize"
+            style="
+              height: 10px;
+              flex-shrink: 0;
+              cursor: row-resize;
+              touch-action: none;
+              background: linear-gradient(
+                to bottom,
+                transparent 4px,
+                #aaa 4px,
+                #aaa 6px,
+                transparent 6px
+              );
+            "
+          ></div>
+
+          <!-- ===== Bottom panel (not used yet) ===== -->
+          <div
+            id="bottomPanel"
+            style="
+              height: 100px;
+              flex-shrink: 0;
+              padding: 10px;
+              box-sizing: border-box;
+              overflow: hidden;
+              border: 2px solid black;
+              background: #f0f0f0;
+              color: #777;
+            "
+          >
+            Bottom panel (not used yet)
+          </div>
         </div>
       </div>
     </div>
-
-    </div>
     <!-- end of the outer box -->
+
+    <!-- The "are you sure?" box for Clear.
+         A <dialog> sits on top of the page. showModal() opens it and greys
+         out everything behind it, so nothing else can be pressed until you
+         answer. "Keep drawing" is picked first (autofocus), so pressing Enter
+         by accident keeps your work. Escape also means "Keep drawing". -->
+    <dialog
+      id="clearDialog"
+      style="
+        border: 1px solid #999;
+        border-radius: 8px;
+        padding: 20px;
+        max-width: 320px;
+        font-family: Arial;
+      "
+    >
+      <p style="margin: 0 0 16px 0; font-size: 18px">
+        Do you want to clear your whole drawing?
+      </p>
+      <div style="display: flex; justify-content: flex-end; gap: 10px">
+        <button
+          id="keepDrawingButton"
+          autofocus
+          onclick="closeClearDialog(false)"
+        >
+          Keep drawing
+        </button>
+        <button
+          id="clearItButton"
+          onclick="closeClearDialog(true)"
+          style="
+            border: 2px solid #cc0000;
+            border-radius: 3px;
+            color: white;
+            background: #cc0000;
+          "
+        >
+          Clear it
+        </button>
+      </div>
+    </dialog>
+
+    <!-- The Export panel, opened by Save Picture.
+         It shows a preview of the exact picture that will be saved,
+         lets you pick the picture type, and has two buttons:
+           Discard = close without saving (for when you pressed Save by accident)
+           Export  = save the picture
+         Escape and clicking Discard do the same thing. -->
+    <dialog
+      id="exportDialog"
+      style="
+        border: 1px solid #999;
+        border-radius: 8px;
+        padding: 20px;
+        width: 520px;
+        max-width: 92vw;
+        box-sizing: border-box; /* count the padding inside the width, so it fits on phones */
+        font-family: Arial;
+      "
+    >
+      <h3 style="margin: 0 0 12px 0">Export picture</h3>
+
+      <!-- The preview. It shrinks to fit, but the saved picture is full size -->
+      <div style="background: #ddd; padding: 8px; text-align: center">
+        <img
+          id="exportPreview"
+          alt="Preview of the picture that will be saved"
+          style="
+            display: block;
+            margin: auto;
+            max-width: 100%;
+            max-height: 45vh;
+            box-shadow: 0 1px 4px #0004;
+          "
+        />
+      </div>
+      <!-- File name, size in pixels and file size -->
+      <div
+        id="exportInfo"
+        style="margin-top: 6px; color: #555; font-size: 13px"
+      ></div>
+
+      <!-- Which kind of picture file to save.
+           WebP gets removed by the JavaScript if this browser can't make it -->
+      <label style="display: block; margin-top: 12px">
+        Picture type:
+        <select id="saveFormat">
+          <option value="png">PNG (sharpest)</option>
+          <option value="jpg">JPG (smaller file)</option>
+          <option value="webp">WebP (smallest file)</option>
+          <option value="pdf">PDF (for printing)</option>
+          <option value="svg">
+            SVG (shapes and text stay sharp at any size)
+          </option>
+        </select>
+      </label>
+
+      <div
+        style="
+          display: flex;
+          justify-content: flex-end;
+          gap: 10px;
+          margin-top: 16px;
+        "
+      >
+        <button
+          id="discardExportButton"
+          onclick="closeExportDialog(false)"
+          style="
+            border: 2px solid #cc0000;
+            border-radius: 3px;
+            color: white;
+            background: #cc0000;
+          "
+        >
+          Discard
+        </button>
+        <button
+          id="exportButton"
+          autofocus
+          onclick="closeExportDialog(true)"
+          style="
+            border: 2px solid #1a7f37;
+            border-radius: 3px;
+            color: white;
+            background: #1a7f37;
+          "
+        >
+          Export
+        </button>
+      </div>
+    </dialog>
+
+    <!-- ===== Log in / Sign up screen =====
+         It covers the whole page (position: fixed, inset: 0) until you log in.
+         Accounts are kept in this browser only (see the Accounts code) -->
+    <div
+      id="loginPage"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        background: linear-gradient(135deg, #dde6f0, #f3d9e6);
+        font-family: Arial;
+        overflow-y: auto;
+      "
+    >
+      <form
+        id="loginForm"
+        style="
+          max-width: 340px;
+          margin: 10vh auto 20px auto;
+          padding: 24px;
+          background: white;
+          border-radius: 10px;
+          box-shadow: 0 4px 20px #0002;
+        "
+      >
+        <h1 style="margin: 0; font-size: 32px">🎨 Drawlab</h1>
+        <p style="margin: 4px 0 16px 0; color: #555">
+          Draw, design and save your work.
+        </p>
+
+        <!-- Two tabs: Log in and Sign up -->
+        <div style="display: flex; gap: 6px; margin-bottom: 14px">
+          <button
+            type="button"
+            id="loginTab"
+            onclick="showLoginMode('login')"
+            style="flex: 1"
+          >
+            Log in
+          </button>
+          <button
+            type="button"
+            id="signupTab"
+            onclick="showLoginMode('signup')"
+            style="flex: 1"
+          >
+            Sign up
+          </button>
+        </div>
+
+        <label style="display: block; margin-bottom: 8px">
+          Username<br />
+          <input
+            id="loginName"
+            autocomplete="username"
+            maxlength="20"
+            style="
+              width: 100%;
+              box-sizing: border-box;
+              font-size: 16px;
+              padding: 6px;
+            "
+          />
+        </label>
+        <label style="display: block; margin-bottom: 8px">
+          Password<br />
+          <input
+            id="loginPassword"
+            type="password"
+            autocomplete="current-password"
+            style="
+              width: 100%;
+              box-sizing: border-box;
+              font-size: 16px;
+              padding: 6px;
+            "
+          />
+        </label>
+        <!-- Sign up only: type the password again, to catch typos -->
+        <label id="loginConfirmLabel" style="display: none; margin-bottom: 8px">
+          Type the password again<br />
+          <input
+            id="loginConfirm"
+            type="password"
+            autocomplete="new-password"
+            style="
+              width: 100%;
+              box-sizing: border-box;
+              font-size: 16px;
+              padding: 6px;
+            "
+          />
+        </label>
+
+        <!-- Shows what went wrong, like "Wrong password" -->
+        <p
+          id="loginError"
+          role="alert"
+          style="color: #cc0000; min-height: 1.2em; margin: 4px 0"
+        ></p>
+
+        <button
+          id="loginSubmit"
+          type="submit"
+          style="
+            width: 100%;
+            font-size: 16px;
+            padding: 8px;
+            border: 2px solid #1a7f37;
+            border-radius: 4px;
+            color: white;
+            background: #1a7f37;
+          "
+        >
+          Log in
+        </button>
+
+        <p style="color: #777; font-size: 12px; margin: 14px 0 0 0">
+          Your account and drawings are saved in this browser on this device
+          only. To keep a drawing safe somewhere else, use Share or Save
+          Picture.
+        </p>
+      </form>
+    </div>
+
+    <!-- ===== Home page =====
+         Shows the templates (to start something new) and your drawings.
+         Also covers the whole page until you open a drawing -->
+    <div
+      id="homePage"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 40;
+        background: #f4f6f9;
+        font-family: Arial;
+        overflow-y: auto;
+      "
+    >
+      <!-- Top bar: app name, who's logged in, Log out -->
+      <div
+        style="
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 10px;
+          padding: 12px 20px;
+          background: #dde6f0;
+          border-bottom: 2px solid black;
+        "
+      >
+        <strong style="font-size: 24px">🎨 Drawlab</strong>
+        <span style="margin-left: auto">Hi, <b id="homeUserName"></b></span>
+        <button onclick="logOut()">Log out</button>
+      </div>
+
+      <div
+        style="max-width: 1100px; margin: auto; padding: 10px 20px 40px 20px"
+      >
+        <h2>Start something new</h2>
+        <!-- The template cards get added in here by the JavaScript -->
+        <div
+          id="templateList"
+          style="
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 14px;
+          "
+        ></div>
+
+        <div
+          style="
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            margin-top: 30px;
+          "
+        >
+          <h2 style="margin: 0">My drawings</h2>
+          <!-- Open a .drawlab file someone shared with you -->
+          <button onclick="document.getElementById('projectInput').click()">
+            📂 Open a project file
+          </button>
+          <input
+            type="file"
+            id="projectInput"
+            accept=".drawlab,application/json"
+            hidden
+          />
+        </div>
+        <p id="homeMessage" style="color: #555"></p>
+        <!-- Your drawings get added in here by the JavaScript -->
+        <div
+          id="drawingList"
+          style="
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 14px;
+          "
+        ></div>
+      </div>
+    </div>
+
+    <!-- The "are you sure?" box for deleting a drawing from the home page -->
+    <dialog
+      id="deleteDrawingDialog"
+      style="
+        border: 1px solid #999;
+        border-radius: 8px;
+        padding: 20px;
+        max-width: 320px;
+        font-family: Arial;
+      "
+    >
+      <p id="deleteDrawingText" style="margin: 0 0 16px 0; font-size: 18px"></p>
+      <div style="display: flex; justify-content: flex-end; gap: 10px">
+        <button
+          id="keepDrawingFileButton"
+          autofocus
+          onclick="document.getElementById('deleteDrawingDialog').close('keep')"
+        >
+          Keep it
+        </button>
+        <button
+          onclick="
+            document.getElementById('deleteDrawingDialog').close('delete')
+          "
+          style="
+            border: 2px solid #cc0000;
+            border-radius: 3px;
+            color: white;
+            background: #cc0000;
+          "
+        >
+          Delete it
+        </button>
+      </div>
+    </dialog>
 
     <!-- JavaScript makes the buttons do things -->
     <script>
@@ -408,10 +1091,16 @@
       // The canvas only ever gets BIGGER, never smaller. If the box gets
       // smaller (like when you make a panel bigger), the extra part of the
       // canvas is just hidden, so you never lose any of your drawing.
-      function fitCanvas() {
+      // minWidth / minHeight (optional): make it at least this big too,
+      // like when opening a saved drawing that's bigger than the screen
+      function fitCanvas(minWidth, minHeight) {
         const box = document.getElementById("canvasBox");
-        const newWidth = Math.max(canvas.width, box.clientWidth);
-        const newHeight = Math.max(canvas.height, box.clientHeight);
+        const newWidth = Math.max(canvas.width, box.clientWidth, minWidth || 0);
+        const newHeight = Math.max(
+          canvas.height,
+          box.clientHeight,
+          minHeight || 0,
+        );
         if (newWidth === canvas.width && newHeight === canvas.height) return; // big enough
 
         // Changing a canvas's size wipes it, so copy the drawing first
@@ -436,7 +1125,9 @@
       }
       // Run fitCanvas whenever the canvas's box changes size, for any reason:
       // the window, a menu opening, or a panel being dragged
-      new ResizeObserver(fitCanvas).observe(document.getElementById("canvasBox"));
+      new ResizeObserver(function () {
+        fitCanvas();
+      }).observe(document.getElementById("canvasBox"));
 
       // ===== Resizable panels =====
       // Drag a splitter bar to make its panel bigger or smaller.
@@ -448,18 +1139,21 @@
           event.preventDefault();
           splitter.setPointerCapture(event.pointerId);
           const startMouse = side === "left" ? event.clientX : event.clientY;
-          const startSize = side === "left" ? panel.offsetWidth : panel.offsetHeight;
+          const startSize =
+            side === "left" ? panel.offsetWidth : panel.offsetHeight;
 
           function onMove(e) {
             if (side === "left") {
               // Dragging right makes the left panel wider
               const size = startSize + (e.clientX - startMouse);
               // Keep it between 40px and half the window
-              panel.style.width = Math.max(40, Math.min(window.innerWidth / 2, size)) + "px";
+              panel.style.width =
+                Math.max(40, Math.min(window.innerWidth / 2, size)) + "px";
             } else {
               // Dragging UP makes the bottom panel taller, so it's minus
               const size = startSize - (e.clientY - startMouse);
-              panel.style.height = Math.max(40, Math.min(window.innerHeight / 2, size)) + "px";
+              panel.style.height =
+                Math.max(40, Math.min(window.innerHeight / 2, size)) + "px";
             }
           }
 
@@ -472,8 +1166,16 @@
           splitter.addEventListener("pointerup", onUp);
         });
       }
-      makeSplitter(document.getElementById("leftSplitter"), document.getElementById("leftPanel"), "left");
-      makeSplitter(document.getElementById("bottomSplitter"), document.getElementById("bottomPanel"), "bottom");
+      makeSplitter(
+        document.getElementById("leftSplitter"),
+        document.getElementById("leftPanel"),
+        "left",
+      );
+      makeSplitter(
+        document.getElementById("bottomSplitter"),
+        document.getElementById("bottomPanel"),
+        "bottom",
+      );
 
       // Touch screens: make the splitter bars wider, so a finger can grab them
       if (window.matchMedia("(pointer: coarse)").matches) {
@@ -503,6 +1205,8 @@
           event.preventDefault(); // stop this click from un-focusing the box
           document.getElementById("insertHint").textContent = "";
           if (what === "text") makeTextBox(event.offsetX, event.offsetY);
+          else if (what.startsWith("sticker:"))
+            makeSticker(what.slice(8), event.offsetX, event.offsetY);
           else makeShape(what, event.offsetX, event.offsetY);
           return;
         }
@@ -630,7 +1334,7 @@
       // When the mouse is close to the end of a line, a blue dot shows
       // on that end. Start drawing while it shows and your new line
       // starts exactly there, so the two lines are joined.
-      const lineEnds = [];  // the start and end point of every line drawn
+      const lineEnds = []; // the start and end point of every line drawn
       let snapPoint = null; // the line end the blue dot is on (or null)
       const closeEnough = 15; // how close (in pixels) the mouse needs to be
       const closeEnoughTouch = 30; // fingers are less exact, so allow more
@@ -655,7 +1359,8 @@
         if (tool !== "brush") return hideDot();
 
         let closest = null;
-        let closestDistance = pointerType === "touch" ? closeEnoughTouch : closeEnough;
+        let closestDistance =
+          pointerType === "touch" ? closeEnoughTouch : closeEnough;
         for (const end of lineEnds) {
           // Distance between two points (Pythagoras: a² + b² = c²)
           const distance = Math.hypot(end.x - x, end.y - y);
@@ -681,10 +1386,10 @@
       // ===== Straight lines =====
       // Hold the mouse still for 2 seconds while drawing and the line
       // turns into a straight line from where you started to where you are.
-      let straight = false;  // has this line become straight?
-      let startX, startY;    // where this line started
-      let lastX, lastY;      // where the mouse is now
-      let before = null;     // the "photo" of the canvas before this line
+      let straight = false; // has this line become straight?
+      let startX, startY; // where this line started
+      let lastX, lastY; // where the mouse is now
+      let before = null; // the "photo" of the canvas before this line
       let stillTimer = null; // counts the 2 seconds
 
       // Start counting 2 seconds again (from zero)
@@ -729,7 +1434,8 @@
         dot.style.width = size + "px";
         dot.style.height = size + "px";
         for (const button of document.querySelectorAll(".sizePreset")) {
-          button.style.fontWeight = Number(button.dataset.size) === size ? "bold" : "normal";
+          button.style.fontWeight =
+            Number(button.dataset.size) === size ? "bold" : "normal";
         }
       }
       showBrushSize(); // show the starting size (5)
@@ -740,7 +1446,8 @@
       // is the canvas's background colour, which isn't part of the drawing.
       // (The Eraser doesn't change the colour picker)
       function setPen() {
-        pen.globalCompositeOperation = tool === "eraser" ? "destination-out" : "source-over";
+        pen.globalCompositeOperation =
+          tool === "eraser" ? "destination-out" : "source-over";
         pen.strokeStyle = document.getElementById("brushColour").value;
         pen.lineWidth = document.getElementById("brushSize").value;
         pen.lineCap = "round"; // makes the line ends smooth
@@ -785,8 +1492,17 @@
       function startPlacing(what) {
         placing = what;
         canvas.style.cursor = what === "text" ? "text" : "crosshair";
+        // Friendly names for the hint ("sticker:🎈" becomes "🎈 sticker")
+        const names = {
+          text: "text box",
+          arrowLine: "arrow line",
+          bubble: "speech bubble",
+        };
+        const name = what.startsWith("sticker:")
+          ? what.slice(8) + " sticker"
+          : names[what] || what;
         document.getElementById("insertHint").textContent =
-          "Click on the canvas where you want the " + what + ".";
+          "Click on the canvas where you want the " + name + ".";
       }
 
       // ===== Items =====
@@ -827,7 +1543,9 @@
         setTool("cursor");
         // Wait a moment before focusing, so the click doesn't steal it back
         const text = item.querySelector(".textInside");
-        setTimeout(function () { text.focus(); }, 0);
+        setTimeout(function () {
+          text.focus();
+        }, 0);
       }
 
       // Build a text box and give it back. (Undo uses this too, to put
@@ -909,8 +1627,10 @@
       function makeShape(type, x, y) {
         const colour = document.getElementById("brushColour").value;
         const thickness = document.getElementById("brushSize").value;
-        // Circles and triangles start square, the others start wider
-        const startsSquare = type === "circle" || type === "triangle";
+        // Circles, triangles, stars and polygons start square, the others start wider
+        const startsSquare = ["circle", "triangle", "star", "polygon"].includes(
+          type,
+        );
         const width = (startsSquare ? 100 : 140) + "px";
         const height = (startsSquare ? 100 : 80) + "px";
         const item = buildShape(type, x, y, colour, thickness, width, height);
@@ -940,6 +1660,10 @@
         svg.style.height = "100%";
         svg.style.display = "block";
         svg.style.overflow = "visible"; // don't cut off thick outlines
+        // Browsers don't draw an SVG with no height (or width) at all, so a
+        // perfectly flat line would vanish. 1 pixel is enough to show it
+        svg.style.minWidth = "1px";
+        svg.style.minHeight = "1px";
 
         let shape;
         if (type === "rectangle") {
@@ -957,6 +1681,41 @@
         } else if (type === "triangle") {
           shape = document.createElementNS(svgAddress, "polygon");
           shape.setAttribute("points", "50,0 100,100 0,100"); // top, bottom-right, bottom-left
+        } else if (shapeSteps[type]) {
+          // Star, arrow, speech bubble, polygon: a "path" that follows the
+          // steps in shapeSteps (see below)
+          shape = document.createElementNS(svgAddress, "path");
+          if (type === "polygon") {
+            item.dataset.sides = polygonSidesForNext || 6;
+            polygonSidesForNext = null;
+          }
+        } else if (type === "arrowLine") {
+          // Arrow line: a line with an arrow head on the top-right end.
+          // This one has no viewBox, so it isn't stretched. The line uses
+          // percentages instead, so it still goes corner to corner. That way
+          // the arrow head (a "marker") keeps its shape when you resize.
+          svg.removeAttribute("viewBox");
+          shape = document.createElementNS(svgAddress, "line");
+          shape.setAttribute("x1", "0%");
+          shape.setAttribute("y1", "100%");
+          shape.setAttribute("x2", "100%");
+          shape.setAttribute("y2", "0%");
+          // The arrow head. Each arrow line needs its own, with its own name
+          const marker = document.createElementNS(svgAddress, "marker");
+          marker.id = "arrowHead" + ++arrowHeadNumber;
+          marker.setAttribute("viewBox", "0 0 10 10");
+          marker.setAttribute("refX", 2); // where the line joins the head
+          marker.setAttribute("refY", 5);
+          marker.setAttribute("orient", "auto"); // point the same way as the line
+          marker.setAttribute("markerUnits", "userSpaceOnUse"); // sized in pixels
+          const head = document.createElementNS(svgAddress, "path");
+          head.setAttribute("d", "M0,0 L10,5 L0,10 Z"); // a triangle
+          marker.appendChild(head);
+          const defs = document.createElementNS(svgAddress, "defs");
+          defs.appendChild(marker);
+          svg.appendChild(shape);
+          svg.appendChild(defs);
+          shape.setAttribute("marker-end", "url(#" + marker.id + ")");
         } else {
           // Line: from the bottom-left corner to the top-right corner
           shape = document.createElementNS(svgAddress, "line");
@@ -969,7 +1728,7 @@
         shape.setAttribute("stroke-linejoin", "round");
         // Keep the outline the same thickness when the shape is stretched
         shape.setAttribute("vector-effect", "non-scaling-stroke");
-        svg.appendChild(shape);
+        if (shape.parentNode !== svg) svg.insertBefore(shape, svg.firstChild);
 
         // Put the shape first, before the corner handles
         item.insertBefore(svg, item.firstChild);
@@ -984,12 +1743,147 @@
       //   dataset.fill      = colour inside, or "none" (lines have no inside)
       function applyShapeLook(item) {
         const shape = item.querySelector("svg").firstChild;
-        const isLine = item.dataset.shape === "line";
+        const isLine = isLineShape(item);
         const showOutline = isLine || item.dataset.outline !== "off";
         const fill = item.dataset.fill || "none";
-        shape.setAttribute("stroke", showOutline ? item.dataset.colour : "none");
+        shape.setAttribute(
+          "stroke",
+          showOutline ? item.dataset.colour : "none",
+        );
         shape.setAttribute("stroke-width", item.dataset.thickness);
         shape.setAttribute("fill", isLine ? "none" : fill);
+
+        // Path shapes: work out the path (polygons can change their sides)
+        if (shape.tagName === "path") {
+          shape.setAttribute("d", stepsToPath(shapeStepsFor(item), 1, 1, 0, 0));
+        }
+        // Arrow line: size and colour the arrow head to match the line
+        if (item.dataset.shape === "arrowLine") {
+          const marker = item.querySelector("marker");
+          const size = arrowHeadSize(item);
+          marker.setAttribute("markerWidth", size);
+          marker.setAttribute("markerHeight", size);
+          marker.firstChild.setAttribute("fill", item.dataset.colour);
+        }
+      }
+
+      // Lines and arrow lines are just a line: no inside to fill,
+      // and the outline can't be hidden (it IS the line)
+      function isLineShape(item) {
+        return (
+          item.dataset.shape === "line" || item.dataset.shape === "arrowLine"
+        );
+      }
+
+      // How big an arrow head is: 4 times the line thickness, but at least 12px
+      let arrowHeadNumber = 0;
+      // Undo sets this just before rebuilding a polygon, so it gets its
+      // own number of sides straight away
+      let polygonSidesForNext = null;
+      function arrowHeadSize(item) {
+        return Math.max(12, 4 * Number(item.dataset.thickness));
+      }
+
+      // ===== Shape steps =====
+      // The newer shapes are written as a list of drawing steps on a
+      // 100 x 100 grid (the same grid as the other shapes):
+      //   ["M", x, y]            = move the pen to x, y (without drawing)
+      //   ["L", x, y]            = draw a straight line to x, y
+      //   ["Q", cx, cy, x, y]    = draw a curve to x, y, bent towards cx, cy
+      //   ["Z"]                  = draw a line back to the start
+      // The same steps draw the shape on screen, in Save Picture, and in SVG.
+      const shapeSteps = {
+        star: starSteps(),
+        // A fat arrow pointing right
+        arrow: [
+          ["M", 0, 30],
+          ["L", 60, 30],
+          ["L", 60, 5],
+          ["L", 100, 50],
+          ["L", 60, 95],
+          ["L", 60, 70],
+          ["L", 0, 70],
+          ["Z"],
+        ],
+        // A rounded box with a little tail at the bottom left
+        bubble: [
+          ["M", 10, 0],
+          ["L", 90, 0],
+          ["Q", 100, 0, 100, 10],
+          ["L", 100, 65],
+          ["Q", 100, 75, 90, 75],
+          ["L", 45, 75],
+          ["L", 22, 100],
+          ["L", 28, 75],
+          ["L", 10, 75],
+          ["Q", 0, 75, 0, 65],
+          ["L", 0, 10],
+          ["Q", 0, 0, 10, 0],
+          ["Z"],
+        ],
+        polygon: polygonSteps(6), // changed per shape by its number of sides
+        triangle: [["M", 50, 0], ["L", 100, 100], ["L", 0, 100], ["Z"]],
+      };
+
+      // A 5-pointed star: points go round the middle, swapping between
+      // the outside (50 away) and the inside (20 away)
+      function starSteps() {
+        const steps = [];
+        for (let i = 0; i < 10; i++) {
+          const distance = i % 2 === 0 ? 50 : 20;
+          const angle = ((i * 36 - 90) * Math.PI) / 180; // start at the top
+          steps.push([
+            i === 0 ? "M" : "L",
+            50 + distance * Math.cos(angle),
+            50 + distance * Math.sin(angle),
+          ]);
+        }
+        steps.push(["Z"]);
+        return steps;
+      }
+
+      // A polygon with any number of equal sides, with a point at the top
+      function polygonSteps(sides) {
+        const steps = [];
+        for (let i = 0; i < sides; i++) {
+          const angle = (((i * 360) / sides - 90) * Math.PI) / 180;
+          steps.push([
+            i === 0 ? "M" : "L",
+            50 + 50 * Math.cos(angle),
+            50 + 50 * Math.sin(angle),
+          ]);
+        }
+        steps.push(["Z"]);
+        return steps;
+      }
+
+      // The steps for one shape item (polygons use their own number of sides)
+      function shapeStepsFor(item) {
+        if (item.dataset.shape === "polygon")
+          return polygonSteps(Number(item.dataset.sides || 6));
+        return shapeSteps[item.dataset.shape];
+      }
+
+      // Turn steps into SVG path writing, like "M0,30 L60,30 ... Z".
+      // scaleX/scaleY stretch the 100 x 100 grid to the real size,
+      // and moveX/moveY move it to the real place.
+      function stepsToPath(steps, scaleX, scaleY, moveX, moveY) {
+        const round = function (n) {
+          return Math.round(n * 100) / 100;
+        };
+        return steps
+          .map(function (step) {
+            let text = step[0];
+            for (let i = 1; i < step.length; i += 2) {
+              text +=
+                (i > 1 ? " " : "") +
+                round(moveX + step[i] * scaleX) +
+                "," +
+                round(moveY + step[i + 1] * scaleY);
+            }
+            return text;
+          })
+          .join(" ");
       }
 
       // Change a shape's colour (its outline)
@@ -1017,17 +1911,21 @@
         const fill = item.dataset.fill || "none";
         resizeAroundMiddle(item, function () {
           text.style.border = showOutline
-            ? item.dataset.boxOutlineWidth + "px solid " + item.dataset.boxOutlineColour
+            ? item.dataset.boxOutlineWidth +
+              "px solid " +
+              item.dataset.boxOutlineColour
             : "none";
           text.style.background = fill === "none" ? "transparent" : fill;
           // With an outline or fill, give the text a bit of room inside
-          text.style.padding = showOutline || fill !== "none" ? "4px 8px" : "2px";
+          text.style.padding =
+            showOutline || fill !== "none" ? "4px 8px" : "2px";
         });
       }
 
       // Either kind of item
       function applyLook(item) {
         if (item.classList.contains("shapeItem")) applyShapeLook(item);
+        else if (item.classList.contains("imageItem")) applyImageLook(item);
         else applyTextBoxLook(item);
       }
 
@@ -1036,13 +1934,18 @@
       // the main way to point is something big, like a finger.
       // Then the handles are made bigger so they're easy to grab.
       const touchScreen = window.matchMedia("(pointer: coarse)").matches;
-      const handleSize = touchScreen ? 18 : 8;     // corner squares
-      const rotatorSize = touchScreen ? 24 : 12;   // round rotate handle
-      const stemLength = touchScreen ? 28 : 22;    // line up to the rotate handle
+      const handleSize = touchScreen ? 18 : 8; // corner squares
+      const rotatorSize = touchScreen ? 24 : 12; // round rotate handle
+      const stemLength = touchScreen ? 28 : 22; // line up to the rotate handle
 
       // Add a little white square on each corner of an item
       function addCornerHandles(item) {
-        for (const corner of ["top-left", "top-right", "bottom-left", "bottom-right"]) {
+        for (const corner of [
+          "top-left",
+          "top-right",
+          "bottom-left",
+          "bottom-right",
+        ]) {
           const handle = document.createElement("div");
           handle.className = "handle";
           handle.style.position = "absolute";
@@ -1123,7 +2026,10 @@
           // Which way the mouse is from the middle, as an angle.
           // atan2 turns "how far across, how far down" into an angle
           function mouseAngle(e) {
-            return Math.atan2(e.clientY - centreY, e.clientX - centreX) * 180 / Math.PI;
+            return (
+              (Math.atan2(e.clientY - centreY, e.clientX - centreX) * 180) /
+              Math.PI
+            );
           }
           const startMouse = mouseAngle(event);
           const startAngle = Number(item.dataset.angle || 0);
@@ -1168,7 +2074,7 @@
 
       // Show the angle next to the mouse (or finger)
       function showAngleLabel(angle, mouseX, mouseY) {
-        angleLabel.textContent = Math.round(angle) % 360 + "°";
+        angleLabel.textContent = (Math.round(angle) % 360) + "°";
         // Up and to the right of the mouse. On touch screens, further
         // away, so your finger doesn't cover it
         const gap = touchScreen ? 40 : 15;
@@ -1233,8 +2139,10 @@
             const area = document.getElementById("canvasBox");
             const maxLeft = area.clientWidth - item.offsetWidth;
             const maxTop = area.clientHeight - item.offsetHeight;
-            item.style.left = Math.max(0, Math.min(maxLeft, startLeft + dx)) + "px";
-            item.style.top = Math.max(0, Math.min(maxTop, startTop + dy)) + "px";
+            item.style.left =
+              Math.max(0, Math.min(maxLeft, startLeft + dx)) + "px";
+            item.style.top =
+              Math.max(0, Math.min(maxTop, startTop + dy)) + "px";
           }
 
           function onUp() {
@@ -1293,17 +2201,17 @@
           // Rotation maths. If the item is rotated, "right" for the item
           // isn't "right" on the screen, so we use sin and cos to turn
           // directions between the two.
-          const angle = Number(item.dataset.angle || 0) * Math.PI / 180; // in radians
+          const angle = (Number(item.dataset.angle || 0) * Math.PI) / 180; // in radians
           const cos = Math.cos(angle);
           const sin = Math.sin(angle);
-          const sx = isRight ? 1 : -1;  // which side the pulled corner is on
+          const sx = isRight ? 1 : -1; // which side the pulled corner is on
           const sy = isBottom ? 1 : -1;
 
           // Where the opposite corner is on the screen. It must stay there
           const startMiddleX = startLeft + startWidth / 2;
           const startMiddleY = startTop + startHeight / 2;
-          const cornerX = -sx * startWidth / 2;  // opposite corner, from the middle
-          const cornerY = -sy * startHeight / 2;
+          const cornerX = (-sx * startWidth) / 2; // opposite corner, from the middle
+          const cornerY = (-sy * startHeight) / 2;
           const anchorX = startMiddleX + (cornerX * cos - cornerY * sin);
           const anchorY = startMiddleY + (cornerX * sin + cornerY * cos);
 
@@ -1322,14 +2230,25 @@
               // Text box: how much bigger should it be? (1 = same, 2 = double)
               const scale = Math.max(
                 (startWidth + dx) / startWidth,
-                (startHeight + dy) / startHeight
+                (startHeight + dy) / startHeight,
               );
               // New text size, kept between 8 and 300
               const newSize = Math.round(
-                Math.max(8, Math.min(300, startSize * scale))
+                Math.max(8, Math.min(300, startSize * scale)),
               );
               item.dataset.size = newSize;
               text.style.fontSize = newSize + "px";
+            } else if (item.classList.contains("imageItem")) {
+              // Photo or sticker: grow both ways by the same amount, so it
+              // keeps its shape (at least 10px across)
+              const scale = Math.max(
+                (startWidth + dx) / startWidth,
+                (startHeight + dy) / startHeight,
+              );
+              const newWidth = Math.max(10, (startWidth - 2) * scale);
+              item.style.width = newWidth + "px";
+              item.style.height =
+                (newWidth * (startHeight - 2)) / (startWidth - 2) + "px";
             } else {
               // Shape: just change the width and height (at least 10px)
               // (-2 because offsetWidth includes the 1px border on each side)
@@ -1341,8 +2260,8 @@
             // item is rotated): work out where the middle needs to go
             const newWidth = item.offsetWidth;
             const newHeight = item.offsetHeight;
-            const x = -sx * newWidth / 2; // opposite corner, from the new middle
-            const y = -sy * newHeight / 2;
+            const x = (-sx * newWidth) / 2; // opposite corner, from the new middle
+            const y = (-sy * newHeight) / 2;
             const middleX = anchorX - (x * cos - y * sin);
             const middleY = anchorY - (x * sin + y * cos);
             item.style.left = middleX - newWidth / 2 + "px";
@@ -1411,7 +2330,7 @@
         if (selectedItem === null) return;
         if (selectedItem.classList.contains("shapeItem")) {
           setShapeThickness(selectedItem, thickness.value);
-        } else {
+        } else if (selectedItem.classList.contains("textItem")) {
           // Text: just the highlighted letters, or the whole box
           const amount = thickness.value * textThicknessStep + "em";
           savedRange = applyStyle("webkitTextStrokeWidth", amount, savedRange);
@@ -1437,31 +2356,71 @@
         item.style.top = middleY - item.offsetHeight / 2 + "px";
       }
 
-      // Width and height boxes (shapes and lines)
+      // Width and height boxes (shapes, lines, photos and stickers).
+      // Photos and stickers keep their shape: changing the width changes
+      // the height to match, and the other way round
       const widthBox = document.getElementById("itemWidth");
       const heightBox = document.getElementById("itemHeight");
       for (const box of [widthBox, heightBox]) {
         box.addEventListener("input", function () {
-          if (selectedItem === null || !selectedItem.classList.contains("shapeItem")) return;
-          const value = Number(box.value);
+          if (
+            selectedItem === null ||
+            selectedItem.classList.contains("textItem")
+          )
+            return;
+          const value = Math.min(3000, Number(box.value));
           if (!(value >= 10)) return; // still typing, or too small: wait
-          resizeAroundMiddle(selectedItem, function () {
-            if (box === widthBox) selectedItem.style.width = Math.min(3000, value) + "px";
-            else selectedItem.style.height = Math.min(3000, value) + "px";
+          const item = selectedItem;
+          const keepShape = item.classList.contains("imageItem");
+          const ratio =
+            parseFloat(item.style.height) / parseFloat(item.style.width);
+          resizeAroundMiddle(item, function () {
+            if (box === widthBox) {
+              item.style.width = value + "px";
+              if (keepShape) item.style.height = value * ratio + "px";
+            } else {
+              item.style.height = value + "px";
+              if (keepShape) item.style.width = value / ratio + "px";
+            }
           });
+          if (keepShape) showItemNumbers(); // show the other number changing too
         });
       }
+
+      // Sides box (polygons)
+      document
+        .getElementById("polygonSides")
+        .addEventListener("input", function () {
+          const sides = Math.round(Number(this.value));
+          if (selectedItem === null || selectedItem.dataset.shape !== "polygon")
+            return;
+          if (!(sides >= 3 && sides <= 12)) return; // still typing: wait
+          selectedItem.dataset.sides = sides;
+          applyShapeLook(selectedItem);
+        });
+      document
+        .getElementById("polygonSides")
+        .addEventListener("change", function () {
+          this.blur();
+          showItemNumbers(); // tidy up the number (like 20 back to the real sides)
+          saveState();
+        });
 
       // Text size box (text boxes)
       const textSizeBox = document.getElementById("itemTextSize");
       textSizeBox.addEventListener("input", function () {
-        if (selectedItem === null || !selectedItem.classList.contains("textItem")) return;
+        if (
+          selectedItem === null ||
+          !selectedItem.classList.contains("textItem")
+        )
+          return;
         const value = Number(textSizeBox.value);
         if (!(value >= 8)) return; // still typing, or too small: wait
         const size = Math.min(300, Math.round(value));
         resizeAroundMiddle(selectedItem, function () {
           selectedItem.dataset.size = size;
-          selectedItem.querySelector(".textInside").style.fontSize = size + "px";
+          selectedItem.querySelector(".textInside").style.fontSize =
+            size + "px";
         });
       });
 
@@ -1493,7 +2452,11 @@
 
       // Shapes: the Show outline tick box
       shapeOutlineOn.addEventListener("change", function () {
-        if (selectedItem === null || !selectedItem.classList.contains("shapeItem")) return;
+        if (
+          selectedItem === null ||
+          !selectedItem.classList.contains("shapeItem")
+        )
+          return;
         selectedItem.dataset.outline = shapeOutlineOn.checked ? "on" : "off";
         applyShapeLook(selectedItem);
         saveState();
@@ -1503,21 +2466,30 @@
       // Picking a colour or thickness turns the outline on, because
       // you clearly want to see it.
       function updateBoxOutline(turnOn) {
-        if (selectedItem === null || !selectedItem.classList.contains("textItem")) return;
+        if (
+          selectedItem === null ||
+          !selectedItem.classList.contains("textItem")
+        )
+          return;
         if (turnOn) boxOutlineOn.checked = true;
         selectedItem.dataset.boxOutline = boxOutlineOn.checked ? "on" : "off";
         selectedItem.dataset.boxOutlineColour = boxOutlineColour.value;
         selectedItem.dataset.boxOutlineWidth = boxOutlineWidth.value;
-        document.getElementById("boxOutlineWidthShow").textContent = boxOutlineWidth.value;
+        document.getElementById("boxOutlineWidthShow").textContent =
+          boxOutlineWidth.value;
         applyTextBoxLook(selectedItem);
       }
       boxOutlineOn.addEventListener("change", function () {
         updateBoxOutline(false);
         saveState();
       });
-      boxOutlineColour.addEventListener("input", function () { updateBoxOutline(true); });
+      boxOutlineColour.addEventListener("input", function () {
+        updateBoxOutline(true);
+      });
       boxOutlineColour.addEventListener("change", saveState);
-      boxOutlineWidth.addEventListener("input", function () { updateBoxOutline(true); });
+      boxOutlineWidth.addEventListener("input", function () {
+        updateBoxOutline(true);
+      });
       boxOutlineWidth.addEventListener("change", saveState);
 
       // Fill (text boxes and shapes). Picking a colour turns the fill on
@@ -1531,12 +2503,15 @@
         updateFill(false);
         saveState();
       });
-      fillColour.addEventListener("input", function () { updateFill(true); });
+      fillColour.addEventListener("input", function () {
+        updateFill(true);
+      });
       fillColour.addEventListener("change", saveState);
 
       // Show the selected item's outline and fill in the Properties panel
       function showItemLook() {
         const item = selectedItem;
+        if (item.classList.contains("imageItem")) return; // photos have no outline or fill
         const fill = item.dataset.fill || "none";
         fillOn.checked = fill !== "none";
         if (fill !== "none") fillColour.value = fill;
@@ -1546,7 +2521,8 @@
           boxOutlineOn.checked = item.dataset.boxOutline === "on";
           boxOutlineColour.value = item.dataset.boxOutlineColour;
           boxOutlineWidth.value = item.dataset.boxOutlineWidth;
-          document.getElementById("boxOutlineWidthShow").textContent = boxOutlineWidth.value;
+          document.getElementById("boxOutlineWidthShow").textContent =
+            boxOutlineWidth.value;
         }
       }
 
@@ -1558,27 +2534,51 @@
         function show(box, value) {
           if (box !== typingIn) box.value = value;
         }
-        if (selectedItem.classList.contains("shapeItem")) {
+        if (selectedItem.classList.contains("imageItem")) {
+          // Photos and stickers: just the width and height
+          show(widthBox, Math.round(parseFloat(selectedItem.style.width)));
+          show(heightBox, Math.round(parseFloat(selectedItem.style.height)));
+        } else if (selectedItem.classList.contains("shapeItem")) {
           thickness.min = 1;
           thickness.max = 40;
           thickness.value = selectedItem.dataset.thickness;
           show(widthBox, Math.round(parseFloat(selectedItem.style.width)));
           show(heightBox, Math.round(parseFloat(selectedItem.style.height)));
+          if (selectedItem.dataset.shape === "polygon") {
+            show(
+              document.getElementById("polygonSides"),
+              selectedItem.dataset.sides,
+            );
+          }
         } else {
           thickness.min = 0;
           thickness.max = 10;
-          thickness.value = textThicknessOf(selectedItem.querySelector(".textInside"));
+          thickness.value = textThicknessOf(
+            selectedItem.querySelector(".textInside"),
+          );
           show(textSizeBox, selectedItem.dataset.size);
         }
         document.getElementById("thicknessShow").textContent = thickness.value;
-        show(angleBox, Math.round(Number(selectedItem.dataset.angle || 0)) % 360);
+        show(
+          angleBox,
+          Math.round(Number(selectedItem.dataset.angle || 0)) % 360,
+        );
       }
 
       // ===== Text colours =====
       const textColours = [
-        "#000000", "#ffffff", "#808080", "#ff0000",
-        "#ff9900", "#ffdd00", "#00aa00", "#00cccc",
-        "#0000ff", "#8800cc", "#ff66cc", "#8b4513",
+        "#000000",
+        "#ffffff",
+        "#808080",
+        "#ff0000",
+        "#ff9900",
+        "#ffdd00",
+        "#00aa00",
+        "#00cccc",
+        "#0000ff",
+        "#8800cc",
+        "#ff66cc",
+        "#8b4513",
       ];
 
       // Make a coloured square in the colour list for each colour
@@ -1616,7 +2616,9 @@
       //     (then the colour changes the whole selected item)
       function rememberHighlight() {
         const range = getHighlight();
-        const fromPanel = document.getElementById("leftPanel").contains(document.activeElement);
+        const fromPanel = document
+          .getElementById("leftPanel")
+          .contains(document.activeElement);
         if (range !== null) savedRange = range.cloneRange();
         else if (!fromPanel) savedRange = null;
       }
@@ -1635,12 +2637,21 @@
       const sliderB = document.getElementById("rgbB");
 
       // Pressing on a slider un-highlights your text too, so remember it first
-      document.getElementById("rgbSliders").addEventListener("mousedown", rememberHighlight);
+      document
+        .getElementById("rgbSliders")
+        .addEventListener("mousedown", rememberHighlight);
 
       // Moving any slider: mix the colour and change the text
       for (const slider of [sliderR, sliderG, sliderB]) {
         slider.addEventListener("input", function () {
-          const colour = "rgb(" + sliderR.value + ", " + sliderG.value + ", " + sliderB.value + ")";
+          const colour =
+            "rgb(" +
+            sliderR.value +
+            ", " +
+            sliderG.value +
+            ", " +
+            sliderB.value +
+            ")";
           savedRange = applyStyle("color", colour, savedRange);
           updateRgbLabels();
           wheel.value = rgbToHex(sliderR.value, sliderG.value, sliderB.value); // match the wheel
@@ -1655,7 +2666,13 @@
         document.getElementById("rgbGShow").textContent = sliderG.value;
         document.getElementById("rgbBShow").textContent = sliderB.value;
         document.getElementById("rgbPreview").style.background =
-          "rgb(" + sliderR.value + ", " + sliderG.value + ", " + sliderB.value + ")";
+          "rgb(" +
+          sliderR.value +
+          ", " +
+          sliderG.value +
+          ", " +
+          sliderB.value +
+          ")";
       }
 
       // Move the sliders to match a colour like "#ff8800"
@@ -1729,20 +2746,32 @@
       function applyStyle(property, value, range) {
         const hint = document.getElementById("homeHint");
         hint.textContent = "";
-        if (!range || range.collapsed || !textBoxOf(range)) range = getHighlight();
+        if (!range || range.collapsed || !textBoxOf(range))
+          range = getHighlight();
 
         // No highlight: change the whole box you're typing in, or the selected box
         if (range === null) {
           const typingIn = document.activeElement;
           if (typingIn.className === "textInside") {
             styleWholeBox(typingIn, property, value);
-          } else if (selectedItem !== null && selectedItem.classList.contains("shapeItem")) {
+          } else if (
+            selectedItem !== null &&
+            selectedItem.classList.contains("shapeItem")
+          ) {
             // A shape is selected: Colour changes its colour (fonts do nothing)
             if (property === "color") setShapeColour(selectedItem, value);
-          } else if (selectedItem !== null) {
-            styleWholeBox(selectedItem.querySelector(".textInside"), property, value);
+          } else if (
+            selectedItem !== null &&
+            selectedItem.classList.contains("textItem")
+          ) {
+            styleWholeBox(
+              selectedItem.querySelector(".textInside"),
+              property,
+              value,
+            );
           } else {
-            hint.textContent = "Click a text box, or highlight some text, first.";
+            hint.textContent =
+              "Click a text box, or highlight some text, first.";
           }
           return null;
         }
@@ -1828,7 +2857,8 @@
         // Small screens start with a narrow panel. When you select
         // something, open it up so you can see the Properties
         const panel = document.getElementById("leftPanel");
-        if (item !== null && panel.offsetWidth < 150) panel.style.width = "180px";
+        if (item !== null && panel.offsetWidth < 150)
+          panel.style.width = "180px";
       }
 
       // Show the Properties that fit what's selected:
@@ -1836,38 +2866,81 @@
       //   shape or line    = Colour, Thickness, Size (W and H) and Rotation
       //   text box         = Colour, Font, Thickness, Size (text size) and Rotation
       function updatePropertiesPanel() {
-        const isText = selectedItem !== null && selectedItem.classList.contains("textItem");
-        const isShape = selectedItem !== null && selectedItem.classList.contains("shapeItem");
+        const isText =
+          selectedItem !== null && selectedItem.classList.contains("textItem");
+        const isShape =
+          selectedItem !== null && selectedItem.classList.contains("shapeItem");
+        const isImage =
+          selectedItem !== null && selectedItem.classList.contains("imageItem");
         const anything = selectedItem !== null;
-        document.getElementById("propsNothing").style.display = anything ? "none" : "block";
-        document.getElementById("propsColour").style.display = anything ? "block" : "none";
-        document.getElementById("propsFont").style.display = isText ? "block" : "none";
-        document.getElementById("propsThickness").style.display = anything ? "block" : "none";
-        document.getElementById("propsSize").style.display = anything ? "block" : "none";
-        document.getElementById("sizeShape").style.display = isShape ? "block" : "none";
-        document.getElementById("sizeText").style.display = isText ? "block" : "none";
-        document.getElementById("propsRotation").style.display = anything ? "block" : "none";
+        // Photos and stickers have their own colours, so they get Size,
+        // Rotation and Filters, but no Colour, Thickness, Outline or Fill
+        const coloured = isText || isShape;
+        document.getElementById("propsNothing").style.display = anything
+          ? "none"
+          : "block";
+        document.getElementById("propsColour").style.display = coloured
+          ? "block"
+          : "none";
+        document.getElementById("propsFont").style.display = isText
+          ? "block"
+          : "none";
+        document.getElementById("propsThickness").style.display = coloured
+          ? "block"
+          : "none";
+        document.getElementById("propsSize").style.display = anything
+          ? "block"
+          : "none";
+        document.getElementById("sizeShape").style.display =
+          isShape || isImage ? "block" : "none";
+        document.getElementById("sizeText").style.display = isText
+          ? "block"
+          : "none";
+        document.getElementById("propsRotation").style.display = anything
+          ? "block"
+          : "none";
+        document.getElementById("propsSides").style.display =
+          isShape && selectedItem.dataset.shape === "polygon"
+            ? "block"
+            : "none";
+        document.getElementById("propsFilters").style.display = isImage
+          ? "block"
+          : "none";
 
         // Outline and Fill. Lines have no inside, and their outline IS the
         // line, so they get neither Fill nor the Show outline tick box
-        const isLine = isShape && selectedItem.dataset.shape === "line";
-        document.getElementById("propsBoxOutline").style.display = isText ? "block" : "none";
-        document.getElementById("propsFill").style.display = anything && !isLine ? "block" : "none";
-        document.getElementById("shapeOutlineLabel").style.display = isShape && !isLine ? "block" : "none";
+        const isLine = isShape && isLineShape(selectedItem);
+        document.getElementById("propsBoxOutline").style.display = isText
+          ? "block"
+          : "none";
+        document.getElementById("propsFill").style.display =
+          coloured && !isLine ? "block" : "none";
+        document.getElementById("shapeOutlineLabel").style.display =
+          isShape && !isLine ? "block" : "none";
 
         // For text, Colour and Thickness are for the letters.
         // For shapes and lines, they're for the outline
-        document.getElementById("colourHeading").textContent = isText ? "Text colour" : isLine ? "Line colour" : "Outline colour";
-        document.getElementById("thicknessHeading").textContent = isText ? "Text thickness" : isLine ? "Line thickness" : "Outline thickness";
+        document.getElementById("colourHeading").textContent = isText
+          ? "Text colour"
+          : isLine
+            ? "Line colour"
+            : "Outline colour";
+        document.getElementById("thicknessHeading").textContent = isText
+          ? "Text thickness"
+          : isLine
+            ? "Line thickness"
+            : "Outline thickness";
 
         showItemNumbers(); // fill in the selected item's own numbers
-        if (anything) showItemLook(); // and its outline and fill
+        if (coloured) showItemLook(); // and its outline and fill
+        if (isImage) showItemFilters(); // or its filters
       }
 
       // Delete key: delete the selected text box or shape.
       // (Not while you're typing in it. Then Delete just deletes letters.)
       document.addEventListener("keydown", function (event) {
         if (event.key !== "Delete" && event.key !== "Backspace") return;
+        if (currentScreen !== "editor") return; // not on the home page
         if (selectedItem === null) return;
         // Typing in a text box (or any other box)? Let the key work normally
         const active = document.activeElement;
@@ -1893,7 +2966,7 @@
       // close or refresh the page.
       const undoHistory = [];
       let canvasChanged = true; // did the drawing change since the last snapshot?
-      let lastImage = null;     // the drawing in the last snapshot
+      let lastImage = null; // the drawing in the last snapshot
 
       function saveState() {
         // Turning the canvas into a picture is slow-ish, so only do it
@@ -1908,17 +2981,21 @@
           // JSON.stringify turns the list into text, so we can easily
           // check if anything changed
           items: JSON.stringify(
-            Array.from(document.querySelectorAll(".canvasItem")).map(itemToData)
+            Array.from(document.querySelectorAll(".canvasItem")).map(
+              itemToData,
+            ),
           ),
           lineEnds: JSON.stringify(lineEnds),
         };
 
         // Nothing changed since the last snapshot? Don't save a copy
         const last = undoHistory[undoHistory.length - 1];
-        if (last && last.image === state.image && last.items === state.items) return;
+        if (last && last.image === state.image && last.items === state.items)
+          return;
 
         undoHistory.push(state);
         updateUndoButton();
+        scheduleAutosave(); // save it to your account in a moment
       }
 
       // Undo button or Ctrl+Z: go back one step
@@ -1931,6 +3008,7 @@
         undoHistory.pop(); // throw away the newest snapshot...
         restoreState(undoHistory[undoHistory.length - 1]); // ...and go back to the one before
         updateUndoButton();
+        scheduleAutosave(); // save the undone version to your account too
       }
 
       // Put everything back the way it was in a snapshot
@@ -1951,7 +3029,8 @@
 
         // The text boxes and shapes: remove them all, then rebuild them
         selectedItem = null;
-        for (const item of document.querySelectorAll(".canvasItem")) item.remove();
+        for (const item of document.querySelectorAll(".canvasItem"))
+          item.remove();
         for (const data of JSON.parse(state.items)) dataToItem(data);
         setTool(tool); // make the rebuilt items behave like the others
 
@@ -1969,12 +3048,24 @@
           angle: item.dataset.angle || 0,
           fill: item.dataset.fill || "none",
         };
-        if (item.classList.contains("shapeItem")) {
+        if (item.classList.contains("imageItem")) {
+          // Only the picture's number is written down, not the picture itself,
+          // so Undo snapshots stay small (the pictures live in pictureStore)
+          data.kind = "image";
+          data.picture = item.dataset.picture;
+          data.imageKind = item.dataset.imageKind; // "photo" or "sticker"
+          data.width = item.style.width;
+          data.height = item.style.height;
+          data.brightness = item.dataset.brightness;
+          data.contrast = item.dataset.contrast;
+          data.blur = item.dataset.blur;
+        } else if (item.classList.contains("shapeItem")) {
           data.kind = "shape";
           data.shape = item.dataset.shape;
           data.colour = item.dataset.colour;
           data.thickness = item.dataset.thickness;
           data.outline = item.dataset.outline;
+          data.sides = item.dataset.sides; // polygons only
           data.width = item.style.width;
           data.height = item.style.height;
         } else {
@@ -1997,14 +3088,35 @@
         const x = parseFloat(data.left);
         const y = parseFloat(data.top);
         let item;
-        if (data.kind === "shape") {
-          item = buildShape(data.shape, x, y, data.colour, data.thickness, data.width, data.height);
+        if (data.kind === "image") {
+          item = buildImage(
+            x,
+            y,
+            data.picture,
+            data.imageKind,
+            data.width,
+            data.height,
+          );
+          item.dataset.brightness = data.brightness || 100;
+          item.dataset.contrast = data.contrast || 100;
+          item.dataset.blur = data.blur || 0;
+        } else if (data.kind === "shape") {
+          if (data.sides) polygonSidesForNext = data.sides;
+          item = buildShape(
+            data.shape,
+            x,
+            y,
+            data.colour,
+            data.thickness,
+            data.width,
+            data.height,
+          );
         } else {
           item = buildTextBox(x, y, data.size, data.colour);
           const text = item.querySelector(".textInside");
           text.style.fontFamily = data.font;
           text.style.webkitTextStrokeWidth = data.thickness || "";
-          text.innerHTML = data.html;
+          text.innerHTML = safeTextHtml(data.html); // see safeTextHtml
           item.dataset.boxOutline = data.boxOutline || "off";
           item.dataset.boxOutlineColour = data.boxOutlineColour || "#000000";
           item.dataset.boxOutlineWidth = data.boxOutlineWidth || 2;
@@ -2026,7 +3138,12 @@
 
       // Ctrl+Z = Undo (but not while typing, where Ctrl+Z undoes your typing)
       document.addEventListener("keydown", function (event) {
-        if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "z") return;
+        if (
+          !(event.ctrlKey || event.metaKey) ||
+          event.key.toLowerCase() !== "z"
+        )
+          return;
+        if (currentScreen !== "editor" || anyDialogOpen()) return;
         const active = document.activeElement;
         if (active.isContentEditable || active.tagName === "INPUT") return;
         event.preventDefault();
@@ -2060,8 +3177,10 @@
         }
         // The Delete button only works when something is selected.
         // (Items can be removed elsewhere, so check it's still on the page)
-        if (selectedItem !== null && !selectedItem.isConnected) selectedItem = null;
-        document.getElementById("deleteButton").disabled = selectedItem === null;
+        if (selectedItem !== null && !selectedItem.isConnected)
+          selectedItem = null;
+        document.getElementById("deleteButton").disabled =
+          selectedItem === null;
         updatePropertiesPanel();
       }
 
@@ -2072,14 +3191,132 @@
         document.getElementById("brushColour").value = colour;
         if (tool === "eraser") setTool("brush");
       }
-      document.getElementById("brushColour").addEventListener("input", function () {
-        if (tool === "eraser") setTool("brush");
-      });
+      document
+        .getElementById("brushColour")
+        .addEventListener("input", function () {
+          if (tool === "eraser") setTool("brush");
+        });
 
-      // Save Picture button: downloads the drawing as a .png image.
+      // ===== Save Picture and the Export panel =====
+      let exportPicture = null; // the full-size picture, while the panel is open
+      let exportFile = null; // that picture as a file (a "Blob"), in the picked type
+      let exportUrl = null; // a short link to exportFile, for the preview and download
+
+      // Save Picture button (or Ctrl+S): make the picture and open the Export panel
+      async function savePicture() {
+        if (document.getElementById("exportDialog").open) return; // already open
+        await picturesReady();
+        if (document.getElementById("exportDialog").open) return; // opened while we waited
+        exportPicture = makePicture();
+        updateExportPreview();
+        document.getElementById("exportDialog").showModal();
+        document.getElementById("exportButton").focus();
+      }
+
+      // Turn the picture into the picked type, and show it in the preview.
+      // The preview is the real file, so for JPG you see what JPG looks like.
+      function updateExportPreview() {
+        const format = saveFormats[document.getElementById("saveFormat").value];
+        exportFile = format.make(exportPicture);
+        if (exportUrl) URL.revokeObjectURL(exportUrl); // forget the old one
+        exportUrl = URL.createObjectURL(exportFile);
+        // A PDF can't be shown in a picture box, so show the picture inside it
+        document.getElementById("exportPreview").src = format.preview
+          ? format.preview(exportPicture)
+          : exportUrl;
+
+        const bytes = exportFile.size;
+        const size =
+          bytes < 1024 * 1024
+            ? Math.max(1, Math.round(bytes / 1024)) + " KB"
+            : (bytes / 1024 / 1024).toFixed(1) + " MB";
+        document.getElementById("exportInfo").textContent =
+          saveFileName(format.ending) +
+          " · " +
+          exportPicture.width +
+          " × " +
+          exportPicture.height +
+          " pixels · " +
+          size;
+      }
+      // Picking a different type updates the preview straight away
+      document
+        .getElementById("saveFormat")
+        .addEventListener("change", updateExportPreview);
+
+      // Export (yes = true) or Discard (yes = false)
+      function closeExportDialog(yes) {
+        if (yes) {
+          const format =
+            saveFormats[document.getElementById("saveFormat").value];
+          downloadFile(exportFile, saveFileName(format.ending)); // like drawlab-2026-11-15-1430.png
+          showSavedMessage();
+        }
+        document.getElementById("exportDialog").close();
+      }
+
+      // Download a file (a Blob) with this name
+      function downloadFile(file, name) {
+        const url = URL.createObjectURL(file);
+        const link = document.createElement("a");
+        link.download = name;
+        link.href = url;
+        link.click(); // pretend to click it
+        // Forget the link a bit later (straight away can stop the download)
+        setTimeout(function () {
+          URL.revokeObjectURL(url);
+        }, 30000);
+      }
+
+      // However the panel closes (Export, Discard or Escape), forget the
+      // picture, because a big picture takes up a lot of memory
+      document
+        .getElementById("exportDialog")
+        .addEventListener("close", function () {
+          exportPicture = null;
+          exportFile = null;
+          if (exportUrl) URL.revokeObjectURL(exportUrl);
+          exportUrl = null;
+          document.getElementById("exportPreview").removeAttribute("src");
+        });
+
+      // Turn a "data:" link (a picture written as text) into a file (a Blob)
+      function dataUrlToBlob(dataUrl) {
+        const comma = dataUrl.indexOf(",");
+        const type = dataUrl.slice(5, dataUrl.indexOf(";"));
+        return new Blob([base64ToBytes(dataUrl.slice(comma + 1))], {
+          type: type,
+        });
+      }
+
+      // base64 is a way of writing bytes as letters. Turn it back into bytes
+      function base64ToBytes(base64) {
+        const letters = atob(base64);
+        const bytes = new Uint8Array(letters.length);
+        for (let i = 0; i < letters.length; i++)
+          bytes[i] = letters.charCodeAt(i);
+        return bytes;
+      }
+
+      // Wait until every photo and sticker has finished loading.
+      // A picture that was only just added can take a moment, and drawing
+      // it before then would leave a blank space.
+      function picturesReady() {
+        return Promise.all(
+          Array.from(
+            document.querySelectorAll(".imageItem img"),
+            function (img) {
+              return img.decode().catch(function () {}); // a broken picture: carry on anyway
+            },
+          ),
+        );
+      }
+
+      // Make the full-size picture: the drawing, with a white background,
+      // and the text boxes and shapes painted on top.
       // Text boxes and shapes aren't part of the canvas, so we make a copy
-      // of the drawing and paint them onto the copy before saving it.
-      function savePicture() {
+      // of the drawing and paint them onto the copy.
+      function makePicture() {
         // Only save the part of the canvas you can see
         // (the canvas can be bigger than its box, see fitCanvas)
         const box = document.getElementById("canvasBox");
@@ -2101,21 +3338,428 @@
           const middleX = parseFloat(item.style.left) + item.offsetWidth / 2;
           const middleY = parseFloat(item.style.top) + item.offsetHeight / 2;
           copyPen.translate(middleX, middleY);
-          copyPen.rotate(Number(item.dataset.angle || 0) * Math.PI / 180);
+          copyPen.rotate((Number(item.dataset.angle || 0) * Math.PI) / 180);
           copyPen.translate(-middleX, -middleY);
 
           if (item.classList.contains("shapeItem")) {
             drawShapeOnto(copyPen, item);
+          } else if (item.classList.contains("imageItem")) {
+            drawImageOnto(copyPen, item);
           } else {
             drawTextOnto(copyPen, item);
           }
           copyPen.restore();
         }
 
-        const link = document.createElement("a");
-        link.download = "my-drawing.png";        // the file name
-        link.href = copy.toDataURL("image/png"); // the picture
-        link.click();                            // pretend to click it
+        return copy;
+      }
+
+      // The picture types you can save as (picked in the Export panel):
+      //   PNG  keeps every pixel exactly, so lines and text stay sharp
+      //   JPG  makes a smaller file, but blurs sharp edges a little
+      //   WebP makes the smallest file, with very little blur
+      //   PDF  for printing. The picture goes on a page the same size as it
+      //   SVG  shapes and text are saved as shapes and text (not dots), so
+      //        they stay sharp however much you zoom in. Brush drawing,
+      //        photos and stickers go inside it as pictures.
+      // 0.92 is the quality for JPG, WebP and the picture in a PDF
+      // (1 = best, 0 = worst). The white background matters most for JPG,
+      // which can't be see-through, so empty spots would otherwise be black.
+      //
+      //   ending  = the end of the file name
+      //   make    = makes the file from the picture
+      //   preview = (PDF only) what to show in the preview box
+      const saveFormats = {
+        png: {
+          ending: ".png",
+          make: function (p) {
+            return dataUrlToBlob(p.toDataURL("image/png"));
+          },
+        },
+        jpg: {
+          ending: ".jpg",
+          make: function (p) {
+            return dataUrlToBlob(p.toDataURL("image/jpeg", 0.92));
+          },
+        },
+        webp: {
+          ending: ".webp",
+          make: function (p) {
+            return dataUrlToBlob(p.toDataURL("image/webp", 0.92));
+          },
+        },
+        pdf: {
+          ending: ".pdf",
+          make: makePdf,
+          preview: function (p) {
+            return p.toDataURL("image/jpeg", 0.92);
+          },
+        },
+        svg: { ending: ".svg", make: makeSvg },
+      };
+
+      // ===== PDF =====
+      // A PDF is a list of numbered "objects" that point to each other:
+      //   1 = the document, 2 = the list of pages, 3 = our one page,
+      //   4 = the picture (as a JPG), 5 = the instruction "draw the picture"
+      // At the end there's a table saying where each object starts in the
+      // file (counted in bytes), so PDF readers can jump straight to it.
+      // The page is sized so it prints the same size it looks on screen:
+      // screens use 96 dots per inch, PDFs use 72 points per inch.
+      function makePdf(picture) {
+        const jpg = base64ToBytes(
+          picture.toDataURL("image/jpeg", 0.92).split(",")[1],
+        );
+        const w = picture.width,
+          h = picture.height;
+        const pageW = ((w * 72) / 96).toFixed(2),
+          pageH = ((h * 72) / 96).toFixed(2);
+        const draw = "q " + pageW + " 0 0 " + pageH + " 0 0 cm /Picture Do Q";
+
+        const parts = []; // the pieces of the file, in order
+        const starts = []; // where each object starts
+        let length = 0;
+        function add(piece) {
+          const bytes =
+            typeof piece === "string" ? new TextEncoder().encode(piece) : piece;
+          parts.push(bytes);
+          length += bytes.length;
+        }
+        function object(number, text) {
+          starts[number] = length;
+          add(number + " 0 obj\n" + text + "\nendobj\n");
+        }
+
+        add("%PDF-1.4\n");
+        object(1, "<< /Type /Catalog /Pages 2 0 R >>");
+        object(2, "<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
+        object(
+          3,
+          "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " +
+            pageW +
+            " " +
+            pageH +
+            "]" +
+            " /Resources << /XObject << /Picture 4 0 R >> >> /Contents 5 0 R >>",
+        );
+        // The picture: the JPG's bytes go straight in (DCTDecode = "this is a JPG")
+        starts[4] = length;
+        add(
+          "4 0 obj\n<< /Type /XObject /Subtype /Image /Width " +
+            w +
+            " /Height " +
+            h +
+            " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " +
+            jpg.length +
+            " >>\nstream\n",
+        );
+        add(jpg);
+        add("\nendstream\nendobj\n");
+        object(
+          5,
+          "<< /Length " + draw.length + " >>\nstream\n" + draw + "\nendstream",
+        );
+
+        // The table of where everything starts (each line must be 20 bytes)
+        const tableStart = length;
+        let table = "xref\n0 6\n0000000000 65535 f \n";
+        for (let n = 1; n <= 5; n++)
+          table += String(starts[n]).padStart(10, "0") + " 00000 n \n";
+        add(
+          table +
+            "trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n" +
+            tableStart +
+            "\n%%EOF\n",
+        );
+
+        return new Blob(parts, { type: "application/pdf" });
+      }
+
+      // ===== SVG =====
+      // SVG is a picture written as text, like HTML. Each shape and text box
+      // is written as an SVG shape or text, so it stays sharp at any size.
+      // The brush drawing, photos and stickers are made of dots, so they go
+      // in as pictures.
+      function makeSvg(picture) {
+        const w = picture.width,
+          h = picture.height;
+        // The brush drawing on its own (see-through where nothing is drawn)
+        const drawingOnly = document.createElement("canvas");
+        drawingOnly.width = w;
+        drawingOnly.height = h;
+        drawingOnly.getContext("2d").drawImage(canvas, 0, 0);
+
+        let svg =
+          '<svg xmlns="http://www.w3.org/2000/svg" width="' +
+          w +
+          '" height="' +
+          h +
+          '" viewBox="0 0 ' +
+          w +
+          " " +
+          h +
+          '">\n';
+        svg += '<rect width="' + w + '" height="' + h + '" fill="white"/>\n';
+        svg +=
+          '<image href="' +
+          drawingOnly.toDataURL("image/png") +
+          '" width="' +
+          w +
+          '" height="' +
+          h +
+          '"/>\n';
+
+        for (const item of document.querySelectorAll(".canvasItem")) {
+          // Rotated items spin around their middle, like on screen
+          const middleX = parseFloat(item.style.left) + item.offsetWidth / 2;
+          const middleY = parseFloat(item.style.top) + item.offsetHeight / 2;
+          svg +=
+            '<g transform="rotate(' +
+            Number(item.dataset.angle || 0) +
+            " " +
+            middleX +
+            " " +
+            middleY +
+            ')">\n';
+          if (item.classList.contains("shapeItem")) svg += shapeToSvg(item);
+          else if (item.classList.contains("imageItem"))
+            svg += imageToSvg(item);
+          else svg += textToSvg(item);
+          svg += "</g>\n";
+        }
+        svg += "</svg>\n";
+        return new Blob([svg], { type: "image/svg+xml" });
+      }
+
+      // Make text safe to put inside SVG (<, > and & have special meanings)
+      function svgSafe(text) {
+        return String(text)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      // One shape, as SVG
+      function shapeToSvg(item) {
+        const x = parseFloat(item.style.left) + 1; // +1 skips the item's border
+        const y = parseFloat(item.style.top) + 1;
+        const w = parseFloat(item.style.width);
+        const h = parseFloat(item.style.height);
+        const isLine = isLineShape(item);
+        const fill = isLine ? "none" : item.dataset.fill || "none";
+        const stroke =
+          isLine || item.dataset.outline !== "off"
+            ? item.dataset.colour
+            : "none";
+        const look =
+          ' fill="' +
+          svgSafe(fill) +
+          '" stroke="' +
+          svgSafe(stroke) +
+          '" stroke-width="' +
+          item.dataset.thickness +
+          '" stroke-linecap="round" stroke-linejoin="round"/>\n';
+        const shape = item.dataset.shape;
+
+        if (shape === "rectangle") {
+          return (
+            '<rect x="' +
+            x +
+            '" y="' +
+            y +
+            '" width="' +
+            w +
+            '" height="' +
+            h +
+            '"' +
+            look
+          );
+        } else if (shape === "circle") {
+          return (
+            '<ellipse cx="' +
+            (x + w / 2) +
+            '" cy="' +
+            (y + h / 2) +
+            '" rx="' +
+            w / 2 +
+            '" ry="' +
+            h / 2 +
+            '"' +
+            look
+          );
+        } else if (shapeSteps[shape]) {
+          return (
+            '<path d="' +
+            stepsToPath(shapeStepsFor(item), w / 100, h / 100, x, y) +
+            '"' +
+            look
+          );
+        }
+        // Line or arrow line
+        let out =
+          '<line x1="' +
+          x +
+          '" y1="' +
+          (y + h) +
+          '" x2="' +
+          (x + w) +
+          '" y2="' +
+          y +
+          '"' +
+          look;
+        if (shape === "arrowLine") {
+          out +=
+            '<polygon points="' +
+            arrowHeadCorners(item, x, y, w, h)
+              .map(function (c) {
+                return c[0].toFixed(2) + "," + c[1].toFixed(2);
+              })
+              .join(" ") +
+            '" fill="' +
+            svgSafe(item.dataset.colour) +
+            '"/>\n';
+        }
+        return out;
+      }
+
+      // One photo or sticker, as a picture inside the SVG (with its filters)
+      function imageToSvg(item) {
+        const picture = filteredPicture(item);
+        return (
+          '<image href="' +
+          picture.canvas.toDataURL("image/png") +
+          '" x="' +
+          (parseFloat(item.style.left) + 1 - picture.extra) +
+          '" y="' +
+          (parseFloat(item.style.top) + 1 - picture.extra) +
+          '" width="' +
+          picture.canvas.width +
+          '" height="' +
+          picture.canvas.height +
+          '"/>\n'
+        );
+      }
+
+      // One text box, as SVG: its fill and outline, then the text.
+      // Each bit of the text can have its own font, colour and thickness,
+      // so each bit gets its own <tspan>, placed where it is on screen.
+      function textToSvg(item) {
+        const text = item.querySelector(".textInside");
+        const size = Number(item.dataset.size);
+        const box = getComputedStyle(text);
+        const outline = parseFloat(box.borderLeftWidth) || 0;
+        const boxX = parseFloat(item.style.left) + 1;
+        const boxY = parseFloat(item.style.top) + 1;
+        let out = "";
+
+        const fill = item.dataset.fill || "none";
+        if (fill !== "none" || outline > 0) {
+          out +=
+            '<rect x="' +
+            (boxX + outline / 2) +
+            '" y="' +
+            (boxY + outline / 2) +
+            '" width="' +
+            (text.offsetWidth - outline) +
+            '" height="' +
+            (text.offsetHeight - outline) +
+            '" fill="' +
+            (fill === "none" ? "none" : svgSafe(fill)) +
+            '" stroke="' +
+            (outline > 0 ? svgSafe(box.borderLeftColor) : "none") +
+            '" stroke-width="' +
+            outline +
+            '"/>\n';
+        }
+
+        // Measure the text with a canvas pen, the same way Save Picture does
+        const measurer = document.createElement("canvas").getContext("2d");
+        let x = boxX + outline + parseFloat(box.paddingLeft);
+        const top = boxY + outline + parseFloat(box.paddingTop) + 0.1 * size;
+        out += '<text xml:space="preserve" font-size="' + size + '">';
+        const walker = document.createTreeWalker(text, NodeFilter.SHOW_TEXT);
+        while (walker.nextNode()) {
+          const piece = walker.currentNode;
+          const look = getComputedStyle(piece.parentElement);
+          measurer.font =
+            look.fontWeight + " " + size + "px " + look.fontFamily;
+          const sizes = measurer.measureText(piece.textContent);
+          // SVG puts text on its "baseline" (the line letters sit on), so
+          // move down from the top of the text by the font's height above it
+          const ascent = sizes.fontBoundingBoxAscent || size * 0.8;
+          const strokeWidth = parseFloat(look.webkitTextStrokeWidth) || 0;
+          out +=
+            '<tspan x="' +
+            x.toFixed(2) +
+            '" y="' +
+            (top + ascent).toFixed(2) +
+            '" font-family="' +
+            svgSafe(look.fontFamily) +
+            '" fill="' +
+            svgSafe(look.color) +
+            '"' +
+            (strokeWidth > 0
+              ? ' stroke="' +
+                svgSafe(look.color) +
+                '" stroke-width="' +
+                strokeWidth +
+                '" stroke-linejoin="round" paint-order="stroke fill"'
+              : "") +
+            ">" +
+            svgSafe(piece.textContent) +
+            "</tspan>";
+          x += sizes.width; // move along
+        }
+        out += "</text>\n";
+        return out;
+      }
+
+      // Some browsers (like older Safari) can't make WebP pictures. They
+      // quietly make a PNG instead, which would get the wrong file ending.
+      // So try a tiny one, and if it doesn't come out as WebP, remove WebP
+      // from the list.
+      (function () {
+        const test = document.createElement("canvas");
+        test.width = 1;
+        test.height = 1;
+        if (!test.toDataURL("image/webp").startsWith("data:image/webp")) {
+          document.querySelector('#saveFormat option[value="webp"]').remove();
+        }
+      })();
+
+      // The file name, made from the date and time right now:
+      // drawlab-YEAR-MONTH-DAY-HOURMINUTE.png (or .jpg or .webp)
+      // padStart(2, "0") turns 7 into "07", so the numbers always line up
+      function saveFileName(ending) {
+        const now = new Date();
+        const two = function (n) {
+          return String(n).padStart(2, "0");
+        };
+        return (
+          "drawlab-" +
+          now.getFullYear() +
+          "-" +
+          two(now.getMonth() + 1) +
+          "-" +
+          two(now.getDate()) +
+          "-" +
+          two(now.getHours()) +
+          two(now.getMinutes()) +
+          ending
+        );
+        // (getMonth() counts from 0, so January is 0. That's why there's + 1)
+      }
+
+      // Show "Saved!" under the Save Picture button for 2 seconds
+      let savedTimer = null;
+      function showSavedMessage() {
+        const message = document.getElementById("savedMessage");
+        message.style.display = "block";
+        clearTimeout(savedTimer); // saving twice quickly restarts the 2 seconds
+        savedTimer = setTimeout(function () {
+          message.style.display = "none";
+        }, 2000);
       }
 
       // Paint a text box onto a canvas, for Save Picture
@@ -2142,7 +3786,12 @@
           copyPen.strokeStyle = box.borderLeftColor;
           copyPen.lineWidth = outline;
           copyPen.lineJoin = "miter";
-          copyPen.strokeRect(boxX + outline / 2, boxY + outline / 2, boxW - outline, boxH - outline);
+          copyPen.strokeRect(
+            boxX + outline / 2,
+            boxY + outline / 2,
+            boxW - outline,
+            boxH - outline,
+          );
         }
 
         copyPen.textBaseline = "top";
@@ -2171,6 +3820,19 @@
         }
       }
 
+      // Paint a photo or sticker onto a canvas, for Save Picture.
+      // filteredPicture adds the filters and gives back a little canvas,
+      // with some extra room round the edge for the blur to spread into
+      function drawImageOnto(p, item) {
+        const picture = filteredPicture(item);
+        // +1 skips the item's 1px border
+        p.drawImage(
+          picture.canvas,
+          parseFloat(item.style.left) + 1 - picture.extra,
+          parseFloat(item.style.top) + 1 - picture.extra,
+        );
+      }
+
       // Paint a shape item onto a canvas, for Save Picture
       function drawShapeOnto(p, item) {
         // +1 skips the item's 1px border
@@ -2189,22 +3851,60 @@
         } else if (item.dataset.shape === "circle") {
           // centre x, centre y, half width, half height, turn, start, end angle
           p.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
-        } else if (item.dataset.shape === "triangle") {
-          p.moveTo(x + w / 2, y);  // top middle
-          p.lineTo(x + w, y + h);  // bottom right
-          p.lineTo(x, y + h);      // bottom left
-          p.closePath();           // back to the top
+        } else if (shapeSteps[item.dataset.shape]) {
+          // Triangle, star, arrow, speech bubble, polygon: follow the steps,
+          // stretched from the 100 x 100 grid to the shape's real size
+          for (const step of shapeStepsFor(item)) {
+            const at = function (i) {
+              return [x + (step[i] * w) / 100, y + (step[i + 1] * h) / 100];
+            };
+            if (step[0] === "M") p.moveTo(...at(1));
+            else if (step[0] === "L") p.lineTo(...at(1));
+            else if (step[0] === "Q") p.quadraticCurveTo(...at(1), ...at(3));
+            else p.closePath();
+          }
         } else {
-          p.moveTo(x, y + h);      // line: bottom left...
-          p.lineTo(x + w, y);      // ...to top right
+          p.moveTo(x, y + h); // line: bottom left...
+          p.lineTo(x + w, y); // ...to top right
         }
         // Fill first, then the outline on top (like the screen does)
-        const isLine = item.dataset.shape === "line";
+        const isLine = isLineShape(item);
         if (!isLine && (item.dataset.fill || "none") !== "none") {
           p.fillStyle = item.dataset.fill;
           p.fill();
         }
         if (isLine || item.dataset.outline !== "off") p.stroke();
+
+        // Arrow line: add the arrow head at the top-right end
+        if (item.dataset.shape === "arrowLine") {
+          p.fillStyle = item.dataset.colour;
+          p.beginPath();
+          for (const corner of arrowHeadCorners(item, x, y, w, h))
+            p.lineTo(corner[0], corner[1]);
+          p.closePath();
+          p.fill();
+        }
+      }
+
+      // The 3 corners of an arrow line's head, in pixels: the tip and the
+      // two back corners. It matches the on-screen arrow head (a 10 x 10
+      // triangle, joined to the line 2 steps from its back).
+      function arrowHeadCorners(item, x, y, w, h) {
+        const length = Math.hypot(w, h) || 1;
+        const dirX = w / length,
+          dirY = -h / length; // which way the line points
+        const sideX = -dirY,
+          sideY = dirX; // at right angles to it
+        const unit = arrowHeadSize(item) / 10;
+        const endX = x + w,
+          endY = y; // the top-right end
+        const backX = endX - dirX * 2 * unit,
+          backY = endY - dirY * 2 * unit;
+        return [
+          [endX + dirX * 8 * unit, endY + dirY * 8 * unit], // tip
+          [backX + sideX * 5 * unit, backY + sideY * 5 * unit], // one back corner
+          [backX - sideX * 5 * unit, backY - sideY * 5 * unit], // the other
+        ];
       }
 
       // Wipe the whole drawing, so it's completely see-through (empty).
@@ -2216,8 +3916,22 @@
         pen.globalCompositeOperation = "source-over";
       }
 
-      // Clear / New Drawing buttons: wipe the drawing, and remove all
-      // text boxes and shapes
+      // Clear button: ask first, because clearing wipes your work
+      function askToClear() {
+        const dialog = document.getElementById("clearDialog");
+        dialog.showModal();
+        document.getElementById("keepDrawingButton").focus(); // the safe choice
+      }
+
+      // "Clear it" (yes = true) or "Keep drawing" (yes = false)
+      function closeClearDialog(yes) {
+        document.getElementById("clearDialog").close();
+        if (yes) clearDrawing();
+      }
+
+      // Wipe the drawing, and remove all text boxes and shapes.
+      // The colour, size and tool stay the same.
+      // (Escape closes the dialog by itself, which means "Keep drawing".)
       function clearDrawing() {
         clearCanvas();
         selectItem(null);
@@ -2230,12 +3944,1705 @@
         saveState(); // so you can Undo a Clear too
       }
 
+      // ===== Photos and stickers =====
+      // Both are "image items": a picture inside an item box.
+      // The pictures themselves are kept in pictureStore, by a name like
+      // "p1x2y-3". Undo snapshots only need that name, not the picture,
+      // because pictures are big and there can be lots of snapshots.
+      const pictureStore = {};
+      let pictureNumber = 0;
+
+      // Keep a picture and give back its name
+      function storePicture(dataUrl) {
+        const id = "p" + Date.now().toString(36) + "-" + ++pictureNumber;
+        pictureStore[id] = dataUrl;
+        return id;
+      }
+
+      // Build a photo or sticker item and give it back. (Undo uses this too.)
+      //   imageKind = "photo" or "sticker"
+      function buildImage(x, y, pictureId, imageKind, width, height) {
+        const item = makeItem(x, y);
+        item.classList.add("imageItem");
+        item.dataset.picture = pictureId;
+        item.dataset.imageKind = imageKind;
+        // Filters: 100% brightness and contrast, and no blur, = unchanged
+        item.dataset.brightness = 100;
+        item.dataset.contrast = 100;
+        item.dataset.blur = 0;
+        item.style.width = width;
+        item.style.height = height;
+
+        const img = document.createElement("img");
+        img.src = pictureStore[pictureId] || "";
+        img.alt = imageKind;
+        img.draggable = false; // stop the browser's own picture dragging
+        img.style.display = "block";
+        img.style.width = "100%";
+        img.style.height = "100%";
+        img.style.pointerEvents = "none"; // presses go to the item, so you can drag it
+        item.insertBefore(img, item.firstChild);
+        applyImageLook(item);
+        return item;
+      }
+
+      // Show a photo or sticker with its filters. CSS has filters built in
+      function applyImageLook(item) {
+        item.querySelector("img").style.filter =
+          "brightness(" +
+          item.dataset.brightness +
+          "%) contrast(" +
+          item.dataset.contrast +
+          "%) blur(" +
+          item.dataset.blur +
+          "px)";
+      }
+
+      // Insert → Photo: you picked a picture file
+      document
+        .getElementById("photoInput")
+        .addEventListener("change", function () {
+          const file = this.files[0];
+          this.value = ""; // so picking the same photo again still works
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = function () {
+            const img = new Image();
+            img.onload = function () {
+              // Big photos (like 4000 pixels across from a phone camera) are
+              // shrunk to at most 1600 pixels, so they don't fill up your storage
+              const scale = Math.min(1, 1600 / Math.max(img.width, img.height));
+              const small = document.createElement("canvas");
+              small.width = Math.max(1, Math.round(img.width * scale));
+              small.height = Math.max(1, Math.round(img.height * scale));
+              small
+                .getContext("2d")
+                .drawImage(img, 0, 0, small.width, small.height);
+              // PNG and GIF can have see-through parts, so keep them as PNG.
+              // Other photos become JPG, which is much smaller
+              const keepSeeThrough =
+                file.type === "image/png" || file.type === "image/gif";
+              const dataUrl = keepSeeThrough
+                ? small.toDataURL("image/png")
+                : small.toDataURL("image/jpeg", 0.9);
+              addPhoto(storePicture(dataUrl), small.width, small.height);
+            };
+            img.onerror = function () {
+              document.getElementById("insertHint").textContent =
+                "Sorry, Drawlab can't open that kind of file. Try a JPG or PNG photo.";
+            };
+            img.src = reader.result;
+          };
+          reader.readAsDataURL(file);
+        });
+
+      // Put a photo in the middle of the canvas you can see,
+      // shrunk to fit inside 60% of it
+      function addPhoto(pictureId, width, height) {
+        const box = document.getElementById("canvasBox");
+        const scale = Math.min(
+          1,
+          (box.clientWidth * 0.6) / width,
+          (box.clientHeight * 0.6) / height,
+        );
+        const w = width * scale;
+        const h = height * scale;
+        const item = buildImage(
+          (box.clientWidth - w) / 2,
+          (box.clientHeight - h) / 2,
+          pictureId,
+          "photo",
+          w + "px",
+          h + "px",
+        );
+        setTool("cursor");
+        selectItem(item);
+        saveState(); // remember it for Undo
+      }
+
+      // The stickers you can pick from (they're emoji, the little pictures
+      // your phone or computer already has)
+      const stickers = [
+        "😀",
+        "😂",
+        "😍",
+        "😎",
+        "🥳",
+        "🤔",
+        "😢",
+        "😡",
+        "👍",
+        "👏",
+        "🙌",
+        "❤️",
+        "⭐",
+        "🌟",
+        "🔥",
+        "🎉",
+        "🎈",
+        "🎂",
+        "🎁",
+        "🏆",
+        "🌈",
+        "☀️",
+        "🌙",
+        "⛅",
+        "🌸",
+        "🌻",
+        "🌳",
+        "🐶",
+        "🐱",
+        "🦄",
+        "🐼",
+        "🍕",
+        "🍦",
+        "⚽",
+        "🎨",
+        "✏️",
+        "📚",
+        "🚀",
+        "💡",
+        "✅",
+        "❌",
+        "❓",
+      ];
+      for (const emoji of stickers) {
+        const button = document.createElement("button");
+        button.textContent = emoji;
+        button.title = "Sticker";
+        button.style.fontSize = "22px";
+        button.style.padding = "0 4px";
+        button.addEventListener("click", function () {
+          startPlacing("sticker:" + emoji);
+        });
+        document.getElementById("stickerList").appendChild(button);
+      }
+
+      // Stickers button: show or hide the sticker list
+      function toggleStickers() {
+        const list = document.getElementById("stickerList");
+        const showing = list.style.display === "flex";
+        list.style.display = showing ? "none" : "flex";
+        document.getElementById("stickerButton").style.fontWeight = showing
+          ? "normal"
+          : "bold";
+      }
+
+      // Turn an emoji into a picture. Each device draws emoji a bit
+      // differently, so making a picture keeps it looking the same
+      // everywhere (and in saved pictures)
+      const stickerPictureIds = {}; // emoji → picture name, so each is only made once
+      function stickerPicture(emoji) {
+        if (
+          stickerPictureIds[emoji] &&
+          pictureStore[stickerPictureIds[emoji]]
+        ) {
+          return stickerPictureIds[emoji];
+        }
+        const c = document.createElement("canvas");
+        c.width = 160;
+        c.height = 160;
+        const p = c.getContext("2d");
+        p.font =
+          "128px 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif";
+        p.textAlign = "center";
+        p.textBaseline = "middle";
+        p.fillText(emoji, 80, 88);
+        stickerPictureIds[emoji] = storePicture(c.toDataURL("image/png"));
+        return stickerPictureIds[emoji];
+      }
+
+      // Sticker + click on the canvas: put the sticker there (80 x 80)
+      function makeSticker(emoji, x, y) {
+        const item = buildImage(
+          x - 40,
+          y - 40,
+          stickerPicture(emoji),
+          "sticker",
+          "80px",
+          "80px",
+        );
+        setTool("cursor");
+        selectItem(item);
+        saveState(); // remember it for Undo
+      }
+
+      // ===== Filters (Properties panel, photos and stickers) =====
+      // Each slider changes one filter on the selected photo or sticker
+      const filterSliders = {
+        brightness: document.getElementById("filterBrightness"),
+        contrast: document.getElementById("filterContrast"),
+        blur: document.getElementById("filterBlur"),
+      };
+      for (const name in filterSliders) {
+        const slider = filterSliders[name];
+        slider.addEventListener("input", function () {
+          document.getElementById(slider.id + "Show").textContent =
+            slider.value;
+          if (
+            selectedItem === null ||
+            !selectedItem.classList.contains("imageItem")
+          )
+            return;
+          selectedItem.dataset[name] = slider.value;
+          applyImageLook(selectedItem);
+        });
+        slider.addEventListener("change", saveState); // let go = one Undo step
+      }
+
+      // Reset filters: back to how the photo or sticker was
+      document
+        .getElementById("filterReset")
+        .addEventListener("click", function () {
+          if (
+            selectedItem === null ||
+            !selectedItem.classList.contains("imageItem")
+          )
+            return;
+          selectedItem.dataset.brightness = 100;
+          selectedItem.dataset.contrast = 100;
+          selectedItem.dataset.blur = 0;
+          applyImageLook(selectedItem);
+          showItemFilters();
+          saveState();
+        });
+
+      // Show the selected photo's or sticker's filters on the sliders
+      function showItemFilters() {
+        for (const name in filterSliders) {
+          filterSliders[name].value = selectedItem.dataset[name];
+          document.getElementById(filterSliders[name].id + "Show").textContent =
+            selectedItem.dataset[name];
+        }
+      }
+
+      // Save Picture can't use the CSS filters, so it does the same maths
+      // itself, dot by dot. Gives back { canvas, extra }: the filtered
+      // picture at its size on screen, with "extra" pixels of room round
+      // the edge, because blur spreads out past the picture's edge.
+      function filteredPicture(item) {
+        const w = Math.max(1, Math.round(parseFloat(item.style.width)));
+        const h = Math.max(1, Math.round(parseFloat(item.style.height)));
+        const blur = Number(item.dataset.blur || 0);
+        const extra = Math.ceil(blur * 2);
+        const c = document.createElement("canvas");
+        c.width = w + extra * 2;
+        c.height = h + extra * 2;
+        const p = c.getContext("2d");
+        p.drawImage(item.querySelector("img"), extra, extra, w, h);
+
+        const brightness = Number(item.dataset.brightness || 100) / 100;
+        const contrast = Number(item.dataset.contrast || 100) / 100;
+        if (brightness === 1 && contrast === 1 && blur === 0)
+          return { canvas: c, extra: extra };
+
+        const data = p.getImageData(0, 0, c.width, c.height);
+        const dots = data.data; // red, green, blue, see-through-ness, red, green...
+        for (let i = 0; i < dots.length; i += 4) {
+          for (let k = 0; k < 3; k++) {
+            // red, green and blue (not see-through-ness)
+            // Brightness: multiply (200% = twice as bright). 255 is the most
+            let value = Math.min(255, dots[i + k] * brightness);
+            // Contrast: push colours away from middle grey (or towards it)
+            value = (value - 127.5) * contrast + 127.5;
+            dots[i + k] = value; // this kind of list keeps it between 0 and 255 itself
+          }
+        }
+        if (blur > 0)
+          blurDots(dots, c.width, c.height, Math.max(1, Math.round(blur)));
+        p.putImageData(data, 0, 0);
+        return { canvas: c, extra: extra };
+      }
+
+      // Blur: each dot becomes the average of the dots around it.
+      // Doing a "box average" 3 times, across then down, looks like a
+      // smooth (Gaussian) blur, like the CSS one.
+      // First, colours are multiplied by how solid the dot is, so
+      // see-through dots don't add a dark edge.
+      function blurDots(dots, w, h, radius) {
+        let a = new Float32Array(dots.length);
+        let b = new Float32Array(dots.length);
+        for (let i = 0; i < dots.length; i += 4) {
+          const solid = dots[i + 3] / 255;
+          a[i] = dots[i] * solid;
+          a[i + 1] = dots[i + 1] * solid;
+          a[i + 2] = dots[i + 2] * solid;
+          a[i + 3] = dots[i + 3];
+        }
+        for (let pass = 0; pass < 3; pass++) {
+          boxAverage(a, b, w, h, radius, true); // across
+          boxAverage(b, a, w, h, radius, false); // down
+        }
+        for (let i = 0; i < dots.length; i += 4) {
+          const solid = a[i + 3] / 255;
+          dots[i] = solid > 0 ? a[i] / solid : 0;
+          dots[i + 1] = solid > 0 ? a[i + 1] / solid : 0;
+          dots[i + 2] = solid > 0 ? a[i + 2] / solid : 0;
+          dots[i + 3] = a[i + 3];
+        }
+      }
+
+      // One box average, along every row (across = true) or column.
+      // A running total slides along, so it's quick even for big pictures
+      function boxAverage(from, to, w, h, radius, across) {
+        const size = radius * 2 + 1;
+        const lines = across ? h : w;
+        const length = across ? w : h;
+        const step = across ? 4 : w * 4; // how far to the next dot along the line
+        for (let line = 0; line < lines; line++) {
+          const start = across ? line * w * 4 : line * 4;
+          for (let k = 0; k < 4; k++) {
+            let total = 0;
+            for (let i = 0; i <= radius && i < length; i++)
+              total += from[start + i * step + k];
+            for (let i = 0; i < length; i++) {
+              to[start + i * step + k] = total / size;
+              if (i + radius + 1 < length)
+                total += from[start + (i + radius + 1) * step + k];
+              if (i - radius >= 0)
+                total -= from[start + (i - radius) * step + k];
+            }
+          }
+        }
+      }
+
+      // ===== Keyboard shortcuts =====
+      //   B = Brush, E = Eraser, V = Cursor, Ctrl+S = Save Picture
+      // (Ctrl+Z = Undo and Delete are further up.)
+      // They don't work while you're typing, so typing "b" in a text box
+      // still types a "b".
+      function anyDialogOpen() {
+        return document.querySelector("dialog[open]") !== null;
+      }
+      document.addEventListener("keydown", function (event) {
+        if (currentScreen !== "editor") return;
+        const active = document.activeElement;
+        // Ctrl+S (Cmd+S on a Mac): our Save Picture, not the browser's "Save page"
+        if (
+          (event.ctrlKey || event.metaKey) &&
+          event.key.toLowerCase() === "s"
+        ) {
+          event.preventDefault();
+          if (anyDialogOpen()) return;
+          if (active.isContentEditable) active.blur(); // finish typing first
+          savePicture();
+          return;
+        }
+        const typing =
+          active.isContentEditable ||
+          ["INPUT", "TEXTAREA", "SELECT"].includes(active.tagName);
+        if (
+          typing ||
+          anyDialogOpen() ||
+          event.ctrlKey ||
+          event.metaKey ||
+          event.altKey
+        )
+          return;
+        const key = event.key.toLowerCase();
+        if (key === "b") setTool("brush");
+        else if (key === "e") setTool("eraser");
+        else if (key === "v") setTool("cursor");
+      });
+
+      // ===== Accounts =====
+      // Accounts are kept in this browser, in its built-in database
+      // (called IndexedDB). It can hold much more than localStorage, which
+      // matters because drawings and photos are big.
+      //
+      // Passwords are never stored. Instead we store a "hash": the password
+      // mixed with some random letters (the "salt") and scrambled with
+      // SHA-256 a thousand times. You can't turn a hash back into the
+      // password, but the same password always makes the same hash, so we
+      // can check it. (This isn't real security: anyone using this
+      // browser could still look at the drawings. See PROJECT.md.)
+
+      let database = null; // the browser database, once it's open
+      let currentScreen = "editor"; // "login", "home" or "editor"
+      let currentUser = null; // the username of whoever is logged in
+      let currentDrawing = null; // { id, title, created } of the open drawing
+
+      // Open the database (and make its two "stores" the first time):
+      //   users    = one record per account
+      //   drawings = one record per drawing, with who owns it
+      function openDatabase() {
+        return new Promise(function (resolve, reject) {
+          const request = indexedDB.open("drawlab", 1);
+          request.onupgradeneeded = function () {
+            const db = request.result;
+            db.createObjectStore("users", { keyPath: "username" });
+            const drawings = db.createObjectStore("drawings", {
+              keyPath: "id",
+            });
+            drawings.createIndex("owner", "owner"); // so we can find someone's drawings fast
+          };
+          request.onsuccess = function () {
+            resolve(request.result);
+          };
+          request.onerror = function () {
+            reject(request.error);
+          };
+        });
+      }
+
+      // Ask the database for something, and wait for the answer.
+      // (A "Promise" is an answer that arrives later. "await" waits for it.)
+      function dbAsk(storeName, mode, ask) {
+        return new Promise(function (resolve, reject) {
+          const store = database
+            .transaction(storeName, mode)
+            .objectStore(storeName);
+          const request = ask(store);
+          request.onsuccess = function () {
+            resolve(request.result);
+          };
+          request.onerror = function () {
+            reject(request.error);
+          };
+        });
+      }
+      function dbGet(storeName, key) {
+        return dbAsk(storeName, "readonly", function (store) {
+          return store.get(key);
+        });
+      }
+      function dbPut(storeName, record) {
+        return dbAsk(storeName, "readwrite", function (store) {
+          return store.put(record);
+        });
+      }
+      function dbDelete(storeName, key) {
+        return dbAsk(storeName, "readwrite", function (store) {
+          return store.delete(key);
+        });
+      }
+      function dbDrawingsOf(username) {
+        return dbAsk("drawings", "readonly", function (store) {
+          return store.index("owner").getAll(username);
+        });
+      }
+
+      // SHA-256: scrambles any text into 64 letters and numbers.
+      // Browsers have one built in, but only on secure (https) pages, and
+      // the phone test page (http://192.168...) isn't one. So here's our
+      // own. It follows the official recipe, step by step.
+      function sha256(text) {
+        const rotate = function (x, n) {
+          return (x >>> n) | (x << (32 - n));
+        };
+        // The recipe's starting numbers come from square and cube roots of
+        // prime numbers (2, 3, 5, 7, 11...)
+        const primes = [];
+        for (let n = 2; primes.length < 64; n++) {
+          if (
+            primes.every(function (p) {
+              return n % p !== 0;
+            })
+          )
+            primes.push(n);
+        }
+        const fraction = function (x) {
+          return ((x - Math.floor(x)) * 4294967296) | 0;
+        };
+        const K = primes.map(function (p) {
+          return fraction(Math.cbrt(p));
+        });
+        let H = primes.slice(0, 8).map(function (p) {
+          return fraction(Math.sqrt(p));
+        });
+
+        // Turn the text into bytes, then pad it to a multiple of 64 bytes,
+        // with its length (in bits) at the end
+        const bytes = new TextEncoder().encode(text);
+        const padded = new Uint8Array(Math.ceil((bytes.length + 9) / 64) * 64);
+        padded.set(bytes);
+        padded[bytes.length] = 0x80;
+        const view = new DataView(padded.buffer);
+        view.setUint32(padded.length - 4, (bytes.length * 8) >>> 0);
+        view.setUint32(padded.length - 8, Math.floor(bytes.length / 536870912));
+
+        // Mix each 64-byte block into H
+        const w = new Int32Array(64);
+        for (let block = 0; block < padded.length; block += 64) {
+          for (let i = 0; i < 16; i++) w[i] = view.getUint32(block + i * 4);
+          for (let i = 16; i < 64; i++) {
+            const s0 =
+              rotate(w[i - 15], 7) ^ rotate(w[i - 15], 18) ^ (w[i - 15] >>> 3);
+            const s1 =
+              rotate(w[i - 2], 17) ^ rotate(w[i - 2], 19) ^ (w[i - 2] >>> 10);
+            w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+          }
+          let [a, b, c, d, e, f, g, h] = H;
+          for (let i = 0; i < 64; i++) {
+            const S1 = rotate(e, 6) ^ rotate(e, 11) ^ rotate(e, 25);
+            const choose = (e & f) ^ (~e & g);
+            const t1 = (h + S1 + choose + K[i] + w[i]) | 0;
+            const S0 = rotate(a, 2) ^ rotate(a, 13) ^ rotate(a, 22);
+            const majority = (a & b) ^ (a & c) ^ (b & c);
+            const t2 = (S0 + majority) | 0;
+            h = g;
+            g = f;
+            f = e;
+            e = (d + t1) | 0;
+            d = c;
+            c = b;
+            b = a;
+            a = (t1 + t2) | 0;
+          }
+          H = [
+            H[0] + a,
+            H[1] + b,
+            H[2] + c,
+            H[3] + d,
+            H[4] + e,
+            H[5] + f,
+            H[6] + g,
+            H[7] + h,
+          ].map(function (n) {
+            return n | 0;
+          });
+        }
+        return H.map(function (n) {
+          return (n >>> 0).toString(16).padStart(8, "0");
+        }).join("");
+      }
+
+      // Scramble a password with its salt, a thousand times over
+      // (so guessing lots of passwords takes a long time)
+      function hashPassword(password, salt) {
+        let hash = "";
+        for (let i = 0; i < 1000; i++) hash = sha256(salt + hash + password);
+        return hash;
+      }
+
+      // Random letters and numbers, for salts and drawing names
+      function randomText() {
+        const bytes = crypto.getRandomValues(new Uint8Array(12));
+        return Array.from(bytes, function (b) {
+          return b.toString(16).padStart(2, "0");
+        }).join("");
+      }
+
+      // Log in / Sign up tabs
+      let loginMode = "login";
+      function showLoginMode(mode) {
+        loginMode = mode;
+        document.getElementById("loginTab").style.fontWeight =
+          mode === "login" ? "bold" : "normal";
+        document.getElementById("signupTab").style.fontWeight =
+          mode === "signup" ? "bold" : "normal";
+        document.getElementById("loginConfirmLabel").style.display =
+          mode === "signup" ? "block" : "none";
+        document.getElementById("loginSubmit").textContent =
+          mode === "login" ? "Log in" : "Create account";
+        document.getElementById("loginPassword").autocomplete =
+          mode === "login" ? "current-password" : "new-password";
+        document.getElementById("loginError").textContent = "";
+      }
+
+      // Log in or Create account pressed (or Enter)
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault(); // don't reload the page (what forms normally do)
+          const error = document.getElementById("loginError");
+          const name = document.getElementById("loginName").value.trim();
+          const password = document.getElementById("loginPassword").value;
+          const key = name.toLowerCase(); // "Sam" and "sam" are the same account
+          error.textContent = "";
+
+          if (database === null) {
+            error.textContent =
+              "This browser won't let Drawlab save anything. Try a normal (not private) window.";
+            return;
+          }
+          if (!/^[A-Za-z0-9_-]{3,20}$/.test(name)) {
+            error.textContent =
+              "Usernames are 3 to 20 letters, numbers, - or _ (no spaces).";
+            return;
+          }
+          if (password.length < 4) {
+            error.textContent = "Passwords need at least 4 characters.";
+            return;
+          }
+
+          const user = await dbGet("users", key);
+          if (loginMode === "signup") {
+            if (user) {
+              error.textContent =
+                "That username is taken. Pick another, or log in.";
+              return;
+            }
+            if (password !== document.getElementById("loginConfirm").value) {
+              error.textContent = "The two passwords don't match.";
+              return;
+            }
+            const salt = randomText();
+            await dbPut("users", {
+              username: key,
+              displayName: name,
+              salt: salt,
+              hash: hashPassword(password, salt),
+              created: Date.now(),
+            });
+          } else if (!user || user.hash !== hashPassword(password, user.salt)) {
+            // Same message either way, so nobody can find out which usernames exist
+            error.textContent = "Wrong username or password.";
+            return;
+          }
+          await logIn(key);
+        });
+
+      async function logIn(username) {
+        currentUser = username;
+        localStorage.setItem("drawlab.user", username); // stay logged in after a refresh
+        document.getElementById("loginPassword").value = "";
+        document.getElementById("loginConfirm").value = "";
+        await showHome();
+      }
+
+      async function logOut() {
+        await saveNow();
+        currentUser = null;
+        currentDrawing = null;
+        localStorage.removeItem("drawlab.user");
+        showLoginMode("login");
+        showScreen("login");
+      }
+
+      // ===== Screens =====
+      // The log-in screen and home page cover the editor. The editor is
+      // always there underneath, so the canvas keeps its size.
+      function showScreen(name) {
+        currentScreen = name;
+        document.getElementById("loginPage").style.display =
+          name === "login" ? "block" : "none";
+        document.getElementById("homePage").style.display =
+          name === "home" ? "block" : "none";
+      }
+
+      // ===== Home page =====
+      async function showHome() {
+        const user = await dbGet("users", currentUser);
+        if (!user) {
+          await logOut();
+          return;
+        } // the account is gone
+        document.getElementById("homeUserName").textContent = user.displayName;
+        showScreen("home");
+        await refreshDrawingList();
+      }
+
+      // ⌂ Home page button: save, then go back to the home page
+      async function goHome() {
+        if (document.activeElement.isContentEditable)
+          document.activeElement.blur(); // finish typing
+        await saveNow();
+        currentDrawing = null;
+        await showHome();
+      }
+
+      // Show your drawings, newest first
+      async function refreshDrawingList() {
+        const list = document.getElementById("drawingList");
+        const drawings = await dbDrawingsOf(currentUser);
+        drawings.sort(function (a, b) {
+          return b.updated - a.updated;
+        });
+        list.innerHTML = "";
+        document.getElementById("homeMessage").textContent =
+          drawings.length === 0
+            ? "No drawings yet. Pick a template above to start one."
+            : "";
+        for (const drawing of drawings) list.appendChild(drawingCard(drawing));
+      }
+
+      // One drawing on the home page: its picture, name, when it was last
+      // changed, and buttons. (textContent is used for the name, so a name
+      // like "<b>" shows as it is, instead of being treated as HTML.)
+      function drawingCard(drawing) {
+        const card = document.createElement("div");
+        card.style.cssText =
+          "background: white; border: 1px solid #ccc; border-radius: 8px; overflow: hidden";
+
+        const picture = document.createElement("img");
+        picture.alt = "";
+        picture.src = drawing.thumb || "";
+        picture.style.cssText =
+          "display: block; width: 100%; height: 130px; object-fit: contain; background: #eee; cursor: pointer";
+        picture.addEventListener("click", function () {
+          openSavedDrawing(drawing.id);
+        });
+        card.appendChild(picture);
+
+        const name = document.createElement("div");
+        name.textContent = drawing.title;
+        name.style.cssText =
+          "font-weight: bold; padding: 6px 8px 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap";
+        card.appendChild(name);
+
+        const when = document.createElement("div");
+        when.textContent =
+          "Edited " +
+          new Date(drawing.updated).toLocaleString([], {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+          });
+        when.style.cssText = "color: #777; font-size: 12px; padding: 0 8px";
+        card.appendChild(when);
+
+        const buttons = document.createElement("div");
+        buttons.style.cssText =
+          "display: flex; flex-wrap: wrap; gap: 4px; padding: 8px";
+        const actions = [
+          [
+            "Open",
+            function () {
+              openSavedDrawing(drawing.id);
+            },
+          ],
+          [
+            "Rename",
+            function () {
+              renameDrawing(drawing);
+            },
+          ],
+          [
+            "📤 Share",
+            async function () {
+              shareRecord(await dbGet("drawings", drawing.id));
+            },
+          ],
+          [
+            "Delete",
+            function () {
+              deleteDrawing(drawing);
+            },
+          ],
+        ];
+        for (const [label, action] of actions) {
+          const button = document.createElement("button");
+          button.textContent = label;
+          button.addEventListener("click", action);
+          if (label === "Delete")
+            button.style.cssText =
+              "border: 2px solid #cc0000; border-radius: 3px; color: #cc0000";
+          buttons.appendChild(button);
+        }
+        card.appendChild(buttons);
+        return card;
+      }
+
+      async function renameDrawing(drawing) {
+        const name = prompt("New name for this drawing:", drawing.title);
+        if (name === null || name.trim() === "") return; // pressed Cancel, or left it empty
+        const record = await dbGet("drawings", drawing.id);
+        record.title = name.trim().slice(0, 60);
+        await dbPut("drawings", record);
+        await refreshDrawingList();
+      }
+
+      // Delete: ask first, like Clear does
+      function deleteDrawing(drawing) {
+        const dialog = document.getElementById("deleteDrawingDialog");
+        document.getElementById("deleteDrawingText").textContent =
+          'Delete "' + drawing.title + "\"? This can't be undone.";
+        dialog.returnValue = "";
+        dialog.addEventListener(
+          "close",
+          async function () {
+            if (dialog.returnValue !== "delete") return; // Keep it, or Escape
+            await dbDelete("drawings", drawing.id);
+            await refreshDrawingList();
+          },
+          { once: true },
+        ); // once = only for this time
+        dialog.showModal();
+        document.getElementById("keepDrawingFileButton").focus(); // the safe choice
+      }
+
+      // A new, unique name for a drawing
+      function newDrawingId() {
+        return "d" + Date.now().toString(36) + randomText().slice(0, 6);
+      }
+
+      // ===== Opening drawings =====
+      async function openSavedDrawing(id) {
+        const record = await dbGet("drawings", id);
+        if (record) await openDrawing(record);
+      }
+
+      // Show a drawing in the editor. record.state is the same kind of
+      // snapshot Undo uses (null for a brand new drawing).
+      async function openDrawing(record) {
+        currentDrawing = {
+          id: record.id,
+          title: record.title,
+          created: record.created,
+        };
+        document.getElementById("drawingTitle").value = record.title;
+        showScreen("editor");
+        resetEditor();
+        Object.assign(pictureStore, record.pictures || {}); // its photos and stickers
+
+        if (record.state) {
+          // Make the canvas big enough for the saved drawing, then put it back
+          const img = await loadPicture(record.state.image);
+          fitCanvas(img.width, img.height);
+          restoreState(record.state);
+          undoHistory.push(record.state); // Undo starts from here
+          lastImage = record.state.image;
+          canvasChanged = false;
+          updateUndoButton();
+        } else {
+          saveState(); // a new drawing: the empty canvas is the first snapshot
+        }
+        setSaveStatus("Saved");
+      }
+
+      // Empty the editor, ready for another drawing
+      function resetEditor() {
+        placing = null;
+        document.getElementById("insertHint").textContent = "";
+        selectItem(null);
+        for (const item of document.querySelectorAll(".canvasItem"))
+          item.remove();
+        clearCanvas();
+        lineEnds.length = 0;
+        hideDot();
+        undoHistory.length = 0;
+        lastImage = null;
+        canvasChanged = true;
+        setTool("brush");
+        updateUndoButton();
+      }
+
+      // Load a picture, and wait until it's ready
+      function loadPicture(src) {
+        return new Promise(function (resolve, reject) {
+          const img = new Image();
+          img.onload = function () {
+            resolve(img);
+          };
+          img.onerror = reject;
+          img.src = src;
+        });
+      }
+
+      // ===== Saving to your account =====
+      // Every change is saved automatically, a moment after you make it.
+      // (Undo's saveState calls scheduleAutosave.) Waiting a moment means
+      // lots of quick changes only save once.
+      let autosaveTimer = null;
+      function scheduleAutosave() {
+        if (currentDrawing === null || currentUser === null) return;
+        setSaveStatus("Saving…");
+        clearTimeout(autosaveTimer);
+        autosaveTimer = setTimeout(saveNow, 800);
+      }
+
+      async function saveNow() {
+        clearTimeout(autosaveTimer);
+        autosaveTimer = null;
+        if (
+          currentDrawing === null ||
+          currentUser === null ||
+          database === null
+        )
+          return;
+        const state = undoHistory[undoHistory.length - 1];
+        if (!state) return;
+        const drawingId = currentDrawing.id;
+        await picturesReady(); // so the home page picture shows the stickers too
+        // Went to a different drawing while waiting? It was already saved
+        if (currentDrawing === null || currentDrawing.id !== drawingId) return;
+
+        // Only keep the photos and stickers this drawing uses
+        const pictures = {};
+        for (const data of JSON.parse(state.items)) {
+          if (data.kind === "image")
+            pictures[data.picture] = pictureStore[data.picture];
+        }
+        const record = {
+          id: currentDrawing.id,
+          owner: currentUser,
+          title: currentDrawing.title,
+          created: currentDrawing.created,
+          updated: Date.now(),
+          state: state,
+          pictures: pictures,
+          thumb: makeThumbnail(),
+        };
+        try {
+          await dbPut("drawings", record);
+          setSaveStatus("Saved");
+        } catch (problem) {
+          setSaveStatus("⚠ Couldn't save (storage full?)");
+        }
+      }
+
+      // A small picture of the drawing, for the home page
+      function makeThumbnail() {
+        const picture = makePicture();
+        const small = document.createElement("canvas");
+        const scale = Math.min(1, 320 / picture.width);
+        small.width = Math.max(1, Math.round(picture.width * scale));
+        small.height = Math.max(1, Math.round(picture.height * scale));
+        small
+          .getContext("2d")
+          .drawImage(picture, 0, 0, small.width, small.height);
+        return small.toDataURL("image/jpeg", 0.8);
+      }
+
+      function setSaveStatus(text) {
+        document.getElementById("saveStatus").textContent = text;
+      }
+
+      // Save straight away if you close or hide the page
+      window.addEventListener("pagehide", saveNow);
+      document.addEventListener("visibilitychange", function () {
+        if (document.visibilityState === "hidden") saveNow();
+      });
+
+      // Typing a new name for the drawing
+      document
+        .getElementById("drawingTitle")
+        .addEventListener("input", function () {
+          if (currentDrawing === null) return;
+          currentDrawing.title = this.value.trim() || "Untitled drawing";
+          scheduleAutosave();
+        });
+      document
+        .getElementById("drawingTitle")
+        .addEventListener("change", function () {
+          if (this.value.trim() === "") this.value = "Untitled drawing";
+          this.blur();
+        });
+
+      // ===== Sharing (project files) =====
+      // A .drawlab project file has everything needed to keep editing:
+      // the drawing, every item, and the photos and stickers.
+      // It's written as JSON (a way of writing data as text).
+      async function shareProject() {
+        if (currentDrawing === null) return;
+        if (document.activeElement.isContentEditable)
+          document.activeElement.blur(); // finish typing
+        await saveNow();
+        shareRecord(await dbGet("drawings", currentDrawing.id));
+      }
+
+      async function shareRecord(record) {
+        const project = {
+          format: "drawlab-project",
+          version: 1,
+          title: record.title,
+          state: record.state,
+          pictures: record.pictures || {},
+        };
+        // File names can't have some characters, like / or ?
+        const name =
+          (record.title.replace(/[\\/:*?"<>|]+/g, "").trim() || "drawing") +
+          ".drawlab";
+        const file = new File([JSON.stringify(project)], name, {
+          type: "application/json",
+        });
+
+        // Phones and tablets: open the share menu (Messages, email, AirDrop...)
+        if (
+          touchScreen &&
+          navigator.canShare &&
+          navigator.canShare({ files: [file] })
+        ) {
+          try {
+            await navigator.share({ files: [file], title: record.title });
+            return;
+          } catch (problem) {
+            if (problem.name === "AbortError") return; // pressed Cancel
+          }
+        }
+        // Laptops and PCs (or if sharing didn't work): download the file
+        downloadFile(file, name);
+        if (currentScreen === "editor") showSavedMessage();
+        else
+          document.getElementById("homeMessage").textContent =
+            "Saved " +
+            name +
+            ' to your downloads. Send it to someone, and they can open it with "Open a project file".';
+      }
+
+      // Open a project file: it becomes a new drawing in your account
+      document
+        .getElementById("projectInput")
+        .addEventListener("change", async function () {
+          const file = this.files[0];
+          this.value = ""; // so opening the same file again still works
+          if (!file) return;
+          let project = null;
+          try {
+            project = JSON.parse(await file.text());
+          } catch (problem) {
+            project = null;
+          }
+          if (!isProjectOk(project)) {
+            document.getElementById("homeMessage").textContent =
+              "Sorry, that file isn't a Drawlab project (it should end in .drawlab).";
+            return;
+          }
+          const now = Date.now();
+          await openDrawing({
+            id: newDrawingId(),
+            owner: currentUser,
+            title: String(project.title || "Shared drawing").slice(0, 60),
+            created: now,
+            state: project.state,
+            pictures: project.pictures,
+          });
+          await saveNow(); // add it to your account straight away
+        });
+
+      // Check a project file has what we need, and nothing odd,
+      // because a file from someone else could have anything in it
+      function isProjectOk(project) {
+        if (!project || project.format !== "drawlab-project" || !project.state)
+          return false;
+        const state = project.state;
+        if (
+          typeof state.image !== "string" ||
+          !state.image.startsWith("data:image/")
+        )
+          return false;
+        if (
+          typeof state.items !== "string" ||
+          typeof state.lineEnds !== "string"
+        )
+          return false;
+        try {
+          if (
+            !Array.isArray(JSON.parse(state.items)) ||
+            !Array.isArray(JSON.parse(state.lineEnds))
+          )
+            return false;
+        } catch (problem) {
+          return false;
+        }
+        const pictures = project.pictures || {};
+        if (typeof pictures !== "object") return false;
+        for (const id in pictures) {
+          if (
+            typeof pictures[id] !== "string" ||
+            !pictures[id].startsWith("data:image/")
+          )
+            return false;
+        }
+        project.pictures = pictures;
+        return true;
+      }
+
+      // Text boxes are saved as HTML (so each bit keeps its own font and
+      // colour). HTML from a file could hide a program inside it, so only
+      // keep the text and the <span>s with their styles. Everything else
+      // is thrown away.
+      function safeTextHtml(html) {
+        const parsed = new DOMParser().parseFromString(
+          "<div>" + html + "</div>",
+          "text/html",
+        );
+        function copy(from, to) {
+          for (const child of from.childNodes) {
+            if (child.nodeType === Node.TEXT_NODE) {
+              to.appendChild(document.createTextNode(child.textContent));
+            } else if (child.nodeType === Node.ELEMENT_NODE) {
+              if (
+                ["SPAN", "FONT", "B", "I", "U", "DIV"].includes(child.tagName)
+              ) {
+                const span = document.createElement("span");
+                span.setAttribute("style", child.getAttribute("style") || "");
+                copy(child, span);
+                to.appendChild(span);
+              } else {
+                copy(child, to); // keep just the text inside anything else
+              }
+            }
+          }
+        }
+        const result = document.createElement("div");
+        copy(parsed.body.firstChild, result);
+        return result.innerHTML;
+      }
+
+      // ===== Templates =====
+      // Each template is a list of "parts". Places and sizes are shares of
+      // the canvas (0.5 = halfway), so a template fits any screen:
+      //   shape:   x, y = top-left corner, w, h = width and height
+      //            (or s = a square, as a share of the canvas's shorter side)
+      //   text:    x, y = the middle of the text, size = share of the shorter side
+      //   sticker: x, y = its middle, size = share of the shorter side
+      //   arrow:   from = [x, y], to = [x, y]
+      const templates = [
+        { title: "Blank canvas", emoji: "⬜", card: "#ffffff", parts: [] },
+        {
+          title: "Birthday card",
+          emoji: "🎂",
+          card: "#ffe3ec",
+          parts: [
+            {
+              shape: "rectangle",
+              x: 0,
+              y: 0,
+              w: 1,
+              h: 1,
+              fill: "#ffe3ec",
+              outline: false,
+            },
+            {
+              shape: "rectangle",
+              x: 0.03,
+              y: 0.04,
+              w: 0.94,
+              h: 0.92,
+              colour: "#f783ac",
+              thickness: 6,
+            },
+            {
+              text: "Happy Birthday!",
+              x: 0.5,
+              y: 0.2,
+              size: 0.11,
+              colour: "#d6336c",
+              font: "Comic Sans MS",
+              thick: 3,
+            },
+            { sticker: "🎂", x: 0.5, y: 0.55, size: 0.3 },
+            { sticker: "🎈", x: 0.15, y: 0.35, size: 0.2, angle: -12 },
+            { sticker: "🎈", x: 0.85, y: 0.35, size: 0.2, angle: 12 },
+            { sticker: "🎁", x: 0.17, y: 0.76, size: 0.16 },
+            { sticker: "🎉", x: 0.83, y: 0.76, size: 0.16 },
+            {
+              text: "Love from ________",
+              x: 0.5,
+              y: 0.85,
+              size: 0.05,
+              colour: "#a61e4d",
+              font: "Comic Sans MS",
+            },
+          ],
+        },
+        {
+          title: "Poster",
+          emoji: "📣",
+          card: "#1b2a4a",
+          parts: [
+            {
+              shape: "rectangle",
+              x: 0,
+              y: 0,
+              w: 1,
+              h: 1,
+              fill: "#1b2a4a",
+              outline: false,
+            },
+            {
+              shape: "rectangle",
+              x: 0.08,
+              y: 0.08,
+              w: 0.84,
+              h: 0.24,
+              fill: "#ffd43b",
+              outline: false,
+            },
+            {
+              text: "BIG EVENT",
+              x: 0.5,
+              y: 0.2,
+              size: 0.14,
+              colour: "#1b2a4a",
+              font: "Impact",
+            },
+            {
+              text: "Come and join us!",
+              x: 0.5,
+              y: 0.45,
+              size: 0.075,
+              colour: "#ffffff",
+              font: "Georgia",
+            },
+            {
+              text: "Saturday · 10 am · School Hall",
+              x: 0.5,
+              y: 0.6,
+              size: 0.05,
+              colour: "#ffd43b",
+              font: "Arial",
+            },
+            {
+              shape: "star",
+              x: 0.05,
+              y: 0.68,
+              s: 0.16,
+              fill: "#ffd43b",
+              outline: false,
+            },
+            {
+              shape: "star",
+              x: 0.2,
+              y: 0.8,
+              s: 0.09,
+              fill: "#ffd43b",
+              outline: false,
+            },
+            { sticker: "📣", x: 0.84, y: 0.8, size: 0.2 },
+          ],
+        },
+        {
+          title: "Comic strip",
+          emoji: "💬",
+          card: "#fff9db",
+          parts: [
+            {
+              shape: "rectangle",
+              x: 0.02,
+              y: 0.06,
+              w: 0.3,
+              h: 0.88,
+              colour: "#000000",
+              thickness: 4,
+            },
+            {
+              shape: "rectangle",
+              x: 0.35,
+              y: 0.06,
+              w: 0.3,
+              h: 0.88,
+              colour: "#000000",
+              thickness: 4,
+            },
+            {
+              shape: "rectangle",
+              x: 0.68,
+              y: 0.06,
+              w: 0.3,
+              h: 0.88,
+              colour: "#000000",
+              thickness: 4,
+            },
+            {
+              shape: "bubble",
+              x: 0.04,
+              y: 0.1,
+              w: 0.26,
+              h: 0.3,
+              colour: "#000000",
+              thickness: 3,
+              fill: "#ffffff",
+            },
+            {
+              shape: "bubble",
+              x: 0.37,
+              y: 0.1,
+              w: 0.26,
+              h: 0.3,
+              colour: "#000000",
+              thickness: 3,
+              fill: "#ffffff",
+            },
+            {
+              shape: "bubble",
+              x: 0.7,
+              y: 0.1,
+              w: 0.26,
+              h: 0.3,
+              colour: "#000000",
+              thickness: 3,
+              fill: "#ffffff",
+            },
+            {
+              text: "Hi there!",
+              x: 0.17,
+              y: 0.2,
+              size: 0.05,
+              font: "Comic Sans MS",
+            },
+            {
+              text: "A dragon?!",
+              x: 0.5,
+              y: 0.2,
+              size: 0.05,
+              font: "Comic Sans MS",
+            },
+            {
+              text: "Let's draw it!",
+              x: 0.83,
+              y: 0.2,
+              size: 0.045,
+              font: "Comic Sans MS",
+            },
+            { sticker: "🙂", x: 0.17, y: 0.68, size: 0.24 },
+            { sticker: "😮", x: 0.5, y: 0.68, size: 0.24 },
+            { sticker: "😄", x: 0.83, y: 0.68, size: 0.24 },
+          ],
+        },
+        {
+          title: "Certificate",
+          emoji: "🏆",
+          card: "#fffaf0",
+          parts: [
+            {
+              shape: "rectangle",
+              x: 0,
+              y: 0,
+              w: 1,
+              h: 1,
+              fill: "#fffaf0",
+              outline: false,
+            },
+            {
+              shape: "rectangle",
+              x: 0.03,
+              y: 0.05,
+              w: 0.94,
+              h: 0.9,
+              colour: "#c9a227",
+              thickness: 10,
+            },
+            {
+              shape: "rectangle",
+              x: 0.06,
+              y: 0.1,
+              w: 0.88,
+              h: 0.8,
+              colour: "#c9a227",
+              thickness: 2,
+            },
+            {
+              text: "Certificate of Achievement",
+              x: 0.5,
+              y: 0.24,
+              size: 0.075,
+              colour: "#7a5c00",
+              font: "Georgia",
+              thick: 1,
+            },
+            {
+              text: "This certificate is awarded to",
+              x: 0.5,
+              y: 0.39,
+              size: 0.045,
+              colour: "#555555",
+              font: "Georgia",
+            },
+            {
+              text: "Your Name Here",
+              x: 0.5,
+              y: 0.53,
+              size: 0.09,
+              colour: "#1b2a4a",
+              font: "Georgia",
+            },
+            {
+              shape: "line",
+              x: 0.3,
+              y: 0.63,
+              w: 0.4,
+              h: 0,
+              colour: "#999999",
+              thickness: 2,
+            },
+            {
+              text: "for amazing work",
+              x: 0.5,
+              y: 0.71,
+              size: 0.045,
+              colour: "#555555",
+              font: "Georgia",
+            },
+            { sticker: "🏆", x: 0.84, y: 0.77, size: 0.16 },
+            { sticker: "🌟", x: 0.16, y: 0.77, size: 0.12 },
+          ],
+        },
+        {
+          title: "Thank-you note",
+          emoji: "💐",
+          card: "#e7f5ff",
+          parts: [
+            {
+              shape: "rectangle",
+              x: 0,
+              y: 0,
+              w: 1,
+              h: 1,
+              fill: "#e7f5ff",
+              outline: false,
+            },
+            {
+              text: "Thank you!",
+              x: 0.5,
+              y: 0.33,
+              size: 0.16,
+              colour: "#1864ab",
+              font: "Georgia",
+              thick: 2,
+            },
+            {
+              text: "for being awesome",
+              x: 0.5,
+              y: 0.53,
+              size: 0.06,
+              colour: "#1971c2",
+              font: "Comic Sans MS",
+            },
+            { sticker: "❤️", x: 0.22, y: 0.76, size: 0.14 },
+            { sticker: "😊", x: 0.5, y: 0.78, size: 0.14 },
+            { sticker: "🌸", x: 0.78, y: 0.76, size: 0.14 },
+          ],
+        },
+        {
+          title: "Mind map",
+          emoji: "🧠",
+          card: "#ebfbee",
+          parts: [
+            {
+              arrow: true,
+              from: [0.4, 0.42],
+              to: [0.25, 0.27],
+              colour: "#495057",
+              thickness: 3,
+            },
+            {
+              arrow: true,
+              from: [0.6, 0.42],
+              to: [0.75, 0.27],
+              colour: "#495057",
+              thickness: 3,
+            },
+            {
+              arrow: true,
+              from: [0.4, 0.58],
+              to: [0.25, 0.73],
+              colour: "#495057",
+              thickness: 3,
+            },
+            {
+              arrow: true,
+              from: [0.6, 0.58],
+              to: [0.75, 0.73],
+              colour: "#495057",
+              thickness: 3,
+            },
+            {
+              shape: "circle",
+              x: 0.36,
+              y: 0.36,
+              w: 0.28,
+              h: 0.28,
+              colour: "#f08c00",
+              thickness: 4,
+              fill: "#ffec99",
+            },
+            {
+              text: "Big idea",
+              x: 0.5,
+              y: 0.5,
+              size: 0.065,
+              font: "Comic Sans MS",
+            },
+            {
+              shape: "circle",
+              x: 0.06,
+              y: 0.06,
+              w: 0.2,
+              h: 0.22,
+              colour: "#2f9e44",
+              thickness: 3,
+              fill: "#d3f9d8",
+            },
+            {
+              shape: "circle",
+              x: 0.74,
+              y: 0.06,
+              w: 0.2,
+              h: 0.22,
+              colour: "#2f9e44",
+              thickness: 3,
+              fill: "#d3f9d8",
+            },
+            {
+              shape: "circle",
+              x: 0.06,
+              y: 0.72,
+              w: 0.2,
+              h: 0.22,
+              colour: "#2f9e44",
+              thickness: 3,
+              fill: "#d3f9d8",
+            },
+            {
+              shape: "circle",
+              x: 0.74,
+              y: 0.72,
+              w: 0.2,
+              h: 0.22,
+              colour: "#2f9e44",
+              thickness: 3,
+              fill: "#d3f9d8",
+            },
+            { text: "Idea 1", x: 0.16, y: 0.17, size: 0.045 },
+            { text: "Idea 2", x: 0.84, y: 0.17, size: 0.045 },
+            { text: "Idea 3", x: 0.16, y: 0.83, size: 0.045 },
+            { text: "Idea 4", x: 0.84, y: 0.83, size: 0.045 },
+          ],
+        },
+      ];
+
+      // Make a card on the home page for each template
+      for (const template of templates) {
+        const card = document.createElement("button");
+        card.style.cssText =
+          "display: flex; flex-direction: column; align-items: stretch; padding: 0; " +
+          "border: 1px solid #ccc; border-radius: 8px; overflow: hidden; background: white; cursor: pointer; font: inherit";
+        const preview = document.createElement("div");
+        preview.textContent = template.emoji;
+        preview.style.cssText =
+          "height: 90px; display: flex; align-items: center; justify-content: center; " +
+          "font-size: 44px; border-bottom: 1px solid #ddd; background: " +
+          template.card;
+        const name = document.createElement("div");
+        name.textContent = template.title;
+        name.style.cssText = "padding: 8px; font-weight: bold";
+        card.appendChild(preview);
+        card.appendChild(name);
+        card.addEventListener("click", function () {
+          startFromTemplate(template);
+        });
+        document.getElementById("templateList").appendChild(card);
+      }
+
+      // Template card pressed: make a new drawing from it
+      async function startFromTemplate(template) {
+        const now = Date.now();
+        await openDrawing({
+          id: newDrawingId(),
+          owner: currentUser,
+          title:
+            template.parts.length === 0 ? "Untitled drawing" : template.title,
+          created: now,
+          state: null,
+        });
+        applyTemplate(template);
+        // The template is where Undo starts, so you can't undo it away
+        undoHistory.length = 0;
+        saveState();
+        await saveNow(); // add it to your account straight away
+      }
+
+      // Put a template's parts on the canvas
+      function applyTemplate(template) {
+        const box = document.getElementById("canvasBox");
+        const W = box.clientWidth;
+        const H = box.clientHeight;
+        const unit = Math.min(W, H); // the shorter side
+
+        for (const part of template.parts) {
+          if (part.shape) {
+            // -1 because each item has a see-through 1px border round it,
+            // so a background starting at 0 really starts at the edge
+            const w = part.s ? part.s * unit : part.w * W;
+            const h = part.s ? part.s * unit : part.h * H;
+            const item = buildShape(
+              part.shape,
+              part.x * W - 1,
+              part.y * H - 1,
+              part.colour || "#000000",
+              part.thickness || 3,
+              w + "px",
+              h + "px",
+            );
+            item.dataset.fill = part.fill || "none";
+            item.dataset.outline = part.outline === false ? "off" : "on";
+            applyShapeLook(item);
+          } else if (part.text) {
+            const item = buildTextBox(
+              0,
+              0,
+              Math.round(part.size * unit),
+              part.colour || "#000000",
+            );
+            const inside = item.querySelector(".textInside");
+            inside.textContent = part.text;
+            inside.style.fontFamily = part.font || "Arial";
+            if (part.thick)
+              inside.style.webkitTextStrokeWidth =
+                part.thick * textThicknessStep + "em";
+            // Put the middle of the text box at (x, y)
+            item.style.left = part.x * W - item.offsetWidth / 2 + "px";
+            item.style.top = part.y * H - item.offsetHeight / 2 + "px";
+          } else if (part.sticker) {
+            const size = part.size * unit;
+            const item = buildImage(
+              part.x * W - size / 2,
+              part.y * H - size / 2,
+              stickerPicture(part.sticker),
+              "sticker",
+              size + "px",
+              size + "px",
+            );
+            if (part.angle) setAngle(item, part.angle);
+          } else if (part.arrow) {
+            // An arrow line from one point to another: a flat arrow line
+            // as long as the gap, with its middle halfway, turned to point
+            // the right way
+            const x1 = part.from[0] * W,
+              y1 = part.from[1] * H;
+            const x2 = part.to[0] * W,
+              y2 = part.to[1] * H;
+            const length = Math.hypot(x2 - x1, y2 - y1);
+            const item = buildShape(
+              "arrowLine",
+              (x1 + x2) / 2 - length / 2 - 1,
+              (y1 + y2) / 2 - 1,
+              part.colour || "#000000",
+              part.thickness || 3,
+              length + "px",
+              "0px",
+            );
+            setAngle(item, (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI);
+          }
+        }
+        setTool(tool); // make the new items behave like the others
+      }
+
+      // ===== Starting the app =====
+      // Logged in last time? Go straight to the home page. Otherwise, log in.
+      async function startApp() {
+        showLoginMode("login");
+        const savedUser = localStorage.getItem("drawlab.user");
+        showScreen(savedUser ? "home" : "login");
+        try {
+          database = await openDatabase();
+        } catch (problem) {
+          showScreen("login");
+          document.getElementById("loginError").textContent =
+            "This browser won't let Drawlab save anything. Try a normal (not private) window.";
+          return;
+        }
+        if (savedUser && (await dbGet("users", savedUser))) {
+          currentUser = savedUser;
+          await showHome();
+        } else {
+          showScreen("login");
+        }
+      }
+
       // Start with the Home tab open (this also sizes the canvas to fit)
       toggleMenu("home");
       // Start with the Brush tool picked
       setTool("brush");
       // The first snapshot: the empty canvas. Undo can go back to here
       saveState();
+      // Show the log-in screen or the home page
+      startApp();
     </script>
   </body>
 </html>
