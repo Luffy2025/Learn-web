@@ -15,10 +15,12 @@ _Last updated: 15 November 2026_
   with templates and your drawings, automatic saving, photos, stickers, more
   shapes, filters, PDF and SVG export, keyboard shortcuts, and sharing with
   project files. See [Accounts and the home page](#accounts-and-the-home-page).
+- **New (15 November 2026, later):** real **online accounts** (Supabase), so your account and drawings work on any device; **friends**; and **chat** (1-to-1 and groups) in the bottom panel. See [Online accounts, friends and chat](#online-accounts-friends-and-chat). Before it works, follow [SETUP-ONLINE.md](SETUP-ONLINE.md) once.
 - **Next steps:**
-  1. Run the [device tests](#device-tests) on a phone, iPad, laptop and PC.
-  2. Answer the **TO DECIDE** questions below (app name, who it's for, purpose, what goes in the Tools tab and the bottom panel).
-  3. Finish the toolbar and layout.
+  1. Follow [SETUP-ONLINE.md](SETUP-ONLINE.md) to connect Supabase and put the site on GitHub Pages.
+  2. Run the [device tests](#device-tests) on a phone, iPad, laptop and PC.
+  3. Answer the **TO DECIDE** questions below (app name, who it's for, purpose, what goes in the Tools tab).
+  4. Finish the toolbar and layout.
 
 ## The basics
 
@@ -27,7 +29,7 @@ _Last updated: 15 November 2026_
 | **App name**     | **TO DECIDE.** The log-in screen, home page and saved file names say "Drawlab". The browser tab says "Drawlab!!". Pick one.                  |
 | **Who it's for** | **TO DECIDE.** For example: kids, students, or anyone who wants to sketch quickly.                                                           |
 | **Purpose**      | **TO DECIDE.** Fill in: "My app lets **_ draw _** so that \_\_\_."                                                                           |
-| **Runs on**      | A web browser. It's one file, `hello.html`, and needs nothing installed or any internet. Accounts and drawings are saved inside the browser. |
+| **Runs on**      | A web browser. It's one file, `hello.html`, with nothing to install. It needs the internet: accounts, drawings, friends and chats are saved online (Supabase). The website is on GitHub Pages. |
 | **Devices**      | Phone, iPad, laptop and PC (decided)                                                                                                         |
 
 ## Expected behaviour (decided)
@@ -91,6 +93,7 @@ These aren't on the must-have list.
 **Photos and stickers (Insert tab)**
 
 - **🖼 Photo:** pick a picture from your computer, phone or tablet. It goes in the middle of the canvas. Big photos are shrunk to at most 1600 pixels across, so they don't fill up the browser's storage.
+- **Drag and drop a photo:** drag a picture from another website (in another tab or window) or a picture file from your computer straight onto the canvas. A blue dashed outline shows where it will go, and the photo's middle lands where you let go. Some websites don't allow their pictures to be copied; then Drawlab says so, and you can save the picture first and drag the saved file in.
 - **😀 Stickers:** 42 emoji stickers. Pick one, then click the canvas. Each sticker is turned into a picture, so it looks the same in saved pictures.
 - Photos and stickers can be moved, resized (they keep their shape), rotated and deleted like shapes.
 - **Filters** (Properties panel): Brightness (0 to 200%), Contrast (0 to 200%) and Blur (0 to 20), plus Reset filters. Saved pictures include the filters.
@@ -126,16 +129,11 @@ These aren't on the must-have list.
 
 **Layout**
 
-- Properties panel on the left, and an empty bottom panel. Drag the bar next to each one to make it bigger or smaller.
+- Properties panel on the left, and the chat in the bottom panel. Drag the bar next to each one to make it bigger or smaller.
 
 ## Accounts and the home page
 
-**Accounts (decided: kept in this browser only)**
-
-- **Log in / Sign up** screen when the app opens. Usernames are 3 to 20 letters, numbers, - or \_. Passwords need at least 4 characters. Sign up asks for the password twice.
-- "Sam" and "sam" are the same account. A wrong username or password gives the same message, so nobody can find out which usernames exist.
-- You stay logged in after a refresh, until you press **Log out**.
-- Accounts and drawings are kept in the browser's own database (IndexedDB), on that device only. Another browser or device has its own, separate accounts.
+**Accounts:** see [Online accounts, friends and chat](#online-accounts-friends-and-chat).
 
 **Home page**
 
@@ -150,6 +148,40 @@ These aren't on the must-have list.
 - **Saving is automatic.** A moment after every change, the drawing is saved to your account. "Saving…" and then "Saved" shows next to the name.
 - Undo starts fresh each time you open a drawing.
 
+## Online accounts, friends and chat
+
+**Accounts (decided: online, with Supabase)**
+
+- **Sign up** asks for a username and a password (twice). **No email needed** (product owner's choice). Usernames are 3 to 20 letters, numbers, - or \_, and friends find you by it. "Sam" and "sam" are the same username. Passwords need at least 8 characters.
+- **Log in** with your username and password, on any computer, phone or tablet. A wrong username or password gives the same message, so nobody can find out who has an account.
+- **Adding an email is optional**, in **⚙ Account**. Nobody else can see it. Once you've added one, you log in with your email instead of your username, and **Forgot your password?** can email you a link to choose a new one. Without an email, a forgotten password can't be reset, so the account is lost.
+- You stay logged in after a refresh, until you press **Log out**.
+- **⚙ Account** (home page): add or change your email, change your password, or delete your account and everything in it (you type your username to be sure).
+- **📦 Move drawings from this computer** (home page) only shows if this browser still has old "this browser only" accounts. Log in to the old account there, and its drawings are copied online, then removed from this computer.
+
+**Friends (👥 Friends tab in the bottom panel)**
+
+- Type a friend's username and press **Send request**. They see it in their Friends tab (with a red number) and press **✔ Accept** or **Decline**. If they had already asked you, you become friends straight away.
+- Your friends have **💬 Message** and **Remove**. Requests you sent have **Cancel request**.
+
+**Chat (💬 Chats tab in the bottom panel)**
+
+- Your chats are on the left, newest first, with the last message. Chats with new messages have a ●, and the Chats tab shows how many.
+- **1-to-1 chats:** press 💬 Message next to a friend.
+- **Group chats:** press **＋ New group**, give it a name and tick some friends. In a group you can add more of your friends (**＋ Add a friend…**) or **Leave group**. Each message shows who sent it.
+- Type a message and press Enter or **Send**. Messages show up for everyone straight away. Messages can be up to 2000 characters.
+- Only friends can be put in chats. If you unfriend someone, neither of you can send messages in your 1-to-1 chat any more.
+
+**How it's kept safe**
+
+- Passwords are handled by Supabase, which keeps them scrambled (bcrypt). Drawlab never stores them.
+- The database checks every read and write against the rules in [supabase-setup.sql](supabase-setup.sql) ("Row Level Security"). For example: only you can see your drawings; only people in a chat can read it; you can only send messages as yourself; only the person asked can accept a friend request. Changing Drawlab's code in a browser can't get round these, because the database does the checking.
+- Emails are private: other people only see your username.
+- Messages and names are always shown as plain text, so nobody can send something that runs code on your computer.
+- Spam limits: at most 10 messages in 10 seconds, and 30 friend requests an hour.
+- The Supabase helper file is checked with a fingerprint ("integrity"), so a changed copy won't run.
+- These rules were tested on a real Postgres database (53 checks, all passing).
+
 ## Saved for version 2
 
 **TO DECIDE.** Some ideas to choose from:
@@ -158,8 +190,9 @@ These aren't on the must-have list.
 - Redo (the opposite of Undo)
 - Lines that can slope either way (right now a line always goes bottom-left to top-right)
 - Layers, so you can put a shape behind or in front of other things
-- Real online accounts, so your drawings follow you to other devices
-- Editing together live (needs online accounts first)
+- Editing together live (online accounts are done, so this is possible now)
+- Sending a drawing or picture in the chat
+- Profile pictures, and seeing who's online
 - Filters for the brush drawing, not just photos and stickers
 - More templates, and template previews that show the real design
 
@@ -274,19 +307,43 @@ Tick each test on each device: Phone, iPad, Laptop, PC.
 
 **Accounts and the home page**
 
-- [ ] Open the app. The log-in screen shows. Press Sign up, make an account, and the home page shows "Hi, (your name)".
+- [ ] Open the app. The log-in screen shows. Press Sign up: it asks for a username and password only (no email). Make an account. Drawlab opens on the home page, saying "Hi, (your name)".
 - [ ] Sign up with two different passwords. It says they don't match. Sign up with a username that's taken. It says so.
 - [ ] Log out, then log in with the wrong password. It says "Wrong username or password". Log in properly. Your drawings are still there.
 - [ ] Refresh the page. You're still logged in, on the home page.
+- [ ] Log in on a different device (like your phone, using the GitHub Pages address). The same drawings are there. Change one on the phone, then open it on the PC: the change is there.
+- [ ] ⚙ Account → Add email. It says the email is saved. Log out. Logging in with the username now says to use your email. Log in with the email.
+- [ ] Forgot your password? Type that email. An email arrives, and its link lets you choose a new password. Log in with the new one.
+- [ ] Try to add an email another account already uses. It says another account already uses it.
+- [ ] ⚙ Account: change your password. Log out, then log in with the new one.
+- [ ] On the PC where you made old "this browser only" accounts: 📦 Move drawings from this computer shows. Move them with the old username and password. They appear in My drawings, and the 📦 button goes away.
+- [ ] Turn off the Wi-Fi and draw. It says "Not saved yet. Trying again soon…". Turn the Wi-Fi back on: it says "Saved" again.
 - [ ] Press each template. Each one opens in the editor, fits the canvas, and everything in it can be moved and changed.
 - [ ] Draw something, wait for "Saved", press ⌂ Home page. The drawing is in My drawings with a small picture of it.
 - [ ] Rename a drawing (on the home page, and by typing in the name box in the editor). Delete one: it asks first, and Keep it doesn't delete.
 - [ ] Close the browser completely, open the app again. Everything is still there.
 - [ ] Make a second account. It can't see the first account's drawings.
+- [ ] ⚙ Account → Delete account: it needs your username typed. After deleting, you can't log in, and your friends' lists no longer show you.
+
+**Friends and chat** (you need two accounts, on two devices or two different browsers)
+
+- [ ] Account A: 👥 Friends → type B's username → Send request. It shows under "Waiting for them to accept".
+- [ ] Account B: a red 1 appears on 👥 Friends straight away. Press ✔ Accept. Both now show each other under "Your friends".
+- [ ] Send a request to a username that doesn't exist. It says nobody has it.
+- [ ] A: press 💬 Message next to B. Type a message and press Enter. B sees it appear straight away, with a ● and a red number on 💬 Chats until B opens the chat.
+- [ ] Send a message like `<b>hi</b>`. It shows exactly like that, not in bold.
+- [ ] Make a group with ＋ New group (a name, and tick some friends). Everyone ticked sees it. Messages show who sent them. Add another friend with ＋ Add a friend…. Press Leave group: it disappears for you, and the others still have it.
+- [ ] Remove a friend. Neither of you can send messages in your 1-to-1 chat any more.
+- [ ] Phone: drag the bar above the bottom panel up to make the chat bigger. Typing a message doesn't zoom the page.
+- [ ] Press B, E or V while typing a message. It types the letter (it doesn't change the tool).
 
 **Photos, stickers, shapes and filters**
 
 - [ ] Insert → 🖼 Photo. Pick a photo. It appears in the middle, and can be moved, resized (it keeps its shape), rotated and deleted. Phone/iPad: you can pick from your photos or take one.
+- [ ] Open a website with pictures (like Wikipedia) in a second window next to Drawlab. Drag a picture onto the canvas. A blue dashed outline appears while dragging, and the photo lands where you let go. Move, resize, rotate and delete it. Undo removes it.
+- [ ] Drag a picture file from File Explorer onto the canvas. Same result.
+- [ ] Drag a picture from Google Images or another big site. Either it appears, or Drawlab explains that the website won't allow it.
+- [ ] Drop a picture next to the canvas (on a panel). The browser does not leave Drawlab.
 - [ ] Insert → 😀 Stickers. Pick one and click the canvas. It appears there.
 - [ ] Select a photo or sticker. Properties shows Size, Rotation and Filters (no Colour or Font). Move Brightness, Contrast and Blur, then Reset filters.
 - [ ] Add an arrow line, star, arrow, speech bubble and polygon. Change the polygon's Sides. Fill the star and the speech bubble.
@@ -385,14 +442,34 @@ Tick each test on each device: Phone, iPad, Laptop, PC.
     canvas, that hidden part isn't saved (see "The canvas never gets
     smaller").
 
-- **Accounts are kept in the browser** (product owner's choice). No internet
-  or installing needed, and it's simple to learn from. The downsides: it isn't
-  real security (anyone using that browser could look inside its storage),
-  accounts only exist on one device and browser, and clearing the browser's
-  data deletes them. Passwords are never stored: only a scrambled "hash"
-  (SHA-256, salted, 1000 rounds). Drawlab has its own SHA-256, because the
-  browser's built-in one only works on https pages, and the phone test page is
-  http.
+- **Accounts are online, with Supabase** (product owner's choice, replacing
+  the earlier "kept in the browser" accounts). Supabase gives free logins, a
+  database, and live updates for chat, with no server program to write or look
+  after, so Drawlab stays one HTML file. The safety rules live in the database
+  ([supabase-setup.sql](supabase-setup.sql)), not in the page, because anyone
+  can change the page's code in their own browser.
+- **The website is on GitHub Pages** (product owner's choice): free, uses the
+  Learn-web repository, and updates by itself after every push.
+- **Email is optional** (product owner's choice). Supabase needs an email for
+  every account, so an account without one gets a pretend one made from its
+  username, like `sam@drawlab.invalid`. `.invalid` is reserved: it can never
+  be a real email, so nobody else can own it or get mail for it. Adding a real
+  email swaps the pretend one for it, so after that you log in with the email.
+  Emails are never shown to anyone else.
+- **Confirm email is off** (needed for accounts without an email). The
+  downside: when you add an email, Supabase doesn't check it's really yours.
+  Someone could add another person's email to their own account. That doesn't
+  get them into anything, but the real owner then can't use that email for
+  Drawlab.
+- **Chats can be 1-to-1 or groups** (product owner's choice). Only friends can
+  be put in a chat, so strangers can't message you.
+- **Old browser accounts can be moved online** (product owner's choice). It
+  asks for the old password, so on a shared computer nobody can move someone
+  else's drawings into their own account.
+- **Photos are only sent to the server when they change.** The drawing saves
+  after every change, and photos are big, so this keeps saving quick.
+- **Saves happen in order**, one after another, so an older save can never
+  finish after a newer one and undo it.
 - **Sharing is a project file** (product owner's choice), not a link. It works
   anywhere with no server. Files from someone else are checked before opening,
   and text boxes only keep text and styles from them, so a sneaky file can't
@@ -414,20 +491,32 @@ Tick each test on each device: Phone, iPad, Laptop, PC.
 ## Known issues
 
 - The **Tools** tab button does nothing.
-- The bottom panel is empty. **TO DECIDE:** what goes in it?
 - The Properties Colour controls don't show the selected item's current colour yet. They show the last colour you picked.
 - After you erase a line, its ends are still remembered, so it can still join
   onto a new line (and the blue dot can still appear there).
 - Shift to snap rotation only works with a keyboard, so phones and iPads can't snap.
 - The file is still called `hello.html`. It could be renamed to match the app.
-  (Renaming it, or moving it to another folder, can make the browser treat it
-  as a different site, so the accounts saved so far might not show up.)
+  (If you do, change the Site URL and Redirect URLs in Supabase too.)
 - "⌂ Home page" and the "Home" tab have similar names. **TO DECIDE:** rename
   one (for example, the tab could become "Draw")?
 - The template cards show an emoji, not a small picture of the real design.
-- Clearing the browser's data (or using a private window) deletes or hides
-  the accounts and drawings. Share or Save Picture to keep a copy.
+- If the same drawing is open on two devices at once, whichever saves last
+  wins, and the other device's changes are lost. (Fixing this is part of
+  "editing together live" in version 2.)
+- Drawlab needs the internet. Without it you can keep drawing, but nothing is
+  saved until the internet is back (it keeps trying every 10 seconds). Closing
+  the page while offline loses the unsaved changes.
+- Chats only show the newest 100 messages.
+- Free Supabase projects pause after a week of nobody using them (see
+  [SETUP-ONLINE.md](SETUP-ONLINE.md)).
+- Supabase's built-in email sender only sends a few emails an hour, so if lots
+  of people ask for a new password at once, some might have to wait.
+- Accounts without an email can't get a new password if they forget it.
+- Adding an email isn't checked (see Design decisions).
+- The chat is only in the editor's bottom panel, so you don't see new messages
+  while you're on the home page.
 - On a phone over `http://192.168...`, the share menu isn't available (browsers
   only allow it on https pages), so 📤 Share downloads the file instead.
 - Filters only work on photos and stickers, not on the brush drawing.
+- Dragging pictures from websites only works when the website allows copying its pictures. Many do (like Wikipedia); some don't. Dragging only works with a mouse on a computer, not on phones or iPads.
 - Saved picture file names don't use the drawing's name yet.

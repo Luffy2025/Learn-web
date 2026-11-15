@@ -685,21 +685,168 @@
             "
           ></div>
 
-          <!-- ===== Bottom panel (not used yet) ===== -->
+          <!-- ===== Bottom panel: chat with your friends =====
+               Two tabs: Chats (your conversations) and Friends (add friends,
+               answer friend requests). Drag the bar above it to make it taller -->
           <div
             id="bottomPanel"
             style="
-              height: 100px;
+              height: 200px;
               flex-shrink: 0;
-              padding: 10px;
               box-sizing: border-box;
               overflow: hidden;
               border: 2px solid black;
-              background: #f0f0f0;
-              color: #777;
+              background: #f7f7f7;
+              display: flex;
+              flex-direction: column;
+              font-family: Arial;
+              font-size: 14px;
             "
           >
-            Bottom panel (not used yet)
+            <!-- The tabs. The badges show how many things are new -->
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                padding: 4px 6px;
+                background: #e4e4e4;
+                border-bottom: 1px solid #ccc;
+                flex-shrink: 0;
+              "
+            >
+              <button id="chatsTab" onclick="showChatTab('chats')">
+                💬 Chats <span id="chatsBadge" class="badge"></span>
+              </button>
+              <button id="friendsTab" onclick="showChatTab('friends')">
+                👥 Friends <span id="friendsBadge" class="badge"></span>
+              </button>
+              <span
+                id="chatStatus"
+                style="margin-left: auto; color: #777; font-size: 12px"
+              ></span>
+            </div>
+            <style>
+              /* The little red number on a tab */
+              .badge:not(:empty) {
+                background: #cc0000;
+                color: white;
+                border-radius: 9px;
+                padding: 0 6px;
+                font-size: 12px;
+              }
+              /* One chat in the list on the left */
+              .chatRow {
+                padding: 6px 8px;
+                cursor: pointer;
+                border-bottom: 1px solid #e4e4e4;
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+              }
+              .chatRow:hover {
+                background: #eaf1fb;
+              }
+              /* One message bubble */
+              .bubble {
+                max-width: 75%;
+                padding: 5px 9px;
+                border-radius: 12px;
+                margin: 3px 0;
+                white-space: pre-wrap; /* keep the lines you typed */
+                overflow-wrap: anywhere; /* break very long words */
+              }
+            </style>
+
+            <!-- Chats tab: the list of chats (left) and the open chat (right) -->
+            <div id="chatsView" style="flex: 1; display: flex; min-height: 0">
+              <div
+                id="chatListBox"
+                style="
+                  width: 190px;
+                  flex-shrink: 0;
+                  border-right: 1px solid #ccc;
+                  display: flex;
+                  flex-direction: column;
+                  min-height: 0;
+                  background: white;
+                "
+              >
+                <button onclick="openGroupDialog()" style="margin: 4px">
+                  ＋ New group
+                </button>
+                <div id="chatList" style="flex: 1; overflow-y: auto"></div>
+              </div>
+              <div
+                style="
+                  flex: 1;
+                  display: flex;
+                  flex-direction: column;
+                  min-width: 0;
+                  min-height: 0;
+                "
+              >
+                <!-- The open chat's name and buttons -->
+                <div
+                  id="chatHeader"
+                  style="
+                    display: flex;
+                    flex-wrap: wrap;
+                    align-items: center;
+                    gap: 6px;
+                    padding: 4px 8px;
+                    border-bottom: 1px solid #ddd;
+                    flex-shrink: 0;
+                  "
+                ></div>
+                <div
+                  id="messageList"
+                  style="
+                    flex: 1;
+                    overflow-y: auto;
+                    padding: 4px 8px;
+                    display: flex;
+                    flex-direction: column;
+                  "
+                ></div>
+                <form
+                  id="messageForm"
+                  style="display: none; gap: 4px; padding: 4px; flex-shrink: 0"
+                >
+                  <input
+                    id="messageInput"
+                    maxlength="2000"
+                    autocomplete="off"
+                    placeholder="Type a message, then press Enter"
+                    style="flex: 1; min-width: 0; font-size: 16px"
+                  />
+                  <button type="submit">Send</button>
+                </form>
+              </div>
+            </div>
+
+            <!-- Friends tab -->
+            <div
+              id="friendsView"
+              style="display: none; flex: 1; overflow-y: auto; padding: 6px 8px"
+            >
+              <form
+                id="addFriendForm"
+                style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px"
+              >
+                Add a friend:
+                <input
+                  id="friendName"
+                  maxlength="20"
+                  autocomplete="off"
+                  placeholder="their username"
+                  style="font-size: 16px; width: 150px"
+                />
+                <button type="submit">Send request</button>
+                <span id="friendMessage" style="color: #555"></span>
+              </form>
+              <div id="friendList" style="margin-top: 6px"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -840,7 +987,29 @@
 
     <!-- ===== Log in / Sign up screen =====
          It covers the whole page (position: fixed, inset: 0) until you log in.
-         Accounts are kept in this browser only (see the Accounts code) -->
+         Accounts are online (Supabase), so they work on any device -->
+    <style>
+      /* The boxes you type in on the log-in screen */
+      .loginInput {
+        width: 100%;
+        box-sizing: border-box;
+        font-size: 16px; /* 16px stops iPhones zooming in when you tap */
+        padding: 6px;
+      }
+      .loginLabel {
+        display: block;
+        margin-bottom: 8px;
+      }
+      .linkButton {
+        background: none;
+        border: none;
+        padding: 0;
+        color: #1a73e8;
+        text-decoration: underline;
+        cursor: pointer;
+        font-size: 14px;
+      }
+    </style>
     <div
       id="loginPage"
       style="
@@ -853,11 +1022,13 @@
         overflow-y: auto;
       "
     >
+      <!-- novalidate: we check what was typed ourselves, with clearer messages -->
       <form
         id="loginForm"
+        novalidate
         style="
           max-width: 340px;
-          margin: 10vh auto 20px auto;
+          margin: 8vh auto 20px auto;
           padding: 24px;
           background: white;
           border-radius: 10px;
@@ -865,12 +1036,15 @@
         "
       >
         <h1 style="margin: 0; font-size: 32px">🎨 Drawlab</h1>
-        <p style="margin: 4px 0 16px 0; color: #555">
+        <p id="loginIntro" style="margin: 4px 0 16px 0; color: #555">
           Draw, design and save your work.
         </p>
 
         <!-- Two tabs: Log in and Sign up -->
-        <div style="display: flex; gap: 6px; margin-bottom: 14px">
+        <div
+          id="loginTabs"
+          style="display: flex; gap: 6px; margin-bottom: 14px"
+        >
           <button
             type="button"
             id="loginTab"
@@ -889,51 +1063,49 @@
           </button>
         </div>
 
-        <label style="display: block; margin-bottom: 8px">
-          Username<br />
+        <!-- Log in: your username, or your email if you added one.
+             Sign up: the username your friends see and search for -->
+        <label id="loginNameLabel" class="loginLabel">
+          <span id="loginNameText">Username or email</span><br />
           <input
             id="loginName"
+            class="loginInput"
             autocomplete="username"
-            maxlength="20"
-            style="
-              width: 100%;
-              box-sizing: border-box;
-              font-size: 16px;
-              padding: 6px;
-            "
+            maxlength="254"
           />
         </label>
-        <label style="display: block; margin-bottom: 8px">
-          Password<br />
+        <!-- Forgot password only -->
+        <label id="loginEmailLabel" class="loginLabel">
+          The email you added to your account<br />
+          <input
+            id="loginEmail"
+            class="loginInput"
+            type="email"
+            autocomplete="email"
+            maxlength="254"
+          />
+        </label>
+        <label id="loginPasswordLabel" class="loginLabel">
+          <span id="loginPasswordText">Password</span><br />
           <input
             id="loginPassword"
+            class="loginInput"
             type="password"
             autocomplete="current-password"
-            style="
-              width: 100%;
-              box-sizing: border-box;
-              font-size: 16px;
-              padding: 6px;
-            "
           />
         </label>
-        <!-- Sign up only: type the password again, to catch typos -->
-        <label id="loginConfirmLabel" style="display: none; margin-bottom: 8px">
+        <!-- Sign up and new password: type the password again, to catch typos -->
+        <label id="loginConfirmLabel" class="loginLabel" style="display: none">
           Type the password again<br />
           <input
             id="loginConfirm"
+            class="loginInput"
             type="password"
             autocomplete="new-password"
-            style="
-              width: 100%;
-              box-sizing: border-box;
-              font-size: 16px;
-              padding: 6px;
-            "
           />
         </label>
 
-        <!-- Shows what went wrong, like "Wrong password" -->
+        <!-- Shows what went wrong (red) or what to do next (green) -->
         <p
           id="loginError"
           role="alert"
@@ -956,10 +1128,29 @@
           Log in
         </button>
 
+        <p style="margin: 12px 0 0 0; text-align: center">
+          <button
+            type="button"
+            id="forgotLink"
+            class="linkButton"
+            onclick="showLoginMode('forgot')"
+          >
+            Forgot your password?
+          </button>
+          <button
+            type="button"
+            id="backToLoginLink"
+            class="linkButton"
+            onclick="showLoginMode('login')"
+            style="display: none"
+          >
+            Back to log in
+          </button>
+        </p>
+
         <p style="color: #777; font-size: 12px; margin: 14px 0 0 0">
-          Your account and drawings are saved in this browser on this device
-          only. To keep a drawing safe somewhere else, use Share or Save
-          Picture.
+          Your account and drawings are saved online, so you can log in on
+          any computer, phone or tablet.
         </p>
       </form>
     </div>
@@ -993,6 +1184,7 @@
       >
         <strong style="font-size: 24px">🎨 Drawlab</strong>
         <span style="margin-left: auto">Hi, <b id="homeUserName"></b></span>
+        <button onclick="openAccountDialog()">⚙ Account</button>
         <button onclick="logOut()">Log out</button>
       </div>
 
@@ -1030,6 +1222,15 @@
             accept=".drawlab,application/json"
             hidden
           />
+          <!-- Only shows if this browser still has drawings from the old
+               "this browser only" accounts -->
+          <button
+            id="moveLocalButton"
+            onclick="openMoveDialog()"
+            style="display: none"
+          >
+            📦 Move drawings from this computer
+          </button>
         </div>
         <p id="homeMessage" style="color: #555"></p>
         <!-- Your drawings get added in here by the JavaScript -->
@@ -1079,6 +1280,215 @@
         </button>
       </div>
     </dialog>
+
+    <!-- ⚙ Account: change your password, or delete your account -->
+    <dialog
+      id="accountDialog"
+      style="
+        border: 1px solid #999;
+        border-radius: 8px;
+        padding: 20px;
+        width: 360px;
+        max-width: 92vw;
+        box-sizing: border-box;
+        font-family: Arial;
+      "
+    >
+      <h3 style="margin: 0 0 4px 0">Your account</h3>
+      <p id="accountWho" style="margin: 0 0 14px 0; color: #555"></p>
+
+      <!-- Email is optional. With one, "Forgot your password?" works -->
+      <form
+        id="emailForm"
+        novalidate
+        style="margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #ddd"
+      >
+        <b>Email (optional)</b>
+        <p
+          id="emailNow"
+          style="margin: 4px 0; font-size: 13px; color: #555"
+        ></p>
+        <input
+          id="newEmail"
+          class="loginInput"
+          type="email"
+          autocomplete="email"
+          maxlength="254"
+          placeholder="you@example.com"
+        />
+        <button id="emailButton" type="submit" style="margin-top: 6px">
+          Add email
+        </button>
+      </form>
+
+      <form id="passwordForm">
+        <b>Change password</b>
+        <label class="loginLabel" style="margin-top: 6px">
+          New password (at least 8 characters)<br />
+          <input
+            id="newPassword"
+            class="loginInput"
+            type="password"
+            autocomplete="new-password"
+          />
+        </label>
+        <label class="loginLabel">
+          Type it again<br />
+          <input
+            id="newPasswordConfirm"
+            class="loginInput"
+            type="password"
+            autocomplete="new-password"
+          />
+        </label>
+        <button type="submit">Change password</button>
+      </form>
+
+      <form
+        id="deleteAccountForm"
+        style="margin-top: 18px; padding-top: 14px; border-top: 1px solid #ddd"
+      >
+        <b style="color: #cc0000">Delete account</b>
+        <p style="margin: 4px 0; font-size: 13px; color: #555">
+          This deletes your account, all your drawings, friends and messages,
+          for ever. Type your username to be sure:
+        </p>
+        <input id="deleteAccountName" class="loginInput" autocomplete="off" />
+        <button
+          type="submit"
+          style="
+            margin-top: 6px;
+            border: 2px solid #cc0000;
+            border-radius: 3px;
+            color: white;
+            background: #cc0000;
+          "
+        >
+          Delete my account
+        </button>
+      </form>
+
+      <p id="accountMessage" role="alert" style="min-height: 1.2em"></p>
+      <div style="text-align: right">
+        <button onclick="document.getElementById('accountDialog').close()">
+          Close
+        </button>
+      </div>
+    </dialog>
+
+    <!-- 📦 Move drawings from an old "this browser only" account -->
+    <dialog
+      id="moveDialog"
+      style="
+        border: 1px solid #999;
+        border-radius: 8px;
+        padding: 20px;
+        width: 360px;
+        max-width: 92vw;
+        box-sizing: border-box;
+        font-family: Arial;
+      "
+    >
+      <form id="moveForm">
+        <h3 style="margin: 0 0 6px 0">Move drawings from this computer</h3>
+        <p style="margin: 0 0 12px 0; font-size: 14px; color: #555">
+          Log in to your old account (the one that was only in this browser).
+          Its drawings get copied to your online account, then removed from
+          this computer.
+        </p>
+        <label class="loginLabel">
+          Old username<br />
+          <input id="moveName" class="loginInput" autocomplete="off" />
+        </label>
+        <label class="loginLabel">
+          Old password<br />
+          <input
+            id="movePassword"
+            class="loginInput"
+            type="password"
+            autocomplete="off"
+          />
+        </label>
+        <p id="moveMessage" role="alert" style="min-height: 1.2em"></p>
+        <div style="display: flex; justify-content: flex-end; gap: 10px">
+          <button
+            type="button"
+            onclick="document.getElementById('moveDialog').close()"
+          >
+            Close
+          </button>
+          <button
+            id="moveSubmit"
+            type="submit"
+            style="
+              border: 2px solid #1a7f37;
+              border-radius: 3px;
+              color: white;
+              background: #1a7f37;
+            "
+          >
+            Move drawings
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- ＋ New group: a name, and which friends to put in it -->
+    <dialog
+      id="groupDialog"
+      style="
+        border: 1px solid #999;
+        border-radius: 8px;
+        padding: 20px;
+        width: 340px;
+        max-width: 92vw;
+        box-sizing: border-box;
+        font-family: Arial;
+      "
+    >
+      <form id="groupForm">
+        <h3 style="margin: 0 0 10px 0">New group chat</h3>
+        <label class="loginLabel">
+          Group name<br />
+          <input id="groupName" class="loginInput" maxlength="40" />
+        </label>
+        <b>Who's in it?</b>
+        <!-- A tick box for each friend gets added in here -->
+        <div
+          id="groupFriends"
+          style="max-height: 40vh; overflow-y: auto; margin: 6px 0"
+        ></div>
+        <p id="groupMessage" role="alert" style="color: #cc0000; min-height: 1.2em"></p>
+        <div style="display: flex; justify-content: flex-end; gap: 10px">
+          <button
+            type="button"
+            onclick="document.getElementById('groupDialog').close()"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            style="
+              border: 2px solid #1a7f37;
+              border-radius: 3px;
+              color: white;
+              background: #1a7f37;
+            "
+          >
+            Make group
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Supabase's helper for talking to the online database.
+         "integrity" is a fingerprint of the exact file we checked. If anyone
+         changed the file on the internet, the browser refuses to run it -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js"
+      integrity="sha384-uteMfOloLDGt042uDz+xHGF3ym63/WQ6rFq7murQRG8Ih7QrXGEGNtWd8688sb4O"
+      crossorigin="anonymous"
+    ></script>
 
     <!-- JavaScript makes the buttons do things -->
     <script>
@@ -4004,41 +4414,167 @@
         .addEventListener("change", function () {
           const file = this.files[0];
           this.value = ""; // so picking the same photo again still works
-          if (!file) return;
-          const reader = new FileReader();
-          reader.onload = function () {
-            const img = new Image();
-            img.onload = function () {
-              // Big photos (like 4000 pixels across from a phone camera) are
-              // shrunk to at most 1600 pixels, so they don't fill up your storage
-              const scale = Math.min(1, 1600 / Math.max(img.width, img.height));
-              const small = document.createElement("canvas");
-              small.width = Math.max(1, Math.round(img.width * scale));
-              small.height = Math.max(1, Math.round(img.height * scale));
-              small
-                .getContext("2d")
-                .drawImage(img, 0, 0, small.width, small.height);
-              // PNG and GIF can have see-through parts, so keep them as PNG.
-              // Other photos become JPG, which is much smaller
-              const keepSeeThrough =
-                file.type === "image/png" || file.type === "image/gif";
-              const dataUrl = keepSeeThrough
-                ? small.toDataURL("image/png")
-                : small.toDataURL("image/jpeg", 0.9);
-              addPhoto(storePicture(dataUrl), small.width, small.height);
-            };
-            img.onerror = function () {
-              document.getElementById("insertHint").textContent =
-                "Sorry, Drawlab can't open that kind of file. Try a JPG or PNG photo.";
-            };
-            img.src = reader.result;
-          };
-          reader.readAsDataURL(file);
+          if (file) addPhotoFile(file);
         });
 
-      // Put a photo in the middle of the canvas you can see,
-      // shrunk to fit inside 60% of it
-      function addPhoto(pictureId, width, height) {
+      // Read a picture file (from the Photo button, or dropped on the canvas)
+      //   dropX, dropY = where it was dropped (leave out = middle of the canvas)
+      function addPhotoFile(file, dropX, dropY) {
+        const reader = new FileReader();
+        reader.onload = function () {
+          addPhotoFromAddress(reader.result, file.type, dropX, dropY);
+        };
+        reader.readAsDataURL(file);
+      }
+
+      // Load a picture from an address (a file we read, or a picture
+      // from a website), make it a photo item, and put it on the canvas.
+      //   fromWeb = true when it's on another website
+      function addPhotoFromAddress(address, fileType, dropX, dropY, fromWeb) {
+        const img = new Image();
+        // Ask the website for permission to copy the picture's pixels.
+        // Without it the browser lets us show the picture but not save it,
+        // so Save Picture and autosave would stop working
+        if (fromWeb) img.crossOrigin = "anonymous";
+        img.onload = function () {
+          // Big photos (like 4000 pixels across from a phone camera) are
+          // shrunk to at most 1600 pixels, so they don't fill up your storage
+          const scale = Math.min(1, 1600 / Math.max(img.width, img.height));
+          const small = document.createElement("canvas");
+          small.width = Math.max(1, Math.round(img.width * scale));
+          small.height = Math.max(1, Math.round(img.height * scale));
+          const pen = small.getContext("2d");
+          pen.drawImage(img, 0, 0, small.width, small.height);
+          // PNG and GIF can have see-through parts, so keep them as PNG.
+          // Other photos become JPG, which is much smaller.
+          // (Pictures from websites often don't say what they are, so for
+          // those we look for see-through pixels instead)
+          let keepSeeThrough =
+            fileType === "image/png" || fileType === "image/gif";
+          if (!fileType) {
+            const dots = pen.getImageData(0, 0, small.width, small.height).data;
+            for (let i = 3; i < dots.length; i += 4) {
+              if (dots[i] < 255) {
+                keepSeeThrough = true;
+                break;
+              }
+            }
+          }
+          const dataUrl = keepSeeThrough
+            ? small.toDataURL("image/png")
+            : small.toDataURL("image/jpeg", 0.9);
+          document.getElementById("insertHint").textContent = "";
+          addPhoto(storePicture(dataUrl), small.width, small.height, dropX, dropY);
+        };
+        img.onerror = function () {
+          document.getElementById("insertHint").textContent = fromWeb
+            ? "That website won't let Drawlab copy its picture. Right-click the picture, choose \"Save image as\", then drag the saved file onto the canvas."
+            : "Sorry, Drawlab can't open that kind of file. Try a JPG or PNG photo.";
+        };
+        img.src = address;
+      }
+
+      // ----- Drag a picture onto the canvas -----
+      // Works with picture files from your computer and pictures dragged
+      // from another website (in another browser tab or window).
+      // When you drag something, the browser tells us what kinds of things
+      // it's carrying ("Files", a web address, ...) but not the things
+      // themselves until you let go
+      function isDraggingPicture(event) {
+        const kinds = Array.from(event.dataTransfer.types);
+        return kinds.includes("Files") || kinds.includes("text/uri-list");
+      }
+
+      // Stop the browser from opening a dropped picture in place of
+      // Drawlab (you'd lose your place) when you miss the canvas
+      for (const what of ["dragover", "drop"]) {
+        document.addEventListener(what, function (event) {
+          if (isDraggingPicture(event)) event.preventDefault();
+        });
+      }
+
+      const dropBox = document.getElementById("canvasBox");
+      dropBox.addEventListener("dragover", function (event) {
+        if (currentScreen !== "editor" || !isDraggingPicture(event)) return;
+        event.preventDefault(); // = "yes, you can drop here"
+        event.dataTransfer.dropEffect = "copy";
+        dropBox.style.outline = "4px dashed #1a73e8";
+        dropBox.style.outlineOffset = "-6px";
+        document.getElementById("insertHint").textContent =
+          "Let go to put the picture here.";
+      });
+
+      function endDropLook() {
+        dropBox.style.outline = "";
+        document.getElementById("insertHint").textContent = "";
+      }
+      dropBox.addEventListener("dragleave", function (event) {
+        // dragleave also happens when moving over an item on the canvas,
+        // so only end it when the mouse really left the canvas
+        if (!dropBox.contains(event.relatedTarget)) endDropLook();
+      });
+
+      dropBox.addEventListener("drop", function (event) {
+        if (currentScreen !== "editor" || !isDraggingPicture(event)) return;
+        event.preventDefault(); // don't let the browser open the picture
+        endDropLook();
+        // Where it was dropped, measured from the canvas's top-left corner
+        const place = canvas.getBoundingClientRect();
+        const dropX = event.clientX - place.left;
+        const dropY = event.clientY - place.top;
+        const data = event.dataTransfer;
+
+        // 1. A picture file (from your computer. Some browsers also send
+        //    pictures from websites as files)
+        const file = Array.from(data.files).find(function (f) {
+          return f.type.startsWith("image/");
+        });
+        if (file) {
+          addPhotoFile(file, dropX, dropY);
+          return;
+        }
+
+        // 2. A picture from a website: find its address. The dragged HTML
+        //    has the <img> itself, which is best, because dragging a picture
+        //    that's also a link sends the link's address as the "uri"
+        let address = "";
+        const html = data.getData("text/html");
+        if (html) {
+          const found = new DOMParser()
+            .parseFromString(html, "text/html")
+            .querySelector("img[src]");
+          if (found) address = found.getAttribute("src");
+        }
+        if (!address) {
+          // A list of addresses, one per line. Lines starting with # are notes
+          address =
+            data
+              .getData("text/uri-list")
+              .split(/\r?\n/)
+              .find(function (line) {
+                return line && !line.startsWith("#");
+              }) || "";
+        }
+        if (!/^(https?:|data:image\/)/i.test(address)) {
+          document.getElementById("insertHint").textContent =
+            "That isn't a picture. Try dragging a photo or a picture file.";
+          return;
+        }
+        document.getElementById("insertHint").textContent =
+          "Getting the picture...";
+        addPhotoFromAddress(
+          address,
+          "",
+          dropX,
+          dropY,
+          !address.startsWith("data:"),
+        );
+      });
+
+      // Put a photo on the canvas, shrunk to fit inside 60% of the canvas
+      // you can see. It goes in the middle, or with its middle where it was
+      // dropped (dropX, dropY)
+      function addPhoto(pictureId, width, height, dropX, dropY) {
         const box = document.getElementById("canvasBox");
         const scale = Math.min(
           1,
@@ -4047,9 +4583,11 @@
         );
         const w = width * scale;
         const h = height * scale;
+        const middleX = dropX === undefined ? box.clientWidth / 2 : dropX;
+        const middleY = dropY === undefined ? box.clientHeight / 2 : dropY;
         const item = buildImage(
-          (box.clientWidth - w) / 2,
-          (box.clientHeight - h) / 2,
+          middleX - w / 2,
+          middleY - h / 2,
           pictureId,
           "photo",
           w + "px",
@@ -4345,22 +4883,1589 @@
         else if (key === "v") setTool("cursor");
       });
 
-      // ===== Accounts =====
-      // Accounts are kept in this browser, in its built-in database
-      // (called IndexedDB). It can hold much more than localStorage, which
-      // matters because drawings and photos are big.
-      //
-      // Passwords are never stored. Instead we store a "hash": the password
-      // mixed with some random letters (the "salt") and scrambled with
-      // SHA-256 a thousand times. You can't turn a hash back into the
-      // password, but the same password always makes the same hash, so we
-      // can check it. (This isn't real security: anyone using this
-      // browser could still look at the drawings. See PROJECT.md.)
+      // ===== Online settings =====
+      // Paste your Supabase project's two details here (SETUP-ONLINE.md
+      // shows where to find them). Both are meant to be public: they only
+      // say WHERE the database is. What anyone can see or change is decided
+      // by the rules in supabase-setup.sql, which the database checks every
+      // single time, so nobody can get round them by changing this code.
+      const SUPABASE_URL = "https://ejlgrhqjxvkcekfuepjb.supabase.co";
+      const SUPABASE_KEY = "sb_publishable_zY8RH3cIz8k7iFCww3mJWA_56TX0K7g"; // the public key (never the secret one)
 
-      let database = null; // the browser database, once it's open
       let currentScreen = "editor"; // "login", "home" or "editor"
-      let currentUser = null; // the username of whoever is logged in
-      let currentDrawing = null; // { id, title, created } of the open drawing
+      let currentUser = null; // { id, username, displayName, email } of whoever is logged in
+      let currentDrawing = null; // { id, title, savedPictures } of the open drawing
+
+      // ===== Talking to the server =====
+      // Everything that goes to or from the internet is in here, in one
+      // place. Each one waits for the server's answer ("await"), and if the
+      // server says something went wrong, it "throws" the problem so the
+      // code that asked can show a message.
+      function answer(result) {
+        if (result.error) throw result.error;
+        return result.data;
+      }
+
+      // The address of this page, for the links in emails
+      function pageAddress() {
+        return location.origin + location.pathname;
+      }
+
+      const Server = {
+        client: null,
+
+        isSetUp() {
+          return (
+            SUPABASE_URL !== "" &&
+            SUPABASE_KEY !== "" &&
+            window.supabase !== undefined
+          );
+        },
+        start(onAuthChange) {
+          this.client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+          this.client.auth.onAuthStateChange(function (event) {
+            // setTimeout: Supabase asks us not to talk to the server
+            // from inside this, so do it a moment later
+            setTimeout(function () {
+              onAuthChange(event);
+            }, 0);
+          });
+        },
+
+        // ----- Logging in -----
+        async currentAuthUser() {
+          const data = answer(await this.client.auth.getSession());
+          return data.session ? data.session.user : null;
+        },
+        async usernameAvailable(name) {
+          return answer(await this.client.rpc("username_available", { name }));
+        },
+        // Gives back true if you're logged in straight away, or false if
+        // you need to click the link in the email first
+        async signUp(email, password, username) {
+          const data = answer(
+            await this.client.auth.signUp({
+              email,
+              password,
+              options: { data: { username }, emailRedirectTo: pageAddress() },
+            }),
+          );
+          return data.session !== null;
+        },
+        async logIn(email, password) {
+          answer(
+            await this.client.auth.signInWithPassword({ email, password }),
+          );
+        },
+        async logOut() {
+          await this.client.auth.signOut();
+        },
+        // Add or change your email. Gives back true if it changed straight
+        // away, or false if you need to click a link in an email first
+        async changeEmail(email) {
+          const data = answer(
+            await this.client.auth.updateUser(
+              { email },
+              { emailRedirectTo: pageAddress() },
+            ),
+          );
+          return data.user.email === email;
+        },
+        async sendPasswordReset(email) {
+          answer(
+            await this.client.auth.resetPasswordForEmail(email, {
+              redirectTo: pageAddress(),
+            }),
+          );
+        },
+        async changePassword(password) {
+          answer(await this.client.auth.updateUser({ password }));
+        },
+        async deleteAccount() {
+          answer(await this.client.rpc("delete_my_account"));
+          await this.client.auth.signOut();
+        },
+        async myProfile() {
+          const user = await this.currentAuthUser();
+          if (!user) return null;
+          const rows = answer(
+            await this.client
+              .from("profiles")
+              .select("id, username, display_name")
+              .eq("id", user.id),
+          );
+          if (!rows[0]) return null;
+          return {
+            id: rows[0].id,
+            username: rows[0].username,
+            displayName: rows[0].display_name,
+            email: user.email,
+          };
+        },
+
+        // ----- Drawings -----
+        // The list leaves out the big parts (the drawing itself and its
+        // photos), so the home page loads fast
+        async listDrawings() {
+          return answer(
+            await this.client
+              .from("drawings")
+              .select("id, title, thumbnail, updated_at")
+              .order("updated_at", { ascending: false }),
+          );
+        },
+        async getDrawing(id) {
+          const rows = answer(
+            await this.client.from("drawings").select("*").eq("id", id),
+          );
+          return rows[0] || null;
+        },
+        // "upsert" = add it, or change it if it's already there
+        async saveDrawing(record) {
+          answer(await this.client.from("drawings").upsert(record));
+        },
+        async renameDrawing(id, title) {
+          answer(
+            await this.client.from("drawings").update({ title }).eq("id", id),
+          );
+        },
+        async deleteDrawing(id) {
+          answer(await this.client.from("drawings").delete().eq("id", id));
+        },
+
+        // ----- Friends -----
+        async myFriends() {
+          return answer(await this.client.rpc("my_friends"));
+        },
+        async sendFriendRequest(name) {
+          return answer(
+            await this.client.rpc("send_friend_request", { name }),
+          );
+        },
+        async acceptFriend(friendId) {
+          answer(
+            await this.client
+              .from("friendships")
+              .update({ status: "accepted" })
+              .eq("requester", friendId)
+              .eq("addressee", currentUser.id),
+          );
+        },
+        // Decline, cancel or unfriend: whoever asked first
+        async removeFriend(friendId) {
+          for (const [a, b] of [
+            [friendId, currentUser.id],
+            [currentUser.id, friendId],
+          ]) {
+            answer(
+              await this.client
+                .from("friendships")
+                .delete()
+                .eq("requester", a)
+                .eq("addressee", b),
+            );
+          }
+        },
+
+        // ----- Chats -----
+        async myChats() {
+          return answer(await this.client.rpc("my_chats"));
+        },
+        async startDirectChat(friendId) {
+          return answer(
+            await this.client.rpc("start_direct_chat", { friend: friendId }),
+          );
+        },
+        async createGroup(name, friendIds) {
+          return answer(
+            await this.client.rpc("create_group_chat", {
+              chat_name: name,
+              friend_ids: friendIds,
+            }),
+          );
+        },
+        async addToGroup(chatId, friendId) {
+          answer(
+            await this.client.rpc("add_to_group", {
+              chat: chatId,
+              friend: friendId,
+            }),
+          );
+        },
+        async leaveGroup(chatId) {
+          answer(
+            await this.client
+              .from("chat_members")
+              .delete()
+              .eq("chat_id", chatId)
+              .eq("user_id", currentUser.id),
+          );
+        },
+        // The newest 100 messages, oldest first
+        async messages(chatId) {
+          const rows = answer(
+            await this.client
+              .from("messages")
+              .select("id, chat_id, sender, body, created_at")
+              .eq("chat_id", chatId)
+              .order("id", { ascending: false })
+              .limit(100),
+          );
+          return rows.reverse();
+        },
+        async sendMessage(chatId, body) {
+          const rows = answer(
+            await this.client
+              .from("messages")
+              .insert({ chat_id: chatId, body })
+              .select(),
+          );
+          return rows[0];
+        },
+        async markRead(chatId) {
+          answer(await this.client.rpc("mark_read", { chat: chatId }));
+        },
+
+        // Live updates: the server tells us straight away about new
+        // messages, friend requests and chats. Gives back a function that
+        // stops listening.
+        listen(handlers) {
+          const channel = this.client
+            .channel("drawlab-live")
+            .on(
+              "postgres_changes",
+              { event: "INSERT", schema: "public", table: "messages" },
+              function (change) {
+                handlers.message(change.new);
+              },
+            )
+            .on(
+              "postgres_changes",
+              { event: "INSERT", schema: "public", table: "friendships" },
+              handlers.friendship,
+            )
+            .on(
+              "postgres_changes",
+              { event: "UPDATE", schema: "public", table: "friendships" },
+              handlers.friendship,
+            )
+            .on(
+              "postgres_changes",
+              { event: "INSERT", schema: "public", table: "chat_members" },
+              handlers.chatMember,
+            )
+            .subscribe(handlers.status);
+          const client = this.client;
+          return function () {
+            client.removeChannel(channel);
+          };
+        },
+      };
+
+      // Turn the server's problems into words a person understands
+      function friendlyError(problem) {
+        const text = String((problem && problem.message) || problem);
+        // Our own messages from supabase-setup.sql are already friendly
+        if (/^(You |Too many messages|Group|Pick |Not logged in)/.test(text))
+          return text;
+        if (/fetch|network|Load failed/i.test(text))
+          return "Can't reach the server. Check your internet connection.";
+        if (/Invalid login credentials/i.test(text))
+          return "Wrong username or password. (If you added an email to your account, log in with your email instead.)";
+        if (/Email not confirmed/i.test(text))
+          return "Please click the link in the email we sent you first, then log in.";
+        if (/already registered|already been registered|email_exists/i.test(text))
+          return "Another account already uses that email.";
+        if (/invalid/i.test(text) && /email/i.test(text))
+          return "That email doesn't look right. Check it and try again.";
+        if (/Database error saving new user/i.test(text))
+          return "That username is taken. Pick another.";
+        if (/rate limit|too many/i.test(text))
+          return "Too many tries. Wait a minute, then try again.";
+        if (/row-level security/i.test(text))
+          return "You're not allowed to do that. (Are you still friends?)";
+        if (/JWT|session/i.test(text))
+          return "You've been logged out. Please log in again.";
+        if (/password/i.test(text)) return text; // like "Password should be..."
+        return "Something went wrong: " + text;
+      }
+
+      // ===== Log in, Sign up, Forgot password =====
+      //   login       = username (or email, if you added one) + password
+      //   signup      = username + password (twice). No email needed
+      //   forgot      = email, to send a "choose a new password" link
+      //   newPassword = after clicking that link: the new password (twice)
+      //
+      // Supabase needs an email for every account. So an account without
+      // one gets a pretend email made from its username, like
+      // "sam@drawlab.invalid". ".invalid" is kept aside by the people who
+      // run the internet: it can never be a real website or email, so no
+      // email can ever be sent there, and nobody else can own it.
+      const pretendEmailEnd = "@drawlab.invalid";
+      function pretendEmail(username) {
+        return username.toLowerCase() + pretendEmailEnd;
+      }
+      function isRealEmail(email) {
+        return Boolean(email) && !email.endsWith(pretendEmailEnd);
+      }
+      function looksLikeEmail(text) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text);
+      }
+      let loginMode = "login";
+      function showLoginMode(mode) {
+        loginMode = mode;
+        // how = how it shows ("flex" for a row of things, or "" for normal)
+        function show(id, yes, how) {
+          document.getElementById(id).style.display = yes ? how || "" : "none";
+        }
+        show("loginTabs", mode === "login" || mode === "signup", "flex");
+        show("loginNameLabel", mode === "login" || mode === "signup");
+        show("loginEmailLabel", mode === "forgot");
+        document.getElementById("loginNameText").textContent =
+          mode === "signup"
+            ? "Username (friends find you by this)"
+            : "Username or email";
+        show("loginPasswordLabel", mode !== "forgot");
+        show(
+          "loginConfirmLabel",
+          mode === "signup" || mode === "newPassword",
+        );
+        show("forgotLink", mode === "login");
+        show("backToLoginLink", mode === "forgot");
+        document.getElementById("loginTab").style.fontWeight =
+          mode === "login" ? "bold" : "normal";
+        document.getElementById("signupTab").style.fontWeight =
+          mode === "signup" ? "bold" : "normal";
+        document.getElementById("loginPasswordText").textContent =
+          mode === "login" ? "Password" : "Password (at least 8 characters)";
+        document.getElementById("loginPassword").autocomplete =
+          mode === "login" ? "current-password" : "new-password";
+        document.getElementById("loginSubmit").textContent = {
+          login: "Log in",
+          signup: "Create account",
+          forgot: "Email me a link",
+          newPassword: "Save new password",
+        }[mode];
+        document.getElementById("loginIntro").textContent = {
+          login: "Draw, design and save your work.",
+          signup: "Draw, design and save your work.",
+          forgot:
+            "Type the email you added to your account. We'll send it a link to choose a new password. (Only works if you added an email in ⚙ Account.)",
+          newPassword: "Choose a new password for your account.",
+        }[mode];
+        setLoginMessage("");
+      }
+
+      // Red = something's wrong, green = good news or what to do next
+      function setLoginMessage(text, good) {
+        const message = document.getElementById("loginError");
+        message.textContent = text;
+        message.style.color = good ? "#1a7f37" : "#cc0000";
+      }
+
+      function showSetupMessage() {
+        setLoginMessage(
+          window.supabase === undefined
+            ? "Couldn't load the online part of Drawlab. Check your internet, then refresh the page."
+            : "Drawlab's online accounts aren't set up yet. Follow SETUP-ONLINE.md to connect it to Supabase.",
+        );
+      }
+
+      // The big button on the log-in screen was pressed (or Enter)
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault(); // don't reload the page (what forms normally do)
+          if (!Server.isSetUp()) {
+            showSetupMessage();
+            return;
+          }
+          const name = document.getElementById("loginName").value.trim();
+          const email = document.getElementById("loginEmail").value.trim();
+          const password = document.getElementById("loginPassword").value;
+          const confirm = document.getElementById("loginConfirm").value;
+          const mode = loginMode;
+
+          // Check what was typed before asking the server
+          let problem = "";
+          if (mode === "forgot" && !looksLikeEmail(email))
+            problem = "Type your email address, like sam@example.com.";
+          if (mode === "login" && name === "")
+            problem = "Type your username (or your email, if you added one).";
+          if (mode === "login" && password === "")
+            problem = problem || "Type your password.";
+          if (mode === "signup" && !/^[A-Za-z0-9_-]{3,20}$/.test(name))
+            problem =
+              "Usernames are 3 to 20 letters, numbers, - or _ (no spaces).";
+          if (mode === "signup" || mode === "newPassword") {
+            if (password.length < 8)
+              problem = problem || "Passwords need at least 8 characters.";
+            else if (password !== confirm)
+              problem = problem || "The two passwords don't match.";
+          }
+          if (problem) {
+            setLoginMessage(problem);
+            return;
+          }
+
+          const button = document.getElementById("loginSubmit");
+          button.disabled = true; // so pressing twice doesn't do it twice
+          setLoginMessage("Please wait…", true);
+          try {
+            if (mode === "login") {
+              // Has an @? It's an email. Otherwise it's a username
+              await Server.logIn(
+                name.includes("@") ? name : pretendEmail(name),
+                password,
+              );
+              await afterLogIn();
+            } else if (mode === "signup") {
+              if (!(await Server.usernameAvailable(name))) {
+                setLoginMessage("That username is taken. Pick another.");
+                return;
+              }
+              if (await Server.signUp(pretendEmail(name), password, name)) {
+                await afterLogIn();
+              } else {
+                // Supabase is waiting for an email that can never arrive
+                setLoginMessage(
+                  "Supabase's \"Confirm email\" setting needs to be turned off for accounts without an email. See SETUP-ONLINE.md, step 4.",
+                );
+              }
+            } else if (mode === "forgot") {
+              await Server.sendPasswordReset(email);
+              setLoginMessage(
+                "If there's an account with that email, we've sent it a link. Check your inbox (and junk mail).",
+                true,
+              );
+            } else {
+              await Server.changePassword(password);
+              history.replaceState(null, "", pageAddress()); // tidy the address bar
+              await afterLogIn();
+            }
+          } catch (problem) {
+            setLoginMessage(friendlyError(problem));
+          } finally {
+            button.disabled = false;
+            document.getElementById("loginPassword").value = "";
+            document.getElementById("loginConfirm").value = "";
+          }
+        });
+
+      // Supabase tells us when you log in or out (on its own too, like when
+      // you click a "new password" link, or log out in another tab)
+      function onAuthChange(event) {
+        if (event === "PASSWORD_RECOVERY") {
+          showScreen("login");
+          showLoginMode("newPassword");
+        } else if (event === "SIGNED_OUT" && currentUser !== null) {
+          stopChat();
+          currentUser = null;
+          currentDrawing = null;
+          showScreen("login");
+          showLoginMode("login");
+          setLoginMessage("You've been logged out.");
+        }
+      }
+
+      // Logged in: get your profile, start the chat, show the home page
+      async function afterLogIn() {
+        const profile = await Server.myProfile();
+        if (!profile) throw new Error("Couldn't find your account.");
+        currentUser = profile;
+        setLoginMessage("");
+        startChat();
+        await showHome();
+      }
+
+      async function logOut() {
+        await saveNow();
+        stopChat();
+        currentUser = null; // first, so onAuthChange doesn't say "You've been logged out"
+        currentDrawing = null;
+        try {
+          await Server.logOut();
+        } catch (problem) {
+          // Offline? You're still logged out on this device
+        }
+        showScreen("login");
+        showLoginMode("login");
+      }
+
+      // ===== ⚙ Account =====
+      function openAccountDialog() {
+        document.getElementById("accountWho").textContent =
+          currentUser.displayName + " (username: " + currentUser.username + ")";
+        showEmailNow();
+        document.getElementById("newEmail").value = "";
+        document.getElementById("accountMessage").textContent = "";
+        document.getElementById("newPassword").value = "";
+        document.getElementById("newPasswordConfirm").value = "";
+        document.getElementById("deleteAccountName").value = "";
+        document.getElementById("accountDialog").showModal();
+      }
+      // Say whether you've added an email
+      function showEmailNow() {
+        const real = isRealEmail(currentUser.email);
+        document.getElementById("emailNow").textContent = real
+          ? "Your email: " +
+            currentUser.email +
+            ". Log in with it, and use it if you forget your password."
+          : "No email yet. Add one so you can get a new password if you forget yours. (Nobody else can see it.)";
+        document.getElementById("emailButton").textContent = real
+          ? "Change email"
+          : "Add email";
+      }
+
+      document
+        .getElementById("emailForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+          const email = document.getElementById("newEmail").value.trim().toLowerCase();
+          if (!looksLikeEmail(email) || !isRealEmail(email)) {
+            setAccountMessage("Type your email address, like sam@example.com.");
+            return;
+          }
+          let changed;
+          try {
+            changed = await Server.changeEmail(email);
+          } catch (problem) {
+            setAccountMessage(friendlyError(problem));
+            return;
+          }
+          document.getElementById("newEmail").value = "";
+          if (changed) {
+            currentUser.email = email;
+            showEmailNow();
+            setAccountMessage(
+              "Email saved! From now on, log in with " + email + " (not your username).",
+              true,
+            );
+          } else {
+            setAccountMessage(
+              "Nearly done! Click the link in the email we sent to " + email + ".",
+              true,
+            );
+          }
+        });
+
+      function setAccountMessage(text, good) {
+        const message = document.getElementById("accountMessage");
+        message.textContent = text;
+        message.style.color = good ? "#1a7f37" : "#cc0000";
+      }
+
+      document
+        .getElementById("passwordForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+          const password = document.getElementById("newPassword").value;
+          if (password.length < 8) {
+            setAccountMessage("Passwords need at least 8 characters.");
+            return;
+          }
+          if (password !== document.getElementById("newPasswordConfirm").value) {
+            setAccountMessage("The two passwords don't match.");
+            return;
+          }
+          try {
+            await Server.changePassword(password);
+            document.getElementById("newPassword").value = "";
+            document.getElementById("newPasswordConfirm").value = "";
+            setAccountMessage("Password changed.", true);
+          } catch (problem) {
+            setAccountMessage(friendlyError(problem));
+          }
+        });
+
+      document
+        .getElementById("deleteAccountForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+          const typed = document
+            .getElementById("deleteAccountName")
+            .value.trim()
+            .toLowerCase();
+          if (typed !== currentUser.username) {
+            setAccountMessage(
+              'Type your username ("' + currentUser.username + '") to delete your account.',
+            );
+            return;
+          }
+          try {
+            await Server.deleteAccount();
+          } catch (problem) {
+            setAccountMessage(friendlyError(problem));
+            return;
+          }
+          stopChat();
+          currentUser = null;
+          currentDrawing = null;
+          document.getElementById("accountDialog").close();
+          showScreen("login");
+          showLoginMode("login");
+          setLoginMessage("Your account and everything in it was deleted.", true);
+        });
+
+      // ===== Screens =====
+      // The log-in screen and home page cover the editor. The editor is
+      // always there underneath, so the canvas keeps its size.
+      function showScreen(name) {
+        currentScreen = name;
+        document.getElementById("loginPage").style.display =
+          name === "login" ? "block" : "none";
+        document.getElementById("homePage").style.display =
+          name === "home" ? "block" : "none";
+      }
+
+      // ===== Home page =====
+      async function showHome() {
+        document.getElementById("homeUserName").textContent =
+          currentUser.displayName;
+        showScreen("home");
+        await refreshDrawingList();
+        checkLocalDrawings();
+      }
+
+      // ⌂ Home page button: save, then go back to the home page
+      async function goHome() {
+        if (document.activeElement.isContentEditable)
+          document.activeElement.blur(); // finish typing
+        await saveNow();
+        currentDrawing = null;
+        await showHome();
+      }
+
+      // Show your drawings, newest first (the server sorts them)
+      async function refreshDrawingList() {
+        const list = document.getElementById("drawingList");
+        const message = document.getElementById("homeMessage");
+        let drawings;
+        try {
+          drawings = await Server.listDrawings();
+        } catch (problem) {
+          message.textContent = friendlyError(problem);
+          return;
+        }
+        list.innerHTML = "";
+        message.textContent =
+          drawings.length === 0
+            ? "No drawings yet. Pick a template above to start one."
+            : "";
+        for (const drawing of drawings) list.appendChild(drawingCard(drawing));
+      }
+
+      // One drawing on the home page: its picture, name, when it was last
+      // changed, and buttons. (textContent is used for the name, so a name
+      // like "<b>" shows as it is, instead of being treated as HTML.)
+      function drawingCard(drawing) {
+        const card = document.createElement("div");
+        card.style.cssText =
+          "background: white; border: 1px solid #ccc; border-radius: 8px; overflow: hidden";
+
+        const picture = document.createElement("img");
+        picture.alt = "";
+        // Only show pictures we made (data: addresses), never a web address
+        if (String(drawing.thumbnail).startsWith("data:image/"))
+          picture.src = drawing.thumbnail;
+        picture.style.cssText =
+          "display: block; width: 100%; height: 130px; object-fit: contain; background: #eee; cursor: pointer";
+        picture.addEventListener("click", function () {
+          openSavedDrawing(drawing.id);
+        });
+        card.appendChild(picture);
+
+        const name = document.createElement("div");
+        name.textContent = drawing.title;
+        name.style.cssText =
+          "font-weight: bold; padding: 6px 8px 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap";
+        card.appendChild(name);
+
+        const when = document.createElement("div");
+        when.textContent =
+          "Edited " +
+          new Date(drawing.updated_at).toLocaleString([], {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+          });
+        when.style.cssText = "color: #777; font-size: 12px; padding: 0 8px";
+        card.appendChild(when);
+
+        const buttons = document.createElement("div");
+        buttons.style.cssText =
+          "display: flex; flex-wrap: wrap; gap: 4px; padding: 8px";
+        const actions = [
+          [
+            "Open",
+            function () {
+              openSavedDrawing(drawing.id);
+            },
+          ],
+          [
+            "Rename",
+            function () {
+              renameDrawing(drawing);
+            },
+          ],
+          [
+            "📤 Share",
+            async function () {
+              try {
+                shareRecord(await Server.getDrawing(drawing.id));
+              } catch (problem) {
+                document.getElementById("homeMessage").textContent =
+                  friendlyError(problem);
+              }
+            },
+          ],
+          [
+            "Delete",
+            function () {
+              deleteDrawing(drawing);
+            },
+          ],
+        ];
+        for (const [label, action] of actions) {
+          const button = document.createElement("button");
+          button.textContent = label;
+          button.addEventListener("click", action);
+          if (label === "Delete")
+            button.style.cssText =
+              "border: 2px solid #cc0000; border-radius: 3px; color: #cc0000";
+          buttons.appendChild(button);
+        }
+        card.appendChild(buttons);
+        return card;
+      }
+
+      async function renameDrawing(drawing) {
+        const name = prompt("New name for this drawing:", drawing.title);
+        if (name === null || name.trim() === "") return; // pressed Cancel, or left it empty
+        try {
+          await Server.renameDrawing(drawing.id, name.trim().slice(0, 60));
+        } catch (problem) {
+          document.getElementById("homeMessage").textContent =
+            friendlyError(problem);
+          return;
+        }
+        await refreshDrawingList();
+      }
+
+      // Delete: ask first, like Clear does
+      function deleteDrawing(drawing) {
+        const dialog = document.getElementById("deleteDrawingDialog");
+        document.getElementById("deleteDrawingText").textContent =
+          'Delete "' + drawing.title + "\"? This can't be undone.";
+        dialog.returnValue = "";
+        dialog.addEventListener(
+          "close",
+          async function () {
+            if (dialog.returnValue !== "delete") return; // Keep it, or Escape
+            try {
+              await Server.deleteDrawing(drawing.id);
+            } catch (problem) {
+              document.getElementById("homeMessage").textContent =
+                friendlyError(problem);
+              return;
+            }
+            await refreshDrawingList();
+          },
+          { once: true },
+        ); // once = only for this time
+        dialog.showModal();
+        document.getElementById("keepDrawingFileButton").focus(); // the safe choice
+      }
+
+      // A new, unique name for a drawing: a "UUID", which looks like
+      // 3f2b8c1e-...  There are so many possible ones that two drawings
+      // will never get the same one by chance
+      function newDrawingId() {
+        const bytes = crypto.getRandomValues(new Uint8Array(16));
+        bytes[6] = (bytes[6] & 15) | 64; // the rules for UUIDs say these
+        bytes[8] = (bytes[8] & 63) | 128; // two bytes look like this
+        const hex = Array.from(bytes, function (b) {
+          return b.toString(16).padStart(2, "0");
+        }).join("");
+        return [
+          hex.slice(0, 8),
+          hex.slice(8, 12),
+          hex.slice(12, 16),
+          hex.slice(16, 20),
+          hex.slice(20),
+        ].join("-");
+      }
+
+      // ===== Opening drawings =====
+      async function openSavedDrawing(id) {
+        let record;
+        try {
+          record = await Server.getDrawing(id);
+        } catch (problem) {
+          document.getElementById("homeMessage").textContent =
+            friendlyError(problem);
+          return;
+        }
+        if (!record) return;
+        record.fromServer = true; // its photos are already on the server
+        await openDrawing(record);
+      }
+
+      // Show a drawing in the editor. record.state is the same kind of
+      // snapshot Undo uses (null for a brand new drawing).
+      async function openDrawing(record) {
+        currentDrawing = {
+          id: record.id,
+          title: record.title,
+          // Which photos and stickers the server already has. Photos are
+          // big, so they're only sent again when this list changes.
+          // (null = none sent yet, so send them next time)
+          savedPictures: record.fromServer
+            ? pictureList(record.pictures || {})
+            : null,
+        };
+        document.getElementById("drawingTitle").value = record.title;
+        showScreen("editor");
+        resetEditor();
+        Object.assign(pictureStore, record.pictures || {}); // its photos and stickers
+
+        if (record.state) {
+          // Make the canvas big enough for the saved drawing, then put it back
+          const img = await loadPicture(record.state.image);
+          fitCanvas(img.width, img.height);
+          restoreState(record.state);
+          undoHistory.push(record.state); // Undo starts from here
+          lastImage = record.state.image;
+          canvasChanged = false;
+          updateUndoButton();
+        } else {
+          saveState(); // a new drawing: the empty canvas is the first snapshot
+        }
+        setSaveStatus("Saved");
+      }
+
+      // The names of some pictures, as one piece of text, like "p1,p2"
+      function pictureList(pictures) {
+        return Object.keys(pictures).sort().join(",");
+      }
+
+      // Empty the editor, ready for another drawing
+      function resetEditor() {
+        placing = null;
+        document.getElementById("insertHint").textContent = "";
+        selectItem(null);
+        for (const item of document.querySelectorAll(".canvasItem"))
+          item.remove();
+        clearCanvas();
+        lineEnds.length = 0;
+        hideDot();
+        undoHistory.length = 0;
+        lastImage = null;
+        canvasChanged = true;
+        setTool("brush");
+        updateUndoButton();
+      }
+
+      // Load a picture, and wait until it's ready
+      function loadPicture(src) {
+        return new Promise(function (resolve, reject) {
+          const img = new Image();
+          img.onload = function () {
+            resolve(img);
+          };
+          img.onerror = reject;
+          img.src = src;
+        });
+      }
+
+      // ===== Saving to your account =====
+      // Every change is saved automatically, a moment after you make it.
+      // (Undo's saveState calls scheduleAutosave.) Waiting a moment means
+      // lots of quick changes only save once.
+      let autosaveTimer = null;
+      function scheduleAutosave() {
+        if (currentDrawing === null || currentUser === null) return;
+        setSaveStatus("Saving…");
+        clearTimeout(autosaveTimer);
+        autosaveTimer = setTimeout(saveNow, 1500);
+      }
+
+      // Saves wait in a line ("saveLine"), so an older save can never
+      // finish after a newer one and undo it
+      let saveLine = Promise.resolve();
+      function saveNow() {
+        clearTimeout(autosaveTimer);
+        autosaveTimer = null;
+        saveLine = saveLine.then(saveToServer, saveToServer);
+        return saveLine;
+      }
+
+      async function saveToServer() {
+        if (currentDrawing === null || currentUser === null) return;
+        const state = undoHistory[undoHistory.length - 1];
+        if (!state) return;
+        const drawing = currentDrawing;
+        await picturesReady(); // so the home page picture shows the stickers too
+        // Went to a different drawing while waiting? It was already saved
+        if (currentDrawing !== drawing) return;
+
+        const pictures = picturesUsedBy(state);
+        const record = {
+          id: drawing.id,
+          title: drawing.title,
+          state: state,
+          thumbnail: makeThumbnail(),
+        };
+        const pictureNames = pictureList(pictures);
+        if (pictureNames !== drawing.savedPictures) record.pictures = pictures;
+        try {
+          await Server.saveDrawing(record);
+          drawing.savedPictures = pictureNames;
+          if (currentDrawing === drawing) setSaveStatus("Saved");
+        } catch (problem) {
+          if (currentDrawing !== drawing) return;
+          setSaveStatus("⚠ Not saved yet. Trying again soon…");
+          setChatStatus(friendlyError(problem));
+          clearTimeout(autosaveTimer);
+          autosaveTimer = setTimeout(saveNow, 10000); // try again in 10 seconds
+        }
+      }
+
+      // Only the photos and stickers a drawing uses (not ones you deleted)
+      function picturesUsedBy(state) {
+        const pictures = {};
+        for (const data of JSON.parse(state.items)) {
+          if (data.kind === "image")
+            pictures[data.picture] = pictureStore[data.picture];
+        }
+        return pictures;
+      }
+
+      // A small picture of the drawing, for the home page
+      function makeThumbnail() {
+        const picture = makePicture();
+        const small = document.createElement("canvas");
+        const scale = Math.min(1, 320 / picture.width);
+        small.width = Math.max(1, Math.round(picture.width * scale));
+        small.height = Math.max(1, Math.round(picture.height * scale));
+        small
+          .getContext("2d")
+          .drawImage(picture, 0, 0, small.width, small.height);
+        return small.toDataURL("image/jpeg", 0.8);
+      }
+
+      function setSaveStatus(text) {
+        document.getElementById("saveStatus").textContent = text;
+      }
+
+      // Save straight away if you close or hide the page
+      window.addEventListener("pagehide", saveNow);
+      document.addEventListener("visibilitychange", function () {
+        if (document.visibilityState === "hidden") saveNow();
+      });
+
+      // Typing a new name for the drawing
+      document
+        .getElementById("drawingTitle")
+        .addEventListener("input", function () {
+          if (currentDrawing === null) return;
+          currentDrawing.title = this.value.trim() || "Untitled drawing";
+          scheduleAutosave();
+        });
+      document
+        .getElementById("drawingTitle")
+        .addEventListener("change", function () {
+          if (this.value.trim() === "") this.value = "Untitled drawing";
+          this.blur();
+        });
+
+      // ===== Friends and chat (the bottom panel) =====
+      let friends = []; // your friends and friend requests, from the server
+      let chats = []; // your chats, newest first
+      let openChatId = null; // the chat showing on the right
+      let shownMessages = new Set(); // ids of the messages showing, so none show twice
+      let stopListening = null; // stops the live updates
+      let checkTimer = null; // checks for news every 30 seconds, just in case
+      let chatHeaderKey = ""; // what the chat's top line shows, to only redraw it when it changes
+      const soonTimers = {};
+
+      // Phones: a thinner chat list, so there's room for the messages
+      if (window.innerWidth < 700)
+        document.getElementById("chatListBox").style.width = "110px";
+
+      function startChat() {
+        stopChat();
+        showChatTab("chats");
+        refreshFriends();
+        refreshChats();
+        stopListening = Server.listen({
+          message: onNewMessage,
+          friendship: function () {
+            soon(refreshFriends);
+          },
+          chatMember: function () {
+            soon(refreshChats);
+          },
+          status: function (status) {
+            setChatStatus(
+              status === "CHANNEL_ERROR" || status === "TIMED_OUT"
+                ? "Live updates paused. Checking every 30 seconds."
+                : "",
+              true,
+            );
+          },
+        });
+        // Live updates can stop (like when a phone sleeps), so also check
+        // every 30 seconds while the page is showing
+        checkTimer = setInterval(function () {
+          if (document.visibilityState !== "visible") return;
+          refreshFriends();
+          refreshChats();
+        }, 30000);
+      }
+
+      function stopChat() {
+        if (stopListening) stopListening();
+        stopListening = null;
+        clearInterval(checkTimer);
+        friends = [];
+        chats = [];
+        openChatId = null;
+        chatHeaderKey = "";
+        document.getElementById("chatList").innerHTML = "";
+        document.getElementById("friendList").innerHTML = "";
+        document.getElementById("messageList").innerHTML = "";
+        document.getElementById("chatsBadge").textContent = "";
+        document.getElementById("friendsBadge").textContent = "";
+        document.getElementById("messageForm").style.display = "none";
+        const header = document.getElementById("chatHeader");
+        header.textContent = "Log in to chat with your friends.";
+        header.style.color = "#777";
+      }
+
+      // Do something in a moment, once (lots of news at once = one refresh)
+      function soon(what) {
+        clearTimeout(soonTimers[what.name]);
+        soonTimers[what.name] = setTimeout(what, 300);
+      }
+
+      // The grey note in the top right of the chat panel
+      let chatStatusTimer = null;
+      function setChatStatus(text, stay) {
+        document.getElementById("chatStatus").textContent = text;
+        clearTimeout(chatStatusTimer);
+        if (text && !stay)
+          chatStatusTimer = setTimeout(function () {
+            document.getElementById("chatStatus").textContent = "";
+          }, 6000);
+      }
+
+      function showChatTab(name) {
+        document.getElementById("chatsView").style.display =
+          name === "chats" ? "flex" : "none";
+        document.getElementById("friendsView").style.display =
+          name === "friends" ? "block" : "none";
+        document.getElementById("chatsTab").style.fontWeight =
+          name === "chats" ? "bold" : "normal";
+        document.getElementById("friendsTab").style.fontWeight =
+          name === "friends" ? "bold" : "normal";
+      }
+
+      // A small button, for the friend and chat lists
+      function smallButton(label, action, red) {
+        const button = document.createElement("button");
+        button.textContent = label;
+        button.style.marginLeft = "6px";
+        if (red) button.style.color = "#cc0000";
+        button.addEventListener("click", action);
+        return button;
+      }
+
+      // ----- Friends tab -----
+      async function refreshFriends() {
+        if (currentUser === null) return;
+        try {
+          friends = await Server.myFriends();
+        } catch (problem) {
+          setChatStatus(friendlyError(problem));
+          return;
+        }
+        const incoming = friends.filter(function (f) {
+          return f.state === "incoming";
+        });
+        document.getElementById("friendsBadge").textContent =
+          incoming.length || "";
+
+        const list = document.getElementById("friendList");
+        list.innerHTML = "";
+        const groups = [
+          ["incoming", "Friend requests"],
+          ["friends", "Your friends"],
+          ["outgoing", "Waiting for them to accept"],
+        ];
+        for (const [state, heading] of groups) {
+          const people = friends.filter(function (f) {
+            return f.state === state;
+          });
+          if (people.length === 0) continue;
+          const title = document.createElement("div");
+          title.textContent = heading;
+          title.style.cssText = "font-weight: bold; margin: 8px 0 2px 0";
+          list.appendChild(title);
+          for (const person of people) list.appendChild(friendRow(person));
+        }
+        if (friends.length === 0)
+          list.textContent =
+            "No friends yet. Type a friend's username above to send them a friend request.";
+        renderChatHeader(); // the "Add a friend" list there might change
+      }
+
+      // One person in the Friends tab, with their buttons
+      function friendRow(person) {
+        const row = document.createElement("div");
+        row.style.cssText = "padding: 3px 0";
+        const name = document.createElement("span");
+        name.textContent = person.display_name;
+        row.appendChild(name);
+        const username = document.createElement("span");
+        username.textContent = " @" + person.username;
+        username.style.color = "#777";
+        row.appendChild(username);
+
+        async function act(job) {
+          try {
+            await job();
+          } catch (problem) {
+            setChatStatus(friendlyError(problem));
+          }
+          refreshFriends();
+          refreshChats();
+        }
+        if (person.state === "incoming") {
+          row.appendChild(
+            smallButton("✔ Accept", function () {
+              act(function () {
+                return Server.acceptFriend(person.id);
+              });
+            }),
+          );
+          row.appendChild(
+            smallButton("Decline", function () {
+              act(function () {
+                return Server.removeFriend(person.id);
+              });
+            }),
+          );
+        } else if (person.state === "friends") {
+          row.appendChild(
+            smallButton("💬 Message", async function () {
+              try {
+                const chatId = await Server.startDirectChat(person.id);
+                await refreshChats();
+                showChatTab("chats");
+                openChat(chatId);
+              } catch (problem) {
+                setChatStatus(friendlyError(problem));
+              }
+            }),
+          );
+          row.appendChild(
+            smallButton(
+              "Remove",
+              function () {
+                if (
+                  confirm(
+                    "Remove " +
+                      person.display_name +
+                      " from your friends? You won't be able to message each other.",
+                  )
+                )
+                  act(function () {
+                    return Server.removeFriend(person.id);
+                  });
+              },
+              true,
+            ),
+          );
+        } else {
+          row.appendChild(
+            smallButton("Cancel request", function () {
+              act(function () {
+                return Server.removeFriend(person.id);
+              });
+            }),
+          );
+        }
+        return row;
+      }
+
+      // Add a friend: send a request by username
+      document
+        .getElementById("addFriendForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+          const box = document.getElementById("friendName");
+          const message = document.getElementById("friendMessage");
+          const name = box.value.trim();
+          if (name === "") return;
+          let result;
+          try {
+            result = await Server.sendFriendRequest(name);
+          } catch (problem) {
+            message.textContent = friendlyError(problem);
+            return;
+          }
+          message.textContent = {
+            sent: "Request sent! " + name + " will see it in their Friends tab.",
+            accepted: "You're now friends with " + name + "!",
+            already: "You've already asked " + name + ", or you're already friends.",
+            "not-found": "Nobody has the username " + name + ".",
+            yourself: "That's you!",
+            "too-many": "You've sent lots of requests. Try again later.",
+          }[result];
+          if (result === "sent" || result === "accepted") box.value = "";
+          refreshFriends();
+        });
+
+      // ----- Chats tab -----
+      function chatTitle(chat) {
+        if (chat.is_group) return chat.name;
+        const other = (chat.members || []).find(function (m) {
+          return m.id !== currentUser.id;
+        });
+        return other ? other.display_name : "(nobody)";
+      }
+
+      // Is there a message you haven't read? (Not counting the open chat)
+      function isUnread(chat) {
+        return (
+          chat.id !== openChatId &&
+          chat.last_at !== null &&
+          chat.last_sender !== currentUser.id &&
+          new Date(chat.last_at) > new Date(chat.last_read_at)
+        );
+      }
+
+      async function refreshChats() {
+        if (currentUser === null) return;
+        try {
+          chats = await Server.myChats();
+        } catch (problem) {
+          setChatStatus(friendlyError(problem));
+          return;
+        }
+        // Left the open group, or it's gone? Close it
+        if (
+          openChatId !== null &&
+          !chats.some(function (c) {
+            return c.id === openChatId;
+          })
+        ) {
+          openChatId = null;
+          document.getElementById("messageList").innerHTML = "";
+        }
+        renderChatList();
+        renderChatHeader();
+      }
+
+      function renderChatList() {
+        const list = document.getElementById("chatList");
+        list.innerHTML = "";
+        let unread = 0;
+        for (const chat of chats) {
+          const row = document.createElement("div");
+          row.className = "chatRow";
+          if (chat.id === openChatId) row.style.background = "#d6e4f7";
+          const title = document.createElement("div");
+          title.textContent =
+            (chat.is_group ? "👥 " : "") + chatTitle(chat);
+          if (isUnread(chat)) {
+            unread++;
+            title.textContent = "● " + title.textContent;
+            title.style.fontWeight = "bold";
+          }
+          row.appendChild(title);
+          // The last message, small and grey
+          const last = document.createElement("div");
+          last.style.cssText =
+            "color: #777; font-size: 12px; overflow: hidden; text-overflow: ellipsis";
+          last.textContent =
+            chat.last_body === null
+              ? "No messages yet"
+              : (chat.last_sender === currentUser.id ? "You: " : "") +
+                chat.last_body;
+          row.appendChild(last);
+          row.addEventListener("click", function () {
+            openChat(chat.id);
+          });
+          list.appendChild(row);
+        }
+        if (chats.length === 0)
+          list.innerHTML =
+            '<div style="padding: 8px; color: #777">No chats yet.</div>';
+        document.getElementById("chatsBadge").textContent = unread || "";
+      }
+
+      // The open chat's top line: its name, who's in it, and buttons
+      function renderChatHeader() {
+        const header = document.getElementById("chatHeader");
+        const chat = chats.find(function (c) {
+          return c.id === openChatId;
+        });
+        document.getElementById("messageForm").style.display = chat
+          ? "flex"
+          : "none";
+        // Friends who could be added to this group
+        const canAdd = !chat || !chat.is_group
+          ? []
+          : friends.filter(function (f) {
+              return (
+                f.state === "friends" &&
+                !chat.members.some(function (m) {
+                  return m.id === f.id;
+                })
+              );
+            });
+        // Nothing changed? Leave it alone (so an open list doesn't snap shut)
+        const key = JSON.stringify([chat && chat.id, chat && chat.members, canAdd]);
+        if (key === chatHeaderKey) return;
+        chatHeaderKey = key;
+        header.innerHTML = "";
+
+        if (!chat) {
+          header.textContent =
+            currentUser === null
+              ? "Log in to chat with your friends."
+              : "Pick a chat on the left, or go to 👥 Friends and press 💬 Message.";
+          header.style.color = "#777";
+          return;
+        }
+        header.style.color = "";
+        const title = document.createElement("b");
+        title.textContent = chatTitle(chat);
+        header.appendChild(title);
+        if (!chat.is_group) return;
+
+        // Groups: who's in it, add a friend, leave
+        const who = document.createElement("span");
+        who.style.cssText = "color: #777; font-size: 12px";
+        who.textContent =
+          "(" +
+          chat.members
+            .map(function (m) {
+              return m.id === currentUser.id ? "you" : m.display_name;
+            })
+            .join(", ") +
+          ")";
+        header.appendChild(who);
+
+        if (canAdd.length > 0) {
+          const add = document.createElement("select");
+          const first = document.createElement("option");
+          first.textContent = "＋ Add a friend…";
+          first.value = "";
+          add.appendChild(first);
+          for (const f of canAdd) {
+            const option = document.createElement("option");
+            option.value = f.id;
+            option.textContent = f.display_name;
+            add.appendChild(option);
+          }
+          add.addEventListener("change", async function () {
+            if (add.value === "") return;
+            try {
+              await Server.addToGroup(chat.id, add.value);
+            } catch (problem) {
+              setChatStatus(friendlyError(problem));
+            }
+            refreshChats();
+          });
+          header.appendChild(add);
+        }
+        header.appendChild(
+          smallButton(
+            "Leave group",
+            async function () {
+              if (!confirm('Leave "' + chat.name + '"?')) return;
+              try {
+                await Server.leaveGroup(chat.id);
+              } catch (problem) {
+                setChatStatus(friendlyError(problem));
+                return;
+              }
+              openChatId = null;
+              document.getElementById("messageList").innerHTML = "";
+              refreshChats();
+            },
+            true,
+          ),
+        );
+      }
+
+      async function openChat(chatId) {
+        openChatId = chatId;
+        shownMessages = new Set();
+        const list = document.getElementById("messageList");
+        list.innerHTML = "";
+        renderChatList();
+        renderChatHeader();
+        let messages;
+        try {
+          messages = await Server.messages(chatId);
+        } catch (problem) {
+          setChatStatus(friendlyError(problem));
+          return;
+        }
+        if (openChatId !== chatId) return; // picked another chat while waiting
+        for (const message of messages) showMessage(message);
+        list.scrollTop = list.scrollHeight; // show the newest
+        markRead(chatId);
+        if (!touchScreen) document.getElementById("messageInput").focus();
+      }
+
+      async function markRead(chatId) {
+        try {
+          await Server.markRead(chatId);
+        } catch (problem) {
+          return; // not important enough to show a message
+        }
+        const chat = chats.find(function (c) {
+          return c.id === chatId;
+        });
+        if (chat) chat.last_read_at = new Date().toISOString();
+      }
+
+      // Add one message bubble to the open chat.
+      // textContent (not innerHTML) means a message is only ever shown as
+      // text, so nobody can send a message that runs code on your computer
+      function showMessage(message) {
+        if (shownMessages.has(message.id)) return;
+        shownMessages.add(message.id);
+        const list = document.getElementById("messageList");
+        // Were you looking at the newest messages? Then keep showing them
+        const atBottom =
+          list.scrollHeight - list.scrollTop - list.clientHeight < 40;
+        const mine = message.sender === currentUser.id;
+        const chat = chats.find(function (c) {
+          return c.id === message.chat_id;
+        });
+
+        const holder = document.createElement("div");
+        holder.style.cssText =
+          "display: flex; flex-direction: column; align-items: " +
+          (mine ? "flex-end" : "flex-start");
+        // In groups, say who sent it
+        if (!mine && chat && chat.is_group) {
+          const sender = chat.members.find(function (m) {
+            return m.id === message.sender;
+          });
+          const name = document.createElement("div");
+          name.textContent = sender ? sender.display_name : "Someone";
+          name.style.cssText = "font-size: 11px; color: #777; margin-top: 4px";
+          holder.appendChild(name);
+        }
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
+        bubble.textContent = message.body;
+        bubble.style.background = mine ? "#1a73e8" : "#e4e6eb";
+        bubble.style.color = mine ? "white" : "black";
+        bubble.title = new Date(message.created_at).toLocaleString();
+        holder.appendChild(bubble);
+        list.appendChild(holder);
+        if (atBottom || mine) list.scrollTop = list.scrollHeight;
+      }
+
+      // The server told us about a new message
+      function onNewMessage(message) {
+        if (message.chat_id === openChatId) {
+          showMessage(message);
+          markRead(message.chat_id);
+        }
+        soon(refreshChats); // update the list (and the unread dots)
+      }
+
+      // Send a message (Send button or Enter)
+      document
+        .getElementById("messageForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+          const box = document.getElementById("messageInput");
+          const body = box.value.trim();
+          if (body === "" || openChatId === null) return;
+          box.value = "";
+          try {
+            showMessage(await Server.sendMessage(openChatId, body));
+            soon(refreshChats);
+          } catch (problem) {
+            box.value = body; // put it back, so it isn't lost
+            setChatStatus(friendlyError(problem));
+          }
+        });
+
+      // ＋ New group
+      function openGroupDialog() {
+        const list = document.getElementById("groupFriends");
+        list.innerHTML = "";
+        const myFriends = friends.filter(function (f) {
+          return f.state === "friends";
+        });
+        if (myFriends.length === 0)
+          list.textContent = "Add some friends first (in the 👥 Friends tab).";
+        for (const f of myFriends) {
+          const label = document.createElement("label");
+          label.style.cssText = "display: block; padding: 3px 0";
+          const tick = document.createElement("input");
+          tick.type = "checkbox";
+          tick.value = f.id;
+          label.appendChild(tick);
+          label.appendChild(document.createTextNode(" " + f.display_name));
+          list.appendChild(label);
+        }
+        document.getElementById("groupName").value = "";
+        document.getElementById("groupMessage").textContent = "";
+        document.getElementById("groupDialog").showModal();
+      }
+
+      document
+        .getElementById("groupForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+          const message = document.getElementById("groupMessage");
+          const name = document.getElementById("groupName").value.trim();
+          const ids = Array.from(
+            document.querySelectorAll("#groupFriends input:checked"),
+            function (tick) {
+              return tick.value;
+            },
+          );
+          if (name === "") {
+            message.textContent = "Give the group a name.";
+            return;
+          }
+          if (ids.length === 0) {
+            message.textContent = "Tick at least one friend.";
+            return;
+          }
+          let chatId;
+          try {
+            chatId = await Server.createGroup(name, ids);
+          } catch (problem) {
+            message.textContent = friendlyError(problem);
+            return;
+          }
+          document.getElementById("groupDialog").close();
+          await refreshChats();
+          showChatTab("chats");
+          openChat(chatId);
+        });
+
+      // ===== Moving drawings from the old "this browser only" accounts =====
+      // Before online accounts, accounts and drawings were kept in this
+      // browser's own database (IndexedDB), with passwords scrambled by the
+      // code below. It's only used now to move those drawings online.
+      let database = null;
 
       // Open the database (and make its two "stores" the first time):
       //   users    = one record per account
@@ -4523,403 +6628,85 @@
         }).join("");
       }
 
-      // Log in / Sign up tabs
-      let loginMode = "login";
-      function showLoginMode(mode) {
-        loginMode = mode;
-        document.getElementById("loginTab").style.fontWeight =
-          mode === "login" ? "bold" : "normal";
-        document.getElementById("signupTab").style.fontWeight =
-          mode === "signup" ? "bold" : "normal";
-        document.getElementById("loginConfirmLabel").style.display =
-          mode === "signup" ? "block" : "none";
-        document.getElementById("loginSubmit").textContent =
-          mode === "login" ? "Log in" : "Create account";
-        document.getElementById("loginPassword").autocomplete =
-          mode === "login" ? "current-password" : "new-password";
-        document.getElementById("loginError").textContent = "";
-      }
-
-      // Log in or Create account pressed (or Enter)
-      document
-        .getElementById("loginForm")
-        .addEventListener("submit", async function (event) {
-          event.preventDefault(); // don't reload the page (what forms normally do)
-          const error = document.getElementById("loginError");
-          const name = document.getElementById("loginName").value.trim();
-          const password = document.getElementById("loginPassword").value;
-          const key = name.toLowerCase(); // "Sam" and "sam" are the same account
-          error.textContent = "";
-
-          if (database === null) {
-            error.textContent =
-              "This browser won't let Drawlab save anything. Try a normal (not private) window.";
-            return;
-          }
-          if (!/^[A-Za-z0-9_-]{3,20}$/.test(name)) {
-            error.textContent =
-              "Usernames are 3 to 20 letters, numbers, - or _ (no spaces).";
-            return;
-          }
-          if (password.length < 4) {
-            error.textContent = "Passwords need at least 4 characters.";
-            return;
-          }
-
-          const user = await dbGet("users", key);
-          if (loginMode === "signup") {
-            if (user) {
-              error.textContent =
-                "That username is taken. Pick another, or log in.";
-              return;
-            }
-            if (password !== document.getElementById("loginConfirm").value) {
-              error.textContent = "The two passwords don't match.";
-              return;
-            }
-            const salt = randomText();
-            await dbPut("users", {
-              username: key,
-              displayName: name,
-              salt: salt,
-              hash: hashPassword(password, salt),
-              created: Date.now(),
-            });
-          } else if (!user || user.hash !== hashPassword(password, user.salt)) {
-            // Same message either way, so nobody can find out which usernames exist
-            error.textContent = "Wrong username or password.";
-            return;
-          }
-          await logIn(key);
-        });
-
-      async function logIn(username) {
-        currentUser = username;
-        localStorage.setItem("drawlab.user", username); // stay logged in after a refresh
-        document.getElementById("loginPassword").value = "";
-        document.getElementById("loginConfirm").value = "";
-        await showHome();
-      }
-
-      async function logOut() {
-        await saveNow();
-        currentUser = null;
-        currentDrawing = null;
-        localStorage.removeItem("drawlab.user");
-        showLoginMode("login");
-        showScreen("login");
-      }
-
-      // ===== Screens =====
-      // The log-in screen and home page cover the editor. The editor is
-      // always there underneath, so the canvas keeps its size.
-      function showScreen(name) {
-        currentScreen = name;
-        document.getElementById("loginPage").style.display =
-          name === "login" ? "block" : "none";
-        document.getElementById("homePage").style.display =
-          name === "home" ? "block" : "none";
-      }
-
-      // ===== Home page =====
-      async function showHome() {
-        const user = await dbGet("users", currentUser);
-        if (!user) {
-          await logOut();
-          return;
-        } // the account is gone
-        document.getElementById("homeUserName").textContent = user.displayName;
-        showScreen("home");
-        await refreshDrawingList();
-      }
-
-      // ⌂ Home page button: save, then go back to the home page
-      async function goHome() {
-        if (document.activeElement.isContentEditable)
-          document.activeElement.blur(); // finish typing
-        await saveNow();
-        currentDrawing = null;
-        await showHome();
-      }
-
-      // Show your drawings, newest first
-      async function refreshDrawingList() {
-        const list = document.getElementById("drawingList");
-        const drawings = await dbDrawingsOf(currentUser);
-        drawings.sort(function (a, b) {
-          return b.updated - a.updated;
-        });
-        list.innerHTML = "";
-        document.getElementById("homeMessage").textContent =
-          drawings.length === 0
-            ? "No drawings yet. Pick a template above to start one."
-            : "";
-        for (const drawing of drawings) list.appendChild(drawingCard(drawing));
-      }
-
-      // One drawing on the home page: its picture, name, when it was last
-      // changed, and buttons. (textContent is used for the name, so a name
-      // like "<b>" shows as it is, instead of being treated as HTML.)
-      function drawingCard(drawing) {
-        const card = document.createElement("div");
-        card.style.cssText =
-          "background: white; border: 1px solid #ccc; border-radius: 8px; overflow: hidden";
-
-        const picture = document.createElement("img");
-        picture.alt = "";
-        picture.src = drawing.thumb || "";
-        picture.style.cssText =
-          "display: block; width: 100%; height: 130px; object-fit: contain; background: #eee; cursor: pointer";
-        picture.addEventListener("click", function () {
-          openSavedDrawing(drawing.id);
-        });
-        card.appendChild(picture);
-
-        const name = document.createElement("div");
-        name.textContent = drawing.title;
-        name.style.cssText =
-          "font-weight: bold; padding: 6px 8px 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap";
-        card.appendChild(name);
-
-        const when = document.createElement("div");
-        when.textContent =
-          "Edited " +
-          new Date(drawing.updated).toLocaleString([], {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-          });
-        when.style.cssText = "color: #777; font-size: 12px; padding: 0 8px";
-        card.appendChild(when);
-
-        const buttons = document.createElement("div");
-        buttons.style.cssText =
-          "display: flex; flex-wrap: wrap; gap: 4px; padding: 8px";
-        const actions = [
-          [
-            "Open",
-            function () {
-              openSavedDrawing(drawing.id);
-            },
-          ],
-          [
-            "Rename",
-            function () {
-              renameDrawing(drawing);
-            },
-          ],
-          [
-            "📤 Share",
-            async function () {
-              shareRecord(await dbGet("drawings", drawing.id));
-            },
-          ],
-          [
-            "Delete",
-            function () {
-              deleteDrawing(drawing);
-            },
-          ],
-        ];
-        for (const [label, action] of actions) {
-          const button = document.createElement("button");
-          button.textContent = label;
-          button.addEventListener("click", action);
-          if (label === "Delete")
-            button.style.cssText =
-              "border: 2px solid #cc0000; border-radius: 3px; color: #cc0000";
-          buttons.appendChild(button);
-        }
-        card.appendChild(buttons);
-        return card;
-      }
-
-      async function renameDrawing(drawing) {
-        const name = prompt("New name for this drawing:", drawing.title);
-        if (name === null || name.trim() === "") return; // pressed Cancel, or left it empty
-        const record = await dbGet("drawings", drawing.id);
-        record.title = name.trim().slice(0, 60);
-        await dbPut("drawings", record);
-        await refreshDrawingList();
-      }
-
-      // Delete: ask first, like Clear does
-      function deleteDrawing(drawing) {
-        const dialog = document.getElementById("deleteDrawingDialog");
-        document.getElementById("deleteDrawingText").textContent =
-          'Delete "' + drawing.title + "\"? This can't be undone.";
-        dialog.returnValue = "";
-        dialog.addEventListener(
-          "close",
-          async function () {
-            if (dialog.returnValue !== "delete") return; // Keep it, or Escape
-            await dbDelete("drawings", drawing.id);
-            await refreshDrawingList();
-          },
-          { once: true },
-        ); // once = only for this time
-        dialog.showModal();
-        document.getElementById("keepDrawingFileButton").focus(); // the safe choice
-      }
-
-      // A new, unique name for a drawing
-      function newDrawingId() {
-        return "d" + Date.now().toString(36) + randomText().slice(0, 6);
-      }
-
-      // ===== Opening drawings =====
-      async function openSavedDrawing(id) {
-        const record = await dbGet("drawings", id);
-        if (record) await openDrawing(record);
-      }
-
-      // Show a drawing in the editor. record.state is the same kind of
-      // snapshot Undo uses (null for a brand new drawing).
-      async function openDrawing(record) {
-        currentDrawing = {
-          id: record.id,
-          title: record.title,
-          created: record.created,
-        };
-        document.getElementById("drawingTitle").value = record.title;
-        showScreen("editor");
-        resetEditor();
-        Object.assign(pictureStore, record.pictures || {}); // its photos and stickers
-
-        if (record.state) {
-          // Make the canvas big enough for the saved drawing, then put it back
-          const img = await loadPicture(record.state.image);
-          fitCanvas(img.width, img.height);
-          restoreState(record.state);
-          undoHistory.push(record.state); // Undo starts from here
-          lastImage = record.state.image;
-          canvasChanged = false;
-          updateUndoButton();
-        } else {
-          saveState(); // a new drawing: the empty canvas is the first snapshot
-        }
-        setSaveStatus("Saved");
-      }
-
-      // Empty the editor, ready for another drawing
-      function resetEditor() {
-        placing = null;
-        document.getElementById("insertHint").textContent = "";
-        selectItem(null);
-        for (const item of document.querySelectorAll(".canvasItem"))
-          item.remove();
-        clearCanvas();
-        lineEnds.length = 0;
-        hideDot();
-        undoHistory.length = 0;
-        lastImage = null;
-        canvasChanged = true;
-        setTool("brush");
-        updateUndoButton();
-      }
-
-      // Load a picture, and wait until it's ready
-      function loadPicture(src) {
-        return new Promise(function (resolve, reject) {
-          const img = new Image();
-          img.onload = function () {
-            resolve(img);
-          };
-          img.onerror = reject;
-          img.src = src;
-        });
-      }
-
-      // ===== Saving to your account =====
-      // Every change is saved automatically, a moment after you make it.
-      // (Undo's saveState calls scheduleAutosave.) Waiting a moment means
-      // lots of quick changes only save once.
-      let autosaveTimer = null;
-      function scheduleAutosave() {
-        if (currentDrawing === null || currentUser === null) return;
-        setSaveStatus("Saving…");
-        clearTimeout(autosaveTimer);
-        autosaveTimer = setTimeout(saveNow, 800);
-      }
-
-      async function saveNow() {
-        clearTimeout(autosaveTimer);
-        autosaveTimer = null;
-        if (
-          currentDrawing === null ||
-          currentUser === null ||
-          database === null
-        )
-          return;
-        const state = undoHistory[undoHistory.length - 1];
-        if (!state) return;
-        const drawingId = currentDrawing.id;
-        await picturesReady(); // so the home page picture shows the stickers too
-        // Went to a different drawing while waiting? It was already saved
-        if (currentDrawing === null || currentDrawing.id !== drawingId) return;
-
-        // Only keep the photos and stickers this drawing uses
-        const pictures = {};
-        for (const data of JSON.parse(state.items)) {
-          if (data.kind === "image")
-            pictures[data.picture] = pictureStore[data.picture];
-        }
-        const record = {
-          id: currentDrawing.id,
-          owner: currentUser,
-          title: currentDrawing.title,
-          created: currentDrawing.created,
-          updated: Date.now(),
-          state: state,
-          pictures: pictures,
-          thumb: makeThumbnail(),
-        };
+      // Show the 📦 button if this browser has any old accounts
+      async function checkLocalDrawings() {
+        let count = 0;
         try {
-          await dbPut("drawings", record);
-          setSaveStatus("Saved");
+          if (database === null) database = await openDatabase();
+          count = (
+            await dbAsk("users", "readonly", function (store) {
+              return store.getAllKeys();
+            })
+          ).length;
         } catch (problem) {
-          setSaveStatus("⚠ Couldn't save (storage full?)");
+          count = 0; // no database here (like a private window): nothing to move
         }
+        document.getElementById("moveLocalButton").style.display =
+          count > 0 ? "" : "none";
       }
 
-      // A small picture of the drawing, for the home page
-      function makeThumbnail() {
-        const picture = makePicture();
-        const small = document.createElement("canvas");
-        const scale = Math.min(1, 320 / picture.width);
-        small.width = Math.max(1, Math.round(picture.width * scale));
-        small.height = Math.max(1, Math.round(picture.height * scale));
-        small
-          .getContext("2d")
-          .drawImage(picture, 0, 0, small.width, small.height);
-        return small.toDataURL("image/jpeg", 0.8);
+      function openMoveDialog() {
+        document.getElementById("moveName").value = "";
+        document.getElementById("movePassword").value = "";
+        document.getElementById("moveMessage").textContent = "";
+        document.getElementById("moveDialog").showModal();
       }
 
-      function setSaveStatus(text) {
-        document.getElementById("saveStatus").textContent = text;
-      }
-
-      // Save straight away if you close or hide the page
-      window.addEventListener("pagehide", saveNow);
-      document.addEventListener("visibilitychange", function () {
-        if (document.visibilityState === "hidden") saveNow();
-      });
-
-      // Typing a new name for the drawing
       document
-        .getElementById("drawingTitle")
-        .addEventListener("input", function () {
-          if (currentDrawing === null) return;
-          currentDrawing.title = this.value.trim() || "Untitled drawing";
-          scheduleAutosave();
-        });
-      document
-        .getElementById("drawingTitle")
-        .addEventListener("change", function () {
-          if (this.value.trim() === "") this.value = "Untitled drawing";
-          this.blur();
+        .getElementById("moveForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+          const message = document.getElementById("moveMessage");
+          const button = document.getElementById("moveSubmit");
+          const key = document.getElementById("moveName").value.trim().toLowerCase();
+          const password = document.getElementById("movePassword").value;
+          message.style.color = "#cc0000";
+          const user = database ? await dbGet("users", key) : null;
+          // Same message either way, so nobody can find out which usernames exist
+          if (!user || user.hash !== hashPassword(password, user.salt)) {
+            message.textContent = "Wrong username or password.";
+            return;
+          }
+          button.disabled = true;
+          message.style.color = "#555";
+          const drawings = await dbDrawingsOf(key);
+          let moved = 0;
+          try {
+            for (const old of drawings) {
+              message.textContent =
+                "Moving drawing " + (moved + 1) + " of " + drawings.length + "…";
+              if (old.state)
+                await Server.saveDrawing({
+                  id: newDrawingId(),
+                  title: String(old.title || "Untitled drawing").slice(0, 60),
+                  state: old.state,
+                  pictures: old.pictures || {},
+                  thumbnail: old.thumb || null,
+                });
+              // Only removed from this computer once it's safely online
+              await dbDelete("drawings", old.id);
+              moved++;
+            }
+            await dbDelete("users", key);
+            message.style.color = "#1a7f37";
+            message.textContent =
+              "Done! Moved " +
+              moved +
+              (moved === 1 ? " drawing" : " drawings") +
+              " to your online account.";
+          } catch (problem) {
+            message.style.color = "#cc0000";
+            message.textContent =
+              "Moved " +
+              moved +
+              ", then: " +
+              friendlyError(problem) +
+              " Press Move drawings to try the rest again.";
+          }
+          button.disabled = false;
+          document.getElementById("movePassword").value = "";
+          await refreshDrawingList();
+          checkLocalDrawings();
         });
 
       // ===== Sharing (project files) =====
@@ -4930,8 +6717,14 @@
         if (currentDrawing === null) return;
         if (document.activeElement.isContentEditable)
           document.activeElement.blur(); // finish typing
-        await saveNow();
-        shareRecord(await dbGet("drawings", currentDrawing.id));
+        saveNow();
+        // Made from what's on screen, so it works even without internet
+        const state = undoHistory[undoHistory.length - 1];
+        shareRecord({
+          title: currentDrawing.title,
+          state: state,
+          pictures: picturesUsedBy(state),
+        });
       }
 
       async function shareRecord(record) {
@@ -4991,12 +6784,11 @@
               "Sorry, that file isn't a Drawlab project (it should end in .drawlab).";
             return;
           }
-          const now = Date.now();
           await openDrawing({
             id: newDrawingId(),
-            owner: currentUser,
-            title: String(project.title || "Shared drawing").slice(0, 60),
-            created: now,
+            title:
+              String(project.title || "").trim().slice(0, 60) ||
+              "Shared drawing",
             state: project.state,
             pictures: project.pictures,
           });
@@ -5521,13 +7313,10 @@
 
       // Template card pressed: make a new drawing from it
       async function startFromTemplate(template) {
-        const now = Date.now();
         await openDrawing({
           id: newDrawingId(),
-          owner: currentUser,
           title:
             template.parts.length === 0 ? "Untitled drawing" : template.title,
-          created: now,
           state: null,
         });
         applyTemplate(template);
@@ -5615,23 +7404,26 @@
 
       // ===== Starting the app =====
       // Logged in last time? Go straight to the home page. Otherwise, log in.
+      // (Supabase remembers who's logged in, so a refresh keeps you logged in.)
       async function startApp() {
         showLoginMode("login");
-        const savedUser = localStorage.getItem("drawlab.user");
-        showScreen(savedUser ? "home" : "login");
-        try {
-          database = await openDatabase();
-        } catch (problem) {
-          showScreen("login");
-          document.getElementById("loginError").textContent =
-            "This browser won't let Drawlab save anything. Try a normal (not private) window.";
+        showScreen("login");
+        stopChat(); // shows "Log in to chat" in the bottom panel
+        if (!Server.isSetUp()) {
+          showSetupMessage();
           return;
         }
-        if (savedUser && (await dbGet("users", savedUser))) {
-          currentUser = savedUser;
-          await showHome();
-        } else {
-          showScreen("login");
+        // Did you get here from a "choose a new password" email link?
+        const fromResetLink = /type=recovery/.test(location.hash);
+        Server.start(onAuthChange);
+        setLoginMessage("Checking if you're logged in…", true);
+        try {
+          const user = await Server.currentAuthUser();
+          if (user && fromResetLink) showLoginMode("newPassword");
+          else if (user) await afterLogIn();
+          else setLoginMessage("");
+        } catch (problem) {
+          setLoginMessage(friendlyError(problem));
         }
       }
 
